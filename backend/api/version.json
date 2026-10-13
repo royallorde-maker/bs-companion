@@ -1,8 +1,8 @@
 {
-  "versionCode": 16,
-  "versionName": "1.10.0",
+  "versionCode": 17,
+  "versionName": "1.11.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.10.0 — żywy pierścień postępu i płaskie tło bez gradientów (treść bez zmian)",
+  "changelog": "1.11.0 — pasek nawigacji uniesiony nad gesty systemowe (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-13T19:11:53Z"
+  "publishedAt": "2026-10-13T19:27:22Z"
 }

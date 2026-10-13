@@ -39,6 +39,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -400,6 +403,8 @@ fun PillBar(
     Box(
         Modifier.fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
+            // Pigułka nad paskiem gestów — bez tego tonie pod systemową nawigację.
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Surface(
@@ -1738,6 +1743,12 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.11.0 — pasek nad gestami", listOf(
+                "Pigułka nawigacji uniesiona nad systemowy pasek gestów",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.10.0 — pierścień i płaskie tło", listOf(
