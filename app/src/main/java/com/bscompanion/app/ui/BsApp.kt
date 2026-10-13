@@ -1368,6 +1368,12 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.3.0 — finalny test kanału", listOf(
+                "Instalacja wprost z apki: Pobierz → Zainstaluj, bez USB",
+                "Dowód, że kanał 1.2.2 → dalej działa samodzielnie"
+            ))
+        }
+        item {
             InfoCard("1.2.2 — naprawa instalacji", listOf(
                 "FileProvider pokrywa files/Download/updates (koniec z Nie można otworzyć pliku)",
                 "DownloadManager przez setDestinationInExternalFilesDir",
