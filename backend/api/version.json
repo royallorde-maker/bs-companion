@@ -1,8 +1,8 @@
 {
-  "versionCode": 13,
-  "versionName": "1.7.0",
+  "versionCode": 14,
+  "versionName": "1.8.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.7.0 — pełna przebudowa Dziś w stylu Nexora: karta-bohater, holdingi, wykres planu, szczegóły wydarzenia (treść bez zmian)",
+  "changelog": "1.8.0 — zakładki w języku Nexora: granatowe nagłówki, mroźne wiersze planu, koniec wykresu (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-13T17:55:08Z"
+  "publishedAt": "2026-10-13T18:04:23Z"
 }

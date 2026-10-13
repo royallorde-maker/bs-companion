@@ -1612,6 +1612,14 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.8.0 — zakładki w języku Nexora", listOf(
+                "Granatowe nagłówki Planu, Stołówki i Zmian jak karta-bohater",
+                "Wiersze planu: mroźne szkło, bieżące wydarzenie na granatowo",
+                "Usunięty wykres zajętości dnia",
+                "Treść, teksty i alarmy bez zmian"
+            ))
+        }
+        item {
             InfoCard("1.7.0 — pełna przebudowa Dziś", listOf(
                 "Granatowa karta-bohater: żywy zegar, TERAZ/NASTĘPNE, skróty do zakładek",
                 "Nadchodzące jako wiersze holdingów + szczegóły wydarzenia z donutem postępu",

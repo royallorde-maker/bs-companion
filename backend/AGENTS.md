@@ -27,15 +27,47 @@ Nie hardkoduj URL w Kotlin — tylko przez BuildConfig.
 - `apkUrl` MUSI wskazywać na asset z GitHub Release (nie commituj apk do repo).
 - `force=true` tylko gdy stara wersja jest łamana (apka pokazuje mocniejszy baner).
 
-## Jak wydać nową wersję (krok po kroku)
+## Jak wydać nową wersję (krok po kroku, sprawdzone na 1.6.0–1.8.0)
 
-1. Podbij `versionCode` + `versionName` w `app/build.gradle.kts`.
-2. Zaktualizuj `backend/api/version.json` (ten sam kod/nazwa, nowy changelog, data).
-3. Dopisz kartę `InfoCard("x.y.z — ...")` w `ChangelogScreen` w `ui/BsApp.kt` PONIŻEJ karty "O aplikacji".
-4. Zbuduj: `./gradlew :app:assembleRelease` (wymaga `keystore.properties`, nigdy go nie commituj).
-5. Push na `main`, potem na GitHub: Release z tagiem `v<versionName>` (np. `v1.2.0`) + załącz `app-release.apk` jako `app-release.apk` (stała nazwa — `latest/download` na nią liczy).
-6. Sprawdź stronę statusu `backend/site/index.html`: wiersz "tag ⇔ version.json" ma być ZGODNE.
-7. W apce: zakładka Zmiany → karta Aktualizacja ma pokazać "dostępna".
+Zasada: KAŻDA zmiana w apce = osobny release + wpis w instrukcji (InfoCard poniżej).
+Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build).
+
+1. Podbij `versionCode` (+1) + `versionName` w `app/build.gradle.kts`.
+2. Zaktualizuj `backend/api/version.json` (ten sam kod/nazwa, nowy changelog, aktualne `publishedAt` UTC).
+3. Dopisz kartę `InfoCard("x.y.z — ...")` w `ChangelogScreen` w `ui/BsApp.kt` NA GÓRZE historii (powyżej poprzedniej wersji).
+4. Zbuduj podpisany release — WYMAGA SIECI (lint dociąga zależności, `--offline` pada):
+   ```powershell
+   $g = "C:\Users\skraba\.gradle\wrapper\dists\gradle-8.7-bin\bhs2wmbdwecv87pi65oeuq5iu\gradle-8.7\bin\gradle.bat"
+   & $g :app:assembleRelease :app:testDebugUnitTest
+   # Wynik: app/build/outputs/apk/release/app-release.apk (podpisany)
+   ```
+   W tym projekcie brak `gradle` na PATH i bootstrapu wrappera — wołaj pełną ścieżkę jw.
+   (`./gradlew` nie działa — policzy wrappera którego nie ma.)
+5. Zweryfikuj podpis (musi być TEN SAM co poprzedni release, inaczej update się nie zainstaluje):
+   ```powershell
+   & "C:\Users\skraba\AppData\Local\Android\Sdk\build-tools\34.0.0\apksigner.bat" verify --print-certs app/build/outputs/apk/release/app-release.apk
+   # Oczekiwane: CN=BS Companion, SHA-256 0fd77ec8684c3dbc2c2917f612f127013184cd35726b94a8929698ab2ff88228
+   ```
+6. Push + tag + Release (asset MUSI nazywać się `app-release.apk` — `latest/download` na to liczy):
+   ```powershell
+   git add -A; git commit -m "1.8.0 code 14: ..."; git push origin main
+   git tag -a v1.8.0 -m "v1.8.0 ..."; git push origin v1.8.0
+   gh release create v1.8.0 app/build/outputs/apk/release/app-release.apk --title "v1.8.0" --notes "..."
+   ```
+   `gh` wymaga jednorazowo `gh auth login` (https). Bez Release `latest/download` serwuje STARY apk
+   (objaw: "build identyczny" mimo nowego version.json).
+7. Sprawdź stronę statusu `backend/site/index.html`: wiersz "tag ⇔ version.json" ma być ZGODNE.
+8. W apce: zakładka Zmiany → karta Aktualizacja ma pokazać "dostępna".
+
+## Podpisywanie (nie ruszać bez zrozumienia)
+
+- Klucz: `C:\Users\skraba\bscompanion-release.keystore`, alias `bscompanion` (POZA repo).
+  Kopia + hasło MUSZĄ mieć backup — zgubienie = koniec OTA. Hasło żyje tylko w `keystore.properties`.
+- `app/build.gradle.kts` WYMAGA klucza: brak `keystore.properties` = twardy błąd konfiguracji.
+  To celowe — cichy unsigned APK w Release łamie aktualizacje.
+- Historia kluczy: ≤1.4.1 oryginalny (niedostępny), 1.5.0 DesignNest (porzucony), od 1.6.0 `bscompanion`.
+  Zmiana klucza = użytkownicy muszą odinstalować apkę (Android odrzuca update).
+- Poprzedni klucz DesignNest (`designnest-release.keystore`, hasło utracone) jest martwy — nie używać.
 
 ## Jak edytować stronę statusu
 
