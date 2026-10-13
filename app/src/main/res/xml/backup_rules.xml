@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Tylko cache harmonogramu nie jest backupowany (odtwarza się przy starcie).
+         Ustawienia użytkownika (bs_settings.xml) są backupowane. -->
+    <exclude domain="sharedpref" path="bs_schedule_cache.xml" />
+    <!-- Znaczniki zdublowanych alarmów — ulotne, odtwarzają się same. -->
+    <exclude domain="sharedpref" path="bs_fired.xml" />
+</full-backup-content>
