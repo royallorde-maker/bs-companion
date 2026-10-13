@@ -434,16 +434,18 @@ fun PillBar(
                             tint = if (sel) MaterialTheme.colorScheme.onPrimary
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            t,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (sel) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        // Etykieta tylko na wybranej — cztery pełne podpisy nie mieszczą się w rzędzie.
+                        if (sel) {
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                t,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -1743,6 +1745,12 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.12.0 — zwarta pigułka nawigacji", listOf(
+                "Etykieta tylko na wybranej zakładce — nazwy już się nie ucinają",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.11.0 — pasek nad gestami", listOf(
