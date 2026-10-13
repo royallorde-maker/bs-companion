@@ -11,12 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -33,7 +31,6 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
-    // Zgoda na powiadomienia (Android 13+). Wynik: przy zgodzie dopinamy alarmy.
     private val notifPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -44,77 +41,41 @@ class MainActivity : ComponentActivity() {
             NotificationHelper.ensureChannel(this)
             EventScheduler.rescheduleAsync(this, force = true)
         } else {
-            // Odmowa: wyczyść wiszące alarmy, żeby nie budziły na darmo.
             EventScheduler.rescheduleAsync(this, force = true)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Prośba o 120 Hz dopóki apka jest na wierzchu.
-        // display (getDisplay) istnieje od API 30 — na starszych pomijamy.
-        // Dokładny tryb z systemu (nie sztywne 120f), odnawiane też w onResume
-        // (w onCreate okno bywa jeszcze niepodpięte i display == null).
         applyRefreshRate()
-        // Wczesne bary wg zapisanego themeMode (nie systemu) — bez flesza
-        // złych ikon przed pierwszą kompozycją.
         try {
-            val earlyMode = Prefs.getThemeMode(this)
-            val sysNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                android.content.res.Configuration.UI_MODE_NIGHT_YES
-            val earlyDark = when (earlyMode) {
-                1 -> true
-                2 -> false
-                else -> sysNight
-            }
             enableEdgeToEdge(
-                statusBarStyle = if (earlyDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
-                navigationBarStyle = if (earlyDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             )
         } catch (_: Exception) { }
         NotificationHelper.ensureChannel(this)
         NotificationHelper.ensureSilentChannel(this)
-        // Asynchronicznie: pełne przeplanowanie to setki IPC, nie wolno na UI.
-        // Debounced w schedulerze — potrójne wołanie (onCreate/onResume/callback) jest tanie.
         EventScheduler.rescheduleAsync(this)
         enqueueSafetyNet()
-        // Tylko zgoda na powiadomienia przy starcie. Baterię proponujemy wyłącznie
-        // z wiersza "Praca w tle" (BatteryRow) — auto-prompt łamał Play policy
-        // i odpalał dwa dialogi systemowe pod rząd.
         requestNotifPermissionIfNeeded()
 
         val activity = this
         setContent {
-            // 0 = system, 1 = ciemny, 2 = jasny. Stan TU (nie w zakładce),
-            // więc wybór przebudowuje motyw natychmiast, bez restartu.
-            var themeMode by rememberSaveable { mutableStateOf(Prefs.getThemeMode(this@MainActivity)) }
-            val useDark = when (themeMode) {
-                1 -> true
-                2 -> false
-                else -> isSystemInDarkTheme()
-            }
-            // Ikony systemowe wg efektywnego motywu apki, nie systemu.
-            // Tło okna też pod motyw apki (bez flesza systemowego przy Jasny/Ciemny).
-            LaunchedEffect(useDark) {
+            LaunchedEffect(Unit) {
                 activity.enableEdgeToEdge(
-                    statusBarStyle = if (useDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
-                    navigationBarStyle = if (useDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                    navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
                 )
                 try {
-                    val bg = if (useDark) 0xFF0A0B0E.toInt() else 0xFFFBF8FF.toInt()
-                    activity.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bg))
+                    activity.window.setBackgroundDrawable(
+                        android.graphics.drawable.ColorDrawable(0xFF131210.toInt())
+                    )
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "window bg failed", e)
                 }
             }
-            BSCompanionTheme(darkTheme = useDark) {
-                // Splash tylko przy zimnym starcie procesu. Celowo `remember`, nie
-                // `rememberSaveable` — saveable odtwarzałby true po rotacji z bundla
-                // zapisanego gdy splash jeszcze wisiał i logo grałoby od nowa.
+            BSCompanionTheme(darkTheme = true) {
                 var showSplash by remember { mutableStateOf(savedInstanceState == null) }
                 LaunchedEffect(Unit) {
                     if (showSplash) {
@@ -123,13 +84,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 Crossfade(targetState = showSplash, animationSpec = tween(200), label = "splash") { splash ->
-                    if (splash) SplashScreen() else BsApp(
-                        themeMode = themeMode,
-                        onThemeChange = {
-                            Prefs.setThemeMode(this@MainActivity, it)
-                            themeMode = it
-                        }
-                    )
+                    if (splash) SplashScreen() else BsApp()
                 }
             }
         }
@@ -138,8 +93,6 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         applyRefreshRate()
-        // Powrót z ustawień systemowych (zgody!) = przeliczenie alarmów od nowa.
-        // Debounce 2 s w schedulerze chroni przed potrójnym stawianiem.
         EventScheduler.rescheduleAsync(this)
     }
 
@@ -150,8 +103,6 @@ class MainActivity : ComponentActivity() {
                 val current = try { disp.mode } catch (_: Exception) { null }
                 val modes = try { disp.supportedModes?.toList() } catch (_: Exception) { null } ?: return
                 if (modes.isEmpty()) return
-                // Ten sam rozmiar co obecnie (nie spychamy do niskiej rozdzielczości
-                // dla Hz), spośród nich najwyższy refresh. Bez zmiany, gdy już ustawiony.
                 val sameSize = if (current != null) {
                     modes.filter { it.physicalWidth == current.physicalWidth && it.physicalHeight == current.physicalHeight }
                 } else emptyList()
@@ -174,7 +125,6 @@ class MainActivity : ComponentActivity() {
             val granted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-            // Pytamy tylko raz — przy trwałej odmowie wracamy przez wiersz w ustawieniach.
             val asked = try { Prefs.isNotifAsked(this) } catch (_: Exception) { false }
             if (!granted && !asked) {
                 try {
@@ -186,7 +136,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Siatka bezpieczeństwa: dopnij okno co 6 h, gdyby jakiś alarm wypadł. */
     private fun enqueueSafetyNet() {
         try {
             val req = PeriodicWorkRequestBuilder<RescheduleWorker>(6, java.util.concurrent.TimeUnit.HOURS).build()
