@@ -273,11 +273,8 @@ object EventScheduler {
                         if (DormSchedule.isNoCare(LocalDateTime.of(endDate, end).minusMinutes(1))) continue
                     }
                     scheduleOne(context, date, event.id, event.title, event.description, event.start, minutesBefore, zone, isReminder = true)?.let { wanted += it }
-                    // Punktualne przypomnienie dokładnie o czasie dla KAŻDEGO punktu:
-                    // w slocie ląduje na nowo z dźwiękiem (EventReceiver kasuje slot
-                    // i budzi ponownie), zamiast cicho znikać po timeoutcie.
-                    // Bez tego zdarzenia spoza kluczowej szóstki nie wracały wcale.
-                    scheduleOne(context, date, event.id, event.title, event.description, event.start, 0, zone, isReminder = false)?.let { wanted += it }
+                    // Celowo BRAK alarmu punktualnego: przypomnienie znika o czasie
+                    // wydarzenia (timeout) i nic nie wraca. Bez re-buzzu.
                 }
             }
             try { Prefs.setScheduledUris(context, wanted) } catch (e: Exception) {

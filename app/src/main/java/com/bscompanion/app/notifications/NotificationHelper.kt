@@ -87,8 +87,7 @@ object NotificationHelper {
         title: String,
         text: String,
         isReminder: Boolean,
-        timeoutAfterMs: Long? = null,
-        alertAgain: Boolean = false
+        timeoutAfterMs: Long? = null
     ) {
         if (!canPost(context)) return
         ensureChannel(context)
@@ -112,9 +111,8 @@ object NotificationHelper {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
-            // Punktualne (alertAgain) MA obudzić na nowo w tym samym slocie;
-            // przypomnienie w świeżym slocie wystarczy raz.
-            .setOnlyAlertOnce(!alertAgain)
+            // Jeden slot, jedno budzenie — nic nie wraca po timeoutcie.
+            .setOnlyAlertOnce(true)
             .setContentIntent(pending)
             .apply { if (timeoutAfterMs != null && timeoutAfterMs > 0) setTimeoutAfter(timeoutAfterMs) }
             .build()
@@ -193,16 +191,6 @@ object NotificationHelper {
             nm.cancel(PERSISTENT_ID)
         } catch (e: Exception) {
             android.util.Log.w("NotifHelper", "cancelPersistent failed", e)
-        }
-    }
-
-    /** Kasuje jeden slot wydarzenia — punktualne najpierw czyści, potem dzwoni na nowo. */
-    fun cancelSlot(context: Context, notificationId: Int) {
-        try {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.cancel(notificationId)
-        } catch (e: Exception) {
-            android.util.Log.w("NotifHelper", "cancelSlot failed", e)
         }
     }
 

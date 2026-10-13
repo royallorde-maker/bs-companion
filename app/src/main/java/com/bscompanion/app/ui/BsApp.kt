@@ -1399,11 +1399,15 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
-            InfoCard("1.4.0 — szkło i powrót o czasie", listOf(
+            InfoCard("1.4.1 — tylko przypomnienia", listOf(
+                "Przypomnienie N min przed, znika o czasie wydarzenia",
+                "Koniec z powrotami: brak alarmów punktualnych wcale"
+            ))
+        }
+        item {
+            InfoCard("1.4.0 — szkło ink", listOf(
                 "Karty w szkle: gradient tonu + pływająca pigułka nawigacji",
-                "Poświata primary w tle, ten sam ink w obu motywach",
-                "Punktualne dla każdego eventu: kasuje slot i dzwoni na nowo",
-                "Koniec z cichym znikaniem przypomnień bez następstwa"
+                "Poświata primary w tle, ten sam ink w obu motywach"
             ))
         }
         item {

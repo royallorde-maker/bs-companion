@@ -1,8 +1,8 @@
 {
-  "versionCode": 10,
-  "versionName": "1.4.0",
+  "versionCode": 11,
+  "versionName": "1.4.1",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.4.0 — szkło ink + punktualne wraca z dźwiękiem",
+  "changelog": "1.4.1 — tylko przypomnienia: znikają o czasie, nic nie wraca",
   "force": false,
-  "publishedAt": "2026-10-13T16:25:00Z"
+  "publishedAt": "2026-10-13T16:30:00Z"
 }

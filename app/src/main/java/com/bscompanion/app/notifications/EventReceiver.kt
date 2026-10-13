@@ -99,16 +99,8 @@ class EventReceiver : BroadcastReceiver() {
         val slotId = NotificationHelper.stableSlotId(eventKey)
         // Sync: przypomnienie na N minut przed kasuje się samo dokładnie o czasie wydarzenia.
         val timeout = if (isReminder && offsetMin > 0) offsetMin * 60_000L else null
-        // Punktualne: zamiast cicho nadpisywać slot po przypomnieniu — skasuj go
-        // i pokaż na nowo z dźwiękiem. Stąd "znika i wraca o czasie", nie "znika".
-        val onTime = !isReminder && offsetMin == 0
-        if (onTime) {
-            try { NotificationHelper.cancelSlot(app, slotId) } catch (e: Exception) {
-                android.util.Log.w("EventReceiver", "cancelSlot failed", e)
-            }
-        }
         // Szybkie (jeden notify) synchronicznie; ciężkie przeplanowanie w tle z debounce.
-        NotificationHelper.showEventNotification(app, slotId, title, text, isReminder, timeout, alertAgain = onTime)
+        NotificationHelper.showEventNotification(app, slotId, title, text, isReminder, timeout)
         try { NotificationHelper.refreshPersistent(app) } catch (e: Exception) {
             android.util.Log.w("EventReceiver", "refresh failed", e)
         }

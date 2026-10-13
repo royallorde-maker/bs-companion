@@ -442,8 +442,8 @@ def g_source() -> None:
     ma = src("java/com/bscompanion/app/MainActivity.kt")
 
     check("debounce coalesces (no drop)", "coalescedPending" in es and "if (coalescedPending) return" in es)
-    check("ontime dla kazdego eventu (bez szostki)", "event.id in setOf" not in es and "isReminder = false)?.let" in es)
-    check("punktualne budzi na nowo", "alertAgain" in nh and "cancelSlot" in nh and "alertAgain = onTime" in er)
+    check("wylacznie przypomnienia (brak on-time)", "isReminder = false" not in es)
+    check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
     check("szklo: gradient + pigulka", "verticalGradient" in bs and "RoundedCornerShape(28.dp)" in bs)
     check("force bypass for user actions", "force: Boolean = false" in es)
     check("lock off UI thread (bgLock/scheduleLock)",
