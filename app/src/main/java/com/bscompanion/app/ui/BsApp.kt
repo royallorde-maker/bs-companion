@@ -46,10 +46,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -59,7 +61,9 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
@@ -313,8 +317,11 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
     var tab by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History)
-    // Back z zakładek 1-3 wraca do Dziś, wyjście tylko z 0.
-    BackHandler(enabled = tab != 0) { tab = 0 }
+    var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
+    // Back: najpierw zamyka szczegóły, potem z zakładek 1-3 wraca do Dziś, wyjście tylko z 0.
+    BackHandler(enabled = tab != 0 || detailKey != null) {
+        if (detailKey != null) detailKey = null else tab = 0
+    }
     val saveableHolder = rememberSaveableStateHolder()
     // Subtelny stan sieci dla całej apki — kropka offline, reszta działa lokalnie.
     val online = rememberIsOnline()
@@ -322,7 +329,7 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            PillBar(titles, icons, tab) { tab = it }
+            PillBar(titles, icons, tab) { detailKey = null; tab = it }
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
@@ -368,8 +375,14 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
                 label = "tabs"
             ) { t ->
                 saveableHolder.SaveableStateProvider(t) {
-                    when (t) {
-                        0 -> HomeScreen()
+                    val detail = remember(detailKey) { detailKey?.let { parseDetailKey(it) } }
+                    if (detail != null) {
+                        DetailScreen(detail.first, detail.second) { detailKey = null }
+                    } else when (t) {
+                        0 -> HomeScreen(
+                            onTab = { tab = it },
+                            onOpenEvent = { d, e -> detailKey = "$d|${e.id}" }
+                        )
                         1 -> ScheduleScreen()
                         2 -> MealsScreen()
                         3 -> ChangelogScreen(themeMode, onThemeChange)
@@ -422,17 +435,16 @@ fun PillBar(
                             tint = if (sel) MaterialTheme.colorScheme.onPrimary
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (sel) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                t,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            t,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (sel) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
@@ -440,12 +452,27 @@ fun PillBar(
     }
 }
 
+/** Klucz szczegółów wydarzenia: "2026-10-13|cisza". */
+fun parseDetailKey(key: String): Pair<LocalDate, DormEvent>? {
+    val sep = key.indexOf('|')
+    if (sep < 0) return null
+    return try {
+        val date = LocalDate.parse(key.substring(0, sep))
+        val e = DormSchedule.eventsForDate(date).firstOrNull { it.id == key.substring(sep + 1) }
+        if (e == null) null else date to e
+    } catch (_: Exception) {
+        null
+    }
+}
+
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onTab: (Int) -> Unit,
+    onOpenEvent: (LocalDate, DormEvent) -> Unit
+) {
     val context = LocalContext.current
-    // SEKUNDNIK: tyka co 1 s, ale czytają go tylko małe poddrzewa (ClockHeader/EventsGrid)
+    // SEKUNDNIK: tyka co 1 s, ale czytają go tylko małe poddrzewa (HeroCard/HoldingSection)
     // przez referencję State — sama HomeScreen NIE przerysowuje się co takt.
-    // Minutnik pochodny dla osi Nadchodzące (rekompozycja 1/min, nie 1/s).
     val nowState = remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
         // Wyrównanie do granicy sekund, żeby zegar nie dryfował.
@@ -459,10 +486,7 @@ fun HomeScreen() {
         nowState.value = LocalDateTime.now()
         onPauseOrDispose { }
     }
-    val minuteState = remember {
-        derivedStateOf { nowState.value.truncatedTo(ChronoUnit.MINUTES) }
-    }
-    // Minutowy takt mieszka w NotifCard — HomeScreen go nie subskrybuje.
+    // Minutnik pochodny dla osi Nadchodzące (rekompozycja 1/min, nie 1/s).
     var notifEnabled by rememberSaveable { mutableStateOf(Prefs.isEnabled(context)) }
     var minutesBefore by rememberSaveable { mutableStateOf(Prefs.minutesBefore(context)) }
 
@@ -472,13 +496,19 @@ fun HomeScreen() {
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Appear(0) { ClockHeader(nowState) }
+            Appear(0) { HeroCard(nowState, onTab) }
         }
         item {
-            Appear(1) { EventsGrid(nowState) }
+            Appear(1) {
+                HoldingSection(
+                    nowState,
+                    onSeeAll = { onTab(1) },
+                    onOpen = onOpenEvent
+                )
+            }
         }
         item {
-            Appear(2) { UpcomingCard(minuteState) }
+            Appear(2) { DayChartCard() }
         }
         item {
             Appear(3) {
@@ -501,262 +531,171 @@ fun HomeScreen() {
     }
 }
 
-/** Nagłówek zegara — jedyny czytelnik taktu oprócz siatki i licznika. */
+/** Granatowa karta-bohater w języku Nexora: żywy zegar + TERAZ/NASTĘPNE + skróty. */
 @Composable
-fun ClockHeader(nowState: State<LocalDateTime>) {
+fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
     val now by nowState
+    // Kwantyzacja do minuty — AnimatedContent odpala się tylko przy zmianie "HH:mm".
+    val minuteKey = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
+    val timeStr = remember(minuteKey) { minuteKey.format(timeFmt) }
     val dateStr = remember(now.toLocalDate()) {
         now.toLocalDate().format(dateFmt)
     }
-    // Kwantyzacja do minuty — bez 60x zbędnych rekompozycji na sekundę.
-    // AnimatedContent i tak odpala się tylko przy zmianie "HH:mm".
-    val minuteKey = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
-    val timeStr = remember(minuteKey) {
-        minuteKey.format(timeFmt)
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            "BS Companion",
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        AnimatedContent(
-            targetState = timeStr,
-            transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
-            label = "clock"
-        ) { animatedTime ->
-            Text(
-                animatedTime,
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        Text(
-            dateStr.replaceFirstChar { it.uppercase(plLocale) },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (DormSchedule.isNoCare(now)) {
-            Spacer(Modifier.height(8.dp))
-            StatusChip("Brak opieki wychowawczej")
-        }
-    }
-}
-
-/** Siatka TERAZ / NASTĘPNE — czyta takt, reszta ekranu stoi. */
-@Composable
-private fun TerazContent(now: LocalDateTime, closed: Boolean, current: DormEvent?) {
-    if (closed) {
-        // Ta sama kotwica 56dp co Ring — ikony w obu kartach w jednej linii.
-        Ring(progress = null) {
-            Icon(
-                Icons.Filled.Bedtime, null,
-                Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "TERAZ",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "Internat zamknięty",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "czynny ndz 16:00 – pt 18:00",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-    } else if (current != null) {
-        Ring(eventProgress(now.toLocalTime(), current)) {
-            Icon(
-                categoryIcon(current.category), null,
-                Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "TERAZ",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            current.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            timeRange(current),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip
-        )
-    } else {
-        Ring(progress = null) {
-            Icon(
-                Icons.Filled.WbSunny, null,
-                Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text("TERAZ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Text("Przerwa", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(16.dp))
-    }
-}
-
-@Composable
-private fun NastepneContent(
-    now: LocalDateTime,
-    today: LocalDate,
-    next: DormEvent?,
-    nextDate: LocalDate?,
-    compact: Boolean = false
-) {
-    if (next != null && nextDate != null) {
-        val target = LocalDateTime.of(nextDate, next.start)
-        // Dzień tylko spoza dziś ("Obiad • 13:30–15:30" albo "Obiad • sob • ...").
-        val day = if (nextDate == today) "" else nextDate.dayOfWeek.getDisplayName(
-            java.time.format.TextStyle.SHORT, plLocale
-        )
-        val head = if (day.isEmpty()) next.title else "${next.title} • $day"
-        // Kotwica 56dp jak Ring obok + ikona z kategorii (nie stałe śniadanie).
-        Ring(progress = null) {
-            Icon(
-                categoryIcon(next.category), null,
-                Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "NASTĘPNE",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            formatCountdown(now, target),
-            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            head,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            timeRange(next),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Clip
-        )
-    } else {
-        Ring(progress = null) {
-            Icon(
-                Icons.Filled.FreeBreakfast, null,
-                Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Text("NASTĘPNE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Text("Koniec planu", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(16.dp))
-    }
-}
-
-/** Siatka TERAZ / NASTĘPNE — czyta takt, reszta ekranu stoi. */
-@Composable
-fun EventsGrid(nowState: State<LocalDateTime>) {
-    val now by nowState
-    // Poza godzinami opieki pokazujemy stan zamknięcia zamiast ciszy z planu.
-    val closed = DormSchedule.isNoCare(now)
     val today = now.toLocalDate()
     val events = remember(today) { DormSchedule.eventsForDate(today) }
     // Lookup obcięty do minut (12:00:00.5 nie gubi eventu 12:00); licznik pełny.
     val lookupNow = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
+    val closed = DormSchedule.isNoCare(now)
     val current = remember(lookupNow, events) { DormSchedule.currentCaredEvent(lookupNow, events) }
     val cared = remember(lookupNow) { DormSchedule.nextCaredEvent(lookupNow) }
-    val next = cared?.second
-    val nextDate = cared?.first
-    // Obok siebie jak wcześniej: TERAZ | NASTĘPNE w jednym wierszu, zawsze równa wysokość.
-    // Wąsko: mniejszy padding + countdown titleMedium, żeby licznik mieścił się w ~134dp.
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val compact = maxWidth < 380.dp
-        val cardPadding = if (compact) 12.dp else 16.dp
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            BsSurface(Modifier.weight(1f).fillMaxHeight().heightIn(min = 150.dp), contentPadding = cardPadding) {
-                TerazContent(now, closed, current)
+    val nowLabel = when {
+        closed -> "Internat zamknięty"
+        current != null -> current.title
+        else -> "Przerwa"
+    }
+    val nextLabel = if (cared != null) {
+        formatCountdown(now, LocalDateTime.of(cared.first, cared.second.start))
+    } else {
+        "—"
+    }
+    val hero = Brush.verticalGradient(
+        0f to MaterialTheme.colorScheme.primary,
+        1f to MaterialTheme.colorScheme.tertiary
+    )
+    val onHero = MaterialTheme.colorScheme.onPrimary
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = Color.Transparent
+    ) {
+        Column(Modifier.background(hero).padding(22.dp)) {
+            Text(
+                "BS Companion",
+                style = MaterialTheme.typography.labelLarge,
+                color = onHero.copy(alpha = 0.72f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(2.dp))
+            AnimatedContent(
+                targetState = timeStr,
+                transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
+                label = "clock"
+            ) { animatedTime ->
+                Text(
+                    animatedTime,
+                    style = MaterialTheme.typography.displayLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = onHero,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-            BsSurface(Modifier.weight(1f).fillMaxHeight().heightIn(min = 150.dp), contentPadding = cardPadding) {
-                NastepneContent(now, today, next, nextDate, compact = compact)
+            Text(
+                dateStr.replaceFirstChar { it.uppercase(plLocale) },
+                style = MaterialTheme.typography.bodyMedium,
+                color = onHero.copy(alpha = 0.72f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (closed) {
+                Spacer(Modifier.height(8.dp))
+                HeroPill("Brak opieki wychowawczej")
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HeroPill("TERAZ: $nowLabel", Modifier.weight(1f))
+                HeroPill("$nextLabel • NASTĘPNE", Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HeroButton(Icons.Filled.DateRange, "Plan dnia", Modifier.weight(1f)) { onTab(1) }
+                HeroButton(Icons.Filled.Restaurant, "Posiłki", Modifier.weight(1f)) { onTab(2) }
+                HeroButton(Icons.Filled.History, "Zmiany", Modifier.weight(1f)) { onTab(3) }
             }
         }
     }
 }
 
-/** Oś czasu: 4 najbliższe punkty z opieką (z dniem, gdy nie dziś). */
 @Composable
-fun UpcomingCard(nowState: State<LocalDateTime>) {
+private fun HeroPill(text: String, modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
+        modifier = modifier
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun HeroButton(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimary)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** Wiersze Nadchodzące w języku holdingów: ikona + tytuł/godziny + start/odliczanie. */
+@Composable
+fun HoldingSection(
+    nowState: State<LocalDateTime>,
+    onSeeAll: () -> Unit,
+    onOpen: (LocalDate, DormEvent) -> Unit
+) {
     val now by nowState
-    // Stan minutowy (pochodny) — rekompozycja 1/min, nie 1/s. Obcięcie chroni
-    // przed zgubieniem eventu startującego dokładnie w sekundzie tyknięcia.
-    val items = remember(now) {
+    val gain = if (isSystemInDarkTheme()) Color(0xFF63D68F) else Color(0xFF1E8E5A)
+    // Stan minutowy (pochodny) — rekompozycja 1/min, nie 1/s.
+    val items = remember(now.truncatedTo(ChronoUnit.MINUTES)) {
         DormSchedule.upcomingCared(now.truncatedTo(ChronoUnit.MINUTES), 4)
     }
-    val today = now.toLocalDate()
-    val dateSuffixFmt = remember { java.time.format.DateTimeFormatter.ofPattern("d.M") }
     BsSurface(Modifier.fillMaxWidth()) {
-        Text("Nadchodzące", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Nadchodzące",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "Zobacz wszystko",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.clickable(onClick = onSeeAll)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         if (items.isEmpty()) {
             Text(
                 "Brak nadchodzących punktów z opieką.",
@@ -765,32 +704,37 @@ fun UpcomingCard(nowState: State<LocalDateTime>) {
             )
         }
         items.forEachIndexed { i, (date, e) ->
-            val day = when (date) {
-                today -> "dziś"
-                today.plusDays(1) -> "jutro"
-                else -> "${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)} ${date.format(dateSuffixFmt)}"
-            }
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    e.start.format(timeFmt),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip,
-                    modifier = Modifier.widthIn(min = 52.dp)
-                )
-                Spacer(Modifier.width(8.dp))
+            val target = LocalDateTime.of(date, e.start)
+            Row(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { onOpen(date, e) }
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier.size(46.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        categoryIcon(e.category), null,
+                        Modifier.size(23.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
                         e.title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "$day • ${timeRange(e)}",
+                        timeRange(e),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -798,8 +742,341 @@ fun UpcomingCard(nowState: State<LocalDateTime>) {
                         overflow = TextOverflow.Clip
                     )
                 }
+                Spacer(Modifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        e.start.format(timeFmt),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
+                    )
+                    Text(
+                        formatCountdown(now, target),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = gain,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
+                    )
+                }
             }
-            if (i < items.lastIndex) Spacer(Modifier.height(12.dp))
+            if (i < items.lastIndex) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .height(1.dp)
+                        .padding(horizontal = 58.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                )
+            }
+        }
+    }
+}
+
+/** Wykres zajętości planu dziś: 8 słupków po 2 h, liczone z DormSchedule (6:00–22:00). */
+@Composable
+fun DayChartCard() {
+    val today = remember { LocalDate.now() }
+    val events = remember(today) { DormSchedule.eventsForDate(today) }
+    val buckets = remember(events) {
+        (0 until 8).map { i ->
+            val bs = LocalTime.of(6 + i * 2, 0).toSecondOfDay()
+            val be = bs + 2 * 3600
+            var busy = 0
+            events.forEach { e ->
+                val s = e.start.toSecondOfDay()
+                var en = (e.end ?: e.start.plusMinutes(15)).toSecondOfDay()
+                if (en <= s) en += 24 * 3600
+                busy += (minOf(en, be) - maxOf(s, bs)).coerceAtLeast(0) / 60
+            }
+            busy.coerceAtMost(120)
+        }
+    }
+    val scheme = MaterialTheme.colorScheme
+    BsSurface(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(
+                Modifier.height(96.dp).width(30.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text("60m", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+                Text("30m", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+                Text("0", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.width(8.dp))
+            Row(
+                Modifier.weight(1f).height(96.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                buckets.forEachIndexed { i, busy ->
+                    val frac = (busy / 120f).coerceIn(0.05f, 1f)
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .fillMaxHeight(frac)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (i % 2 == 0) scheme.primary else scheme.primary.copy(alpha = 0.35f))
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row {
+            Spacer(Modifier.width(38.dp))
+            Row(
+                Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                buckets.indices.forEach { i ->
+                    Text(
+                        "${6 + i * 2}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = scheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Szczegóły wydarzenia w języku drugiego ekranu Nexora: donut postępu + karty faktów. */
+@Composable
+fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
+    val context = LocalContext.current
+    // Własny takt minutowy — szczegóły nie budzą reszty apki.
+    var now by remember { mutableStateOf(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000 - System.currentTimeMillis() % 60_000)
+            now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
+        }
+    }
+    val startDT = LocalDateTime.of(date, event.start)
+    val endDT = event.end?.let {
+        if (it <= event.start) LocalDateTime.of(date.plusDays(1), it)
+        else LocalDateTime.of(date, it)
+    }
+    val totalMin = endDT?.let { Duration.between(startDT, it).toMinutes().coerceAtLeast(1) } ?: 15L
+    val progress: Float
+    val center: String
+    val caption: String
+    when {
+        now.isBefore(startDT) -> {
+            progress = 0f
+            center = "za " + formatCountdown(now, startDT)
+            caption = "do startu"
+        }
+        endDT != null && !now.isBefore(endDT) -> {
+            progress = 1f
+            center = "Zakończone"
+            caption = "wydarzenie minęło"
+        }
+        else -> {
+            val done = Duration.between(startDT, now).toMinutes().coerceIn(0, totalMin)
+            progress = done / totalMin.toFloat()
+            center = "jeszcze " + formatCountdown(now, endDT!!)
+            caption = "do końca"
+        }
+    }
+    val today = LocalDate.now()
+    val dateSuffixFmt = remember { java.time.format.DateTimeFormatter.ofPattern("d.M") }
+    val day = when (date) {
+        today -> "dziś"
+        today.plusDays(1) -> "jutro"
+        else -> "${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)} ${date.format(dateSuffixFmt)}"
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp)
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack, null,
+                        Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        event.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "$day • ${timeRange(event)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
+                Box(Modifier.fillMaxWidth().height(250.dp)) {
+                    val scheme = MaterialTheme.colorScheme
+                    Canvas(Modifier.size(210.dp).align(Alignment.Center)) {
+                        val w = 22.dp.toPx()
+                        drawArc(scheme.outlineVariant, -90f, 360f, false, style = Stroke(w))
+                        if (progress > 0.005f) {
+                            drawArc(
+                                scheme.primary, -90f, 360f * progress, false,
+                                style = Stroke(w, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
+                    Column(
+                        Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            center,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            caption,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    MiniPill(
+                        Icons.Filled.Schedule, "Start ${event.start.format(timeFmt)}",
+                        Modifier.align(Alignment.TopStart)
+                    )
+                    MiniPill(
+                        Icons.Filled.History, "Koniec ${event.end?.format(timeFmt) ?: "—"}",
+                        Modifier.align(Alignment.TopEnd)
+                    )
+                    MiniPill(
+                        Icons.Filled.Timer, "$totalMin min",
+                        Modifier.align(Alignment.BottomStart)
+                    )
+                    MiniPill(
+                        Icons.Filled.CheckCircle, "${(progress * 100).toInt()}%",
+                        Modifier.align(Alignment.BottomEnd)
+                    )
+                }
+            }
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        event.category.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    event.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "$day • ${timeRange(event)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Start",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            event.start.format(timeFmt),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Koniec",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            event.end?.format(timeFmt) ?: "—",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
+                Text(
+                    event.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(10.dp))
+                MiniPill(
+                    Icons.Filled.Notifications,
+                    if (event.notifyDefault) {
+                        "Przypomnienie: ${Prefs.minutesBefore(context)} min przed"
+                    } else {
+                        "Bez przypomnienia"
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier
+    ) {
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
         }
     }
 }
