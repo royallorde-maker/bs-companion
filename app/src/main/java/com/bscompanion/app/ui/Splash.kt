@@ -69,12 +69,12 @@ fun SplashScreen() {
                     .size(112.dp)
                     .graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Filled.MenuBook, contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(56.dp)
                 )
             }

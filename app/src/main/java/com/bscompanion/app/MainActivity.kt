@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
                     else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
                 )
                 try {
-                    val bg = if (useDark) 0xFF0A0B0E.toInt() else 0xFFFBF8FF.toInt()
+                    val bg = if (useDark) 0xFF0A1728.toInt() else 0xFFCBDDF1.toInt()
                     activity.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bg))
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "window bg failed", e)

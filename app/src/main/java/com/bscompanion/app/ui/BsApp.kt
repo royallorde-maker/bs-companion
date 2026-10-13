@@ -40,9 +40,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -63,13 +60,12 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -90,7 +86,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -100,6 +95,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
@@ -325,41 +322,16 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            // Pływająca pigułka zamiast pełnej belki z kreską — premium znamię.
-            Box(
-                Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    NavigationBar(containerColor = Color.Transparent) {
-                        titles.forEachIndexed { i, t ->
-                            NavigationBarItem(
-                                selected = tab == i,
-                                onClick = { tab = i },
-                                // Jeden węzeł semantyczny — label już niesie nazwę, ikona dekoracyjna.
-                                icon = { Icon(icons[i], contentDescription = null) },
-                                label = { Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                alwaysShowLabel = true
-                            )
-                        }
-                    }
-                }
-            }
+            PillBar(titles, icons, tab) { tab = it }
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
-            // Tło: poświata primary u góry, gasnąca w bazę — wspólna dla zakładek.
+            // Tło: chłodny szklany wash jak w Nexora — mleczna góra, głębia w dole.
             // Bez remember: przeliczenie przy zmianie motywu, koszt znikomy.
-            val glow = Brush.radialGradient(
-                0f to MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                0.7f to Color.Transparent,
-                center = Offset.Unspecified,
-                radius = 900f
+            val glow = Brush.verticalGradient(
+                0f to MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.55f),
+                0.45f to Color.Transparent,
+                1f to MaterialTheme.colorScheme.surfaceDim.copy(alpha = 0.35f)
             )
             // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
             // SaveableStateProvider trzyma scroll + saveable stany zakładek.
@@ -406,57 +378,65 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
                 }
             }
-            // Godzina policyjna 21:00–07:00: subtelna czerwona winieta nad treścią.
-            CurfewVignette()
         }
     }
-    /* Poza barem celowo nie wychodzimy: winieta w treści wystarczy,
-       a dolny pasek nawigacji zostaje czytelny. */
 }
 
-/** Czerwień szlabanu — stonowana, czytelna na obu motywach. */
-private val CurfewRed = Color(0xFFE0322A)
-
-/**
- * Subtelna czerwona winieta godziny policyjnej 21:00–07:00 (jak szlaban na noc).
- * Środek ekranu czysty, czerwień tylko na krawędziach. Nieklikalna (Box bez
- * handlerów) — dotyk przechodzi do treści pod spodem. Własny takt minutowy,
- * więc reszta ekranu stoi.
- */
+/** Pływająca szklana pigułka w języku Nexora: wybrana zakładka to granatowa pastylka. */
 @Composable
-fun BoxScope.CurfewVignette() {
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(60_000 - System.currentTimeMillis() % 60_000)
-            now = LocalDateTime.now()
+fun PillBar(
+    titles: List<String>,
+    icons: List<ImageVector>,
+    selected: Int,
+    onSelect: (Int) -> Unit
+) {
+    Box(
+        Modifier.fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                titles.forEachIndexed { i, t ->
+                    val sel = selected == i
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .selectable(selected = sel, onClick = { onSelect(i) }, role = Role.Tab)
+                            .semantics { contentDescription = t }
+                            .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            icons[i], contentDescription = null,
+                            Modifier.size(20.dp),
+                            tint = if (sel) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (sel) {
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                t,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
         }
-    }
-    // Powrót z tła po długiej przerwie — odśwież natychmiast, nie za minutę.
-    var resumeTick by remember { mutableStateOf(0) }
-    LifecycleResumeEffect(Unit) {
-        resumeTick++
-        onPauseOrDispose { }
-    }
-    val active = remember(now.truncatedTo(ChronoUnit.MINUTES), resumeTick) {
-        DormSchedule.isCurfew(now.toLocalTime())
-    }
-    if (!active) return
-    BoxWithConstraints(Modifier.matchParentSize().clearAndSetSemantics { }) {
-        val density = LocalDensity.current
-        val wPx = with(density) { maxWidth.toPx() }
-        val hPx = with(density) { maxHeight.toPx() }
-        val brush = remember(wPx, hPx) {
-            Brush.radialGradient(
-                0f to CurfewRed.copy(alpha = 0f),
-                0.55f to CurfewRed.copy(alpha = 0f),
-                0.82f to CurfewRed.copy(alpha = 0.06f),
-                1f to CurfewRed.copy(alpha = 0.18f),
-                center = Offset(wPx / 2f, hPx / 2f),
-                radius = kotlin.math.hypot(wPx, hPx) / 2f
-            )
-        }
-        Box(Modifier.fillMaxSize().background(brush))
     }
 }
 
@@ -832,11 +812,11 @@ fun BsSurface(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    // Szkło: jaśniejsza góra schodząca w bazę karty. Bierze kolory ze schematu,
-    // więc działa w obu motywach bez nowych stałych (pin testu 0xFF20242E cały).
+    // Mroźne szkło: jasna góra schodząca w bazę karty. Bierze kolory ze schematu,
+    // więc działa w obu motywach bez nowych stałych.
     val glass = Brush.verticalGradient(
-        0f to scheme.surfaceContainerHighest,
-        0.45f to scheme.surfaceContainerHigh,
+        0f to scheme.surfaceContainerLowest,
+        0.5f to scheme.surfaceContainerLow,
         1f to scheme.surfaceContainer
     )
     Surface(
