@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,8 +15,8 @@ android {
         applicationId = "com.bscompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.4.1"
+        versionCode = 12
+        versionName = "1.6.0"
         // Jedno źródło URL aktualizacji — reszta czyta BuildConfig.UPDATE_URL.
         // Surowy plik z main, żeby apka nie czekała na Pages.
         buildConfigField(
@@ -32,7 +35,26 @@ android {
             )
             // Podpis release: utwórz keystore.properties (nie commituj) z:
             // storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
-            // Bez niego ./gradlew assembleRelease da app-release-unsigned.apk (nie do instalacji).
+            // Brak klucza = twardy błąd (cichy unsigned APK łamie OTA).
+            val ksPropsFile = rootProject.file("keystore.properties")
+            if (!ksPropsFile.exists()) {
+                throw GradleException(
+                    "Brak keystore.properties — release MUSI być podpisany tym samym kluczem. " +
+                        "Utwórz plik wg backend/AGENTS.md; nie omijaj tego (unsigned APK łamie aktualizacje)."
+                )
+            }
+            signingConfigs {
+                getByName("debug")
+                create("release") {
+                    val ksProps = Properties()
+                    FileInputStream(ksPropsFile).use { ksProps.load(it) }
+                    storeFile = file(ksProps["storeFile"] as String)
+                    storePassword = ksProps["storePassword"] as String
+                    keyAlias = ksProps["keyAlias"] as String
+                    keyPassword = ksProps["keyPassword"] as String
+                }
+            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

@@ -1379,6 +1379,14 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.6.0 — wygląd Nexora", listOf(
+                "Mroźne szkło: jasny błękit, granatowe akcenty, pływająca pigułka nawigacji",
+                "Ciemny motyw w tym samym języku: głęboki granat",
+                "Usunięta czerwona winieta godziny policyjnej",
+                "Zero zmian treści — wszystkie teksty i alarmy jak w 1.4.1"
+            ))
+        }
+        item {
             InfoCard("1.4.1 — tylko przypomnienia", listOf(
                 "Przypomnienie N min przed, znika o czasie wydarzenia",
                 "Koniec z powrotami: brak alarmów punktualnych wcale"
