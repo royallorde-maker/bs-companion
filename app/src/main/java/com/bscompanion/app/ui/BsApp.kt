@@ -90,7 +90,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -163,7 +162,8 @@ fun formatCountdown(now: LocalDateTime, target: LocalDateTime): String {
 
 /** Ułamek realizacji wydarzenia (0..1), z obsługą przedziału przez północ. */
 fun eventProgress(now: LocalTime, e: DormEvent): Float? {
-    val end = e.end ?: return null
+    // Punktowe (end = null) traktuj jak 15 min obecności — inaczej Ring stoi w miejscu.
+    val end = e.end ?: e.start.plusMinutes(15)
     val s = e.start.toSecondOfDay()
     val en = end.toSecondOfDay()
     val n = now.toSecondOfDay()
@@ -333,16 +333,8 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
-            // Tło: chłodny szklany wash jak w Nexora — mleczna góra, głębia w dole.
-            // Bez remember: przeliczenie przy zmianie motywu, koszt znikomy.
-            val glow = Brush.verticalGradient(
-                0f to MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.55f),
-                0.45f to Color.Transparent,
-                1f to MaterialTheme.colorScheme.surfaceDim.copy(alpha = 0.35f)
-            )
-            // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
-            // SaveableStateProvider trzyma scroll + saveable stany zakładek.
-            Column(Modifier.fillMaxSize().background(glow)) {
+            // Tło płaskie — bez gradientów w całej apce.
+            Column(Modifier.fillMaxSize()) {
                 // Offline: jedna cienka linia, bez blokowania. Ikona CloudOff 14dp.
                 AnimatedVisibility(visible = !online) {
                     Row(
@@ -367,6 +359,8 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
                 androidx.compose.foundation.layout.Box(Modifier.weight(1f).fillMaxWidth()) {
+            // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
+            // SaveableStateProvider trzyma scroll + saveable stany zakładek.
             AnimatedContent(
                 targetState = tab,
                 transitionSpec = {
@@ -542,17 +536,14 @@ fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
         now.toLocalDate().format(dateFmt)
     }
     val closed = DormSchedule.isNoCare(now)
-    val hero = Brush.verticalGradient(
-        0f to MaterialTheme.colorScheme.primary,
-        1f to MaterialTheme.colorScheme.tertiary
-    )
+    // Płaski granat — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        color = Color.Transparent
+        color = MaterialTheme.colorScheme.primary
     ) {
-        Column(Modifier.background(hero).padding(22.dp)) {
+        Column(Modifier.padding(22.dp)) {
             Text(
                 "BS Companion",
                 style = MaterialTheme.typography.labelLarge,
@@ -932,12 +923,13 @@ fun HoldingSection(
 @Composable
 fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
     val context = LocalContext.current
-    // Własny takt minutowy — szczegóły nie budzą reszty apki.
-    var now by remember { mutableStateOf(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)) }
+    // Sekundnik jak na Dziś — donut pełznie płynnie, tekst i tak co minutę.
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
+        // Wyrównanie do granicy sekund, żeby nie dryfował.
         while (true) {
-            delay(60_000 - System.currentTimeMillis() % 60_000)
-            now = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
+            delay(1000 - System.currentTimeMillis() % 1000)
+            now = LocalDateTime.now()
         }
     }
     val startDT = LocalDateTime.of(date, event.start)
@@ -1165,17 +1157,14 @@ private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modif
 /** Granatowy nagłówek zakładki w języku Nexora — te same napisy, nowa oprawa. */
 @Composable
 fun TabHero(title: String, subtitle: String) {
-    val hero = Brush.verticalGradient(
-        0f to MaterialTheme.colorScheme.primary,
-        1f to MaterialTheme.colorScheme.tertiary
-    )
+    // Płaski granat — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        color = Color.Transparent
+        color = MaterialTheme.colorScheme.primary
     ) {
-        Column(Modifier.background(hero).padding(22.dp)) {
+        Column(Modifier.padding(22.dp)) {
             Text(
                 title,
                 style = MaterialTheme.typography.headlineSmall,
@@ -1204,22 +1193,16 @@ fun BsSurface(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    // Mroźne szkło: jasna góra schodząca w bazę karty. Bierze kolory ze schematu,
-    // więc działa w obu motywach bez nowych stałych.
-    val glass = Brush.verticalGradient(
-        0f to scheme.surfaceContainerLowest,
-        0.5f to scheme.surfaceContainerLow,
-        1f to scheme.surfaceContainer
-    )
+    // Mroźne szkło zamienione na płaską taflę — bez gradientów w całej apce.
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(28.dp),
-        color = Color.Transparent,
+        color = scheme.surfaceContainerLowest,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         // Bez spacedBy: odstępy niosą jawne Spacery (4/8/12dp) — inaczej sumowały się.
         content = {
             Column(
-                Modifier.background(glass).padding(contentPadding),
+                Modifier.padding(contentPadding),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 content = content
             )
@@ -1445,12 +1428,7 @@ fun BatteryRow() {
 @Composable
 fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
-    // Zwykły wiersz to mroźne szkło, bieżący to granat jak hero.
-    val glass = Brush.verticalGradient(
-        0f to scheme.surfaceContainerLowest,
-        0.5f to scheme.surfaceContainerLow,
-        1f to scheme.surfaceContainer
-    )
+    // Zwykły wiersz to płaska tafla, bieżący to płaski granat jak hero.
     val content = if (isCurrent) scheme.onPrimary else scheme.onSurface
     val subContent = if (isCurrent) scheme.onPrimary.copy(alpha = 0.72f)
     else scheme.onSurfaceVariant
@@ -1460,17 +1438,11 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = if (isCurrent) scheme.primary else Color.Transparent,
+        color = if (isCurrent) scheme.primary else scheme.surfaceContainerLowest,
         border = BorderStroke(1.dp, borderColor),
         onClick = { expanded = !expanded }
     ) {
-        Row(
-            Modifier.background(if (isCurrent) Brush.verticalGradient(
-                0f to scheme.primary,
-                1f to scheme.tertiary
-            ) else glass).padding(20.dp),
-            verticalAlignment = Alignment.Top
-        ) {
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
             // Ikona zawsze w tym samym kole — żaden wiersz nie "pływa".
             if (isCurrent) IconDotOnContainer(categoryIcon(e.category))
             else IconDot(categoryIcon(e.category))
@@ -1766,6 +1738,14 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.10.0 — pierścień i płaskie tło", listOf(
+                "Pierścień postępu rusza też dla wydarzeń punktowych (15 min)",
+                "Donut szczegółów pełznie co sekundę zamiast co minutę",
+                "Koniec gradientów — płaskie tafle w całej apce",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.9.0 — osobne karty TERAZ/NASTĘPNE", listOf(

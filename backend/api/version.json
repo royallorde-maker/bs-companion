@@ -1,8 +1,8 @@
 {
-  "versionCode": 15,
-  "versionName": "1.9.0",
+  "versionCode": 16,
+  "versionName": "1.10.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.9.0 — TERAZ i NASTĘPNE jako osobne karty z pierścieniem postępu (treść bez zmian)",
+  "changelog": "1.10.0 — żywy pierścień postępu i płaskie tło bez gradientów (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-13T19:03:22Z"
+  "publishedAt": "2026-10-13T19:11:53Z"
 }
