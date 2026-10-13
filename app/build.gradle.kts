@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -33,6 +36,23 @@ android {
             // Podpis release: utwórz keystore.properties (nie commituj) z:
             // storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
             // Bez niego ./gradlew assembleRelease da app-release-unsigned.apk (nie do instalacji).
+            // Signing jest podpinany defensywnie (tylko gdy plik istnieje),
+            // więc maszyny bez klucza nadal budują unsigned zamiast padać.
+            val ksPropsFile = rootProject.file("keystore.properties")
+            if (ksPropsFile.exists()) {
+                signingConfigs {
+                    getByName("debug")
+                    create("release") {
+                        val ksProps = Properties()
+                        FileInputStream(ksPropsFile).use { ksProps.load(it) }
+                        storeFile = file(ksProps["storeFile"] as String)
+                        storePassword = ksProps["storePassword"] as String
+                        keyAlias = ksProps["keyAlias"] as String
+                        keyPassword = ksProps["keyPassword"] as String
+                    }
+                }
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

@@ -8,6 +8,8 @@ build/
 *.iml
 local.properties
 keystore.properties
+*.jks
+*.keystore
 gradle/wrapper/gradle-wrapper.jar
 
 # OS
