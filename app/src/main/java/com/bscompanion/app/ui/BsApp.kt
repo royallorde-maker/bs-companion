@@ -208,7 +208,7 @@ fun StatusChip(text: String) {
     }
 }
 
-/** Ikona w jednolitym kole — ten sam środek optyczny w każdym wierszu/karcie. */
+/** Znaczek w jednolitym kole — ten sam środek optyczny w każdym wierszu/karcie. */
 @Composable
 fun IconDot(
     icon: ImageVector,
@@ -220,10 +220,10 @@ fun IconDot(
         modifier
             .size(boxSize)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, null, Modifier.size(iconSize), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(icon, null, Modifier.size(iconSize), tint = MaterialTheme.colorScheme.onPrimaryContainer)
     }
 }
 
@@ -508,10 +508,7 @@ fun HomeScreen(
             }
         }
         item {
-            Appear(2) { DayChartCard() }
-        }
-        item {
-            Appear(3) {
+            Appear(2) {
                 NotifCard(
                     notifEnabled = notifEnabled,
                     minutesBefore = minutesBefore,
@@ -775,78 +772,6 @@ fun HoldingSection(
     }
 }
 
-/** Wykres zajętości planu dziś: 8 słupków po 2 h, liczone z DormSchedule (6:00–22:00). */
-@Composable
-fun DayChartCard() {
-    val today = remember { LocalDate.now() }
-    val events = remember(today) { DormSchedule.eventsForDate(today) }
-    val buckets = remember(events) {
-        (0 until 8).map { i ->
-            val bs = LocalTime.of(6 + i * 2, 0).toSecondOfDay()
-            val be = bs + 2 * 3600
-            var busy = 0
-            events.forEach { e ->
-                val s = e.start.toSecondOfDay()
-                var en = (e.end ?: e.start.plusMinutes(15)).toSecondOfDay()
-                if (en <= s) en += 24 * 3600
-                busy += (minOf(en, be) - maxOf(s, bs)).coerceAtLeast(0) / 60
-            }
-            busy.coerceAtMost(120)
-        }
-    }
-    val scheme = MaterialTheme.colorScheme
-    BsSurface(Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Column(
-                Modifier.height(96.dp).width(30.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text("60m", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-                Text("30m", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-                Text("0", style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.width(8.dp))
-            Row(
-                Modifier.weight(1f).height(96.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                buckets.forEachIndexed { i, busy ->
-                    val frac = (busy / 120f).coerceIn(0.05f, 1f)
-                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
-                        Box(
-                            Modifier.fillMaxWidth()
-                                .fillMaxHeight(frac)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (i % 2 == 0) scheme.primary else scheme.primary.copy(alpha = 0.35f))
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row {
-            Spacer(Modifier.width(38.dp))
-            Row(
-                Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                buckets.indices.forEach { i ->
-                    Text(
-                        "${6 + i * 2}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = scheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
 /** Szczegóły wydarzenia w języku drugiego ekranu Nexora: donut postępu + karty faktów. */
 @Composable
 fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
@@ -1076,6 +1001,40 @@ private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modif
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1
+            )
+        }
+    }
+}
+
+/** Granatowy nagłówek zakładki w języku Nexora — te same napisy, nowa oprawa. */
+@Composable
+fun TabHero(title: String, subtitle: String) {
+    val hero = Brush.verticalGradient(
+        0f to MaterialTheme.colorScheme.primary,
+        1f to MaterialTheme.colorScheme.tertiary
+    )
+    val onHero = MaterialTheme.colorScheme.onPrimary
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = Color.Transparent
+    ) {
+        Column(Modifier.background(hero).padding(22.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = onHero,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = onHero.copy(alpha = 0.72f),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -1329,23 +1288,33 @@ fun BatteryRow() {
 
 @Composable
 fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
-    val container = if (isCurrent) MaterialTheme.colorScheme.primaryContainer
-    else MaterialTheme.colorScheme.surfaceContainerHigh
-    val content = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurface
-    val subContent = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor = if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-    else MaterialTheme.colorScheme.outlineVariant
+    val scheme = MaterialTheme.colorScheme
+    // Zwykły wiersz to mroźne szkło, bieżący to granat jak hero.
+    val glass = Brush.verticalGradient(
+        0f to scheme.surfaceContainerLowest,
+        0.5f to scheme.surfaceContainerLow,
+        1f to scheme.surfaceContainer
+    )
+    val content = if (isCurrent) scheme.onPrimary else scheme.onSurface
+    val subContent = if (isCurrent) scheme.onPrimary.copy(alpha = 0.72f)
+    else scheme.onSurfaceVariant
+    val borderColor = if (isCurrent) scheme.onPrimary.copy(alpha = 0.35f)
+    else scheme.outlineVariant
     var expanded by remember(e.id) { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = container,
+        color = if (isCurrent) scheme.primary else Color.Transparent,
         border = BorderStroke(1.dp, borderColor),
         onClick = { expanded = !expanded }
     ) {
-        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
+        Row(
+            Modifier.background(if (isCurrent) Brush.verticalGradient(
+                0f to scheme.primary,
+                1f to scheme.tertiary
+            ) else glass).padding(20.dp),
+            verticalAlignment = Alignment.Top
+        ) {
             // Ikona zawsze w tym samym kole — żaden wiersz nie "pływa".
             if (isCurrent) IconDotOnContainer(categoryIcon(e.category))
             else IconDot(categoryIcon(e.category))
@@ -1412,14 +1381,9 @@ fun ScheduleScreen() {
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Text("Porządek dnia", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Zał. nr 6 Regulaminu • internat czynny ndz 16:00 – pt 18:00",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+            TabHero(
+                "Porządek dnia",
+                "Zał. nr 6 Regulaminu • internat czynny ndz 16:00 – pt 18:00"
             )
             AnimatedVisibility(visible = isClosedNow) {
                 Column {
@@ -1479,13 +1443,9 @@ fun MealsScreen() {
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Text("Stołówka", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                "Zał. nr 3 • 3 posiłki dziennie, wykupienie pakietu obowiązkowe",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+            TabHero(
+                "Stołówka",
+                "Zał. nr 3 • 3 posiłki dziennie, wykupienie pakietu obowiązkowe"
             )
             AnimatedVisibility(visible = closedToday) {
                 Column {
@@ -1589,13 +1549,9 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Text("Zmiany", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                "Co nowego w BS Companion",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+            TabHero(
+                "Zmiany",
+                "Co nowego w BS Companion"
             )
         }
         // Karta aktualizacji: stan sieci + version.json z GitHub. Zawsze nad About,
