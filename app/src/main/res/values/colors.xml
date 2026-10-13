@@ -1,5 +1,11 @@
 ﻿<resources>
-    <color name="ic_launcher_background">#131210</color>
-    <color name="bs_window_light">#131210</color>
-    <color name="bs_window_dark">#131210</color>
+    <!-- Adaptive-icon tło dopasowane do czerni grafiki (próbkowane z krawędzi ikony). -->
+    <color name="ic_launcher_background">#2B2B2B</color>
+    <color name="bs_window_light">#FBF8FF</color>
+    <color name="bs_window_dark">#0A0B0E</color>
 </resources>
+
+
+
+
+

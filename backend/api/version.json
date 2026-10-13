@@ -1,8 +1,8 @@
 {
-  "versionCode": 12,
-  "versionName": "1.5.0",
+  "versionCode": 11,
+  "versionName": "1.4.1",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.5.0 — DesignNest rebuild: onboarding, Home (My Project / Spaces / Quick Tools / Recent), Living Room lighting control",
+  "changelog": "1.4.1 — tylko przypomnienia: znikają o czasie, nic nie wraca",
   "force": false,
-  "publishedAt": "2026-10-13T16:58:47Z"
+  "publishedAt": "2026-10-13T16:30:00Z"
 }

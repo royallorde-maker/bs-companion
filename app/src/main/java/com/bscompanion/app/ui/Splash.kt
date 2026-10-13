@@ -1,60 +1,102 @@
 package com.bscompanion.app.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.House
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.bscompanion.app.ui.theme.DnBeige
-import com.bscompanion.app.ui.theme.DnBg
-import com.bscompanion.app.ui.theme.DnCardHigh
-import com.bscompanion.app.ui.theme.DnSub
 
+/** Krótki ekran startowy: logo skaluje się sprężyście i znika po ~1,1 s. */
 @Composable
 fun SplashScreen() {
+    // Flaga startowa napędza SCALE (spring) + ALPHA (fade) logo i napisów.
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { started = true }
+    // Tween 500 ms (nie sprężyna): logo na pewno zdąży przed zniknięciem splashy.
+    val scale by animateFloatAsState(
+        targetValue = if (started) 1f else 0.5f,
+        animationSpec = tween(500),
+        label = "splash-scale"
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (started) 1f else 0f,
+        animationSpec = tween(450),
+        label = "splash-fade"
+    )
     Box(
-        Modifier.fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    0f to Color(0xFF211D18),
-                    0.55f to DnBg,
-                    1f to DnBg
-                )
-            ),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Box(
-                Modifier.size(76.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(DnCardHigh),
+                modifier = Modifier
+                    .size(112.dp)
+                    .graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.House, null, tint = DnBeige, modifier = Modifier.size(36.dp))
+                Icon(
+                    Icons.Filled.MenuBook, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(56.dp)
+                )
             }
-            Spacer(Modifier.height(14.dp))
-            Text("DesignNest", color = Color(0xFFF3EDE2), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
             Text(
-                "I N T E R I O R S",
-                color = DnSub,
-                fontSize = 10.sp,
-                letterSpacing = 3.sp
+                "BS Companion",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = alpha)
+            )
+            Text(
+                "Internat ZST Szczecinek",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = alpha)
             )
         }
     }
