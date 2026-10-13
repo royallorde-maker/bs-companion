@@ -17,3 +17,4 @@ gradle/wrapper/gradle-wrapper.jar
 # OS
 .DS_Store
 Thumbs.db
+.concord/
