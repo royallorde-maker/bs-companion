@@ -36,23 +36,29 @@ android {
             // Podpis release: utwórz keystore.properties (nie commituj) z:
             // storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
             // Bez niego ./gradlew assembleRelease da app-release-unsigned.apk (nie do instalacji).
-            // Signing jest podpinany defensywnie (tylko gdy plik istnieje),
-            // więc maszyny bez klucza nadal budują unsigned zamiast padać.
+            // Signing jest WYMAGANY: release bez klucza pada z jasnym błędem
+            // zamiast cicho budować unsigned (inny "podpis" = zepsute OTA).
+            // Klucz: C:\Users\skraba\designnest-release.keystore (POZA repo, backup obowiązkowy).
             val ksPropsFile = rootProject.file("keystore.properties")
-            if (ksPropsFile.exists()) {
-                signingConfigs {
-                    getByName("debug")
-                    create("release") {
-                        val ksProps = Properties()
-                        FileInputStream(ksPropsFile).use { ksProps.load(it) }
-                        storeFile = file(ksProps["storeFile"] as String)
-                        storePassword = ksProps["storePassword"] as String
-                        keyAlias = ksProps["keyAlias"] as String
-                        keyPassword = ksProps["keyPassword"] as String
-                    }
-                }
-                signingConfig = signingConfigs.getByName("release")
+            if (!ksPropsFile.exists()) {
+                throw GradleException(
+                    "Brak keystore.properties — release MUSI być podpisany tym samym kluczem " +
+                        "(DesignNest, SHA-256 92958d46…). Utwórz plik wg INSTRUCTIONS/BACKEND_AGENTS.md; " +
+                        "nie omijaj tego (unsigned APK łamie aktualizacje)."
+                )
             }
+            signingConfigs {
+                getByName("debug")
+                create("release") {
+                    val ksProps = Properties()
+                    FileInputStream(ksPropsFile).use { ksProps.load(it) }
+                    storeFile = file(ksProps["storeFile"] as String)
+                    storePassword = ksProps["storePassword"] as String
+                    keyAlias = ksProps["keyAlias"] as String
+                    keyPassword = ksProps["keyPassword"] as String
+                }
+            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

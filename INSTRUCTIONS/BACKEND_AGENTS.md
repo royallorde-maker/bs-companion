@@ -64,9 +64,12 @@ Nie hardkoduj URL w Kotlin — tylko przez BuildConfig.
 
 - Klucz release: `C:\Users\skraba\designnest-release.keystore` (POZA repo, alias `designnest`, RSA-2048).
   Kopia zapasowa obowiązkowa — ZGUBIENIE KLUCZA = koniec aktualizacji OTA.
+  Jedyna kopia = ten plik; nie rozpraszaj go, zrób backup (np. szyfrowany USB / menedżer haseł).
 - `keystore.properties` w root repo (gitignored, nigdy nie commituj):
   `storeFile=C:/Users/skraba/designnest-release.keystore` + `storePassword`/`keyAlias`/`keyPassword`.
-- `app/build.gradle.kts` podpina signing DEFENSYWNIE (tylko gdy plik istnieje).
+- `app/build.gradle.kts` WYMAGA klucza: brak `keystore.properties` = twardy błąd konfiguracji,
+  release NIE zbuduje się unsigned. To celowe: cichy unsigned APK w Release łamie OTA
+  (objaw: "build identyczny" / błąd weryfikacji podpisu).
   Ten sam keystore co poprzedni apk, inaczej update się nie zainstaluje
   (`INSTALL_FAILED_UPDATE_INCOMPATIBLE` → wymagany ręczny uninstall).
   Nowy klucz (jak w v1.5.0 vs v1.4.1) = użytkownicy muszą odinstalować starą apkę.
