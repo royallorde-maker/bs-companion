@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BS Companion — status</title>
+<style>
+  :root { --bg:#0a0b0e; --panel:#111318; --line:#23262e; --txt:#e8eaf0; --dim:#9aa0ae; --grn:#3ddc84; --red:#ff5f56; --amb:#ffbd2e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.5 ui-monospace,Menlo,Consolas,monospace; }
+  .wrap { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  .term { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .bar { display:flex; gap:8px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); color:var(--dim); }
+  .dot { width:12px; height:12px; border-radius:50%; }
+  .body { padding:16px; white-space:pre-wrap; }
+  .ok { color:var(--grn); } .bad { color:var(--red); } .warn { color:var(--amb); } .dim { color:var(--dim); }
+  a { color:var(--grn); }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .row:last-child { border-bottom:0; }
+  button { background:#1a1e26; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font:inherit; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="term">
+    <div class="bar"><span class="dot" style="background:var(--red)"></span><span class="dot" style="background:var(--amb)"></span><span class="dot" style="background:var(--grn)"></span><span>bs-companion — status</span></div>
+    <div class="body" id="out">Ładowanie…</div>
+  </div>
+  <p class="dim">Źródło: <a href="../api/version.json">backend/api/version.json</a> + GitHub Releases API.</p>
+</div>
+<script>
+const OWNER = "royallorde-maker", REPO = "bs-companion";
+const out = document.getElementById("out");
+function row(k, v) { return `<div class="row"><span class="dim">${k}</span><span>${v}</span></div>`; }
+async function main() {
+  let ver = null, rel = null, verErr = null, relErr = null;
+  try {
+    const r = await fetch("../api/version.json", { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    ver = await r.json();
+  } catch (e) { verErr = e; }
+  try {
+    const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/releases/latest`, { cache: "no-store" });
+    if (r.status === 404) { rel = null; } else if (!r.ok) throw new Error("HTTP " + r.status);
+    else rel = await r.json();
+  } catch (e) { relErr = e; }
+  let h = "";
+  h += row("version.json", ver ? `<span class="ok">OK — v${ver.versionName} (${ver.versionCode})</span>` : `<span class="bad">BŁĄD — ${verErr}</span>`);
+  if (ver) {
+    h += row("apkUrl", `<a href="${ver.apkUrl}">pobierz apk</a>`);
+    h += row("force", ver.force ? `<span class="warn">wymuszona</span>` : "nie");
+    h += row("changelog", (ver.changelog || "—").slice(0, 120));
+  }
+  h += row("github release", rel ? `<span class="ok">${rel.tag_name} — ${rel.assets?.length || 0} asset(s)</span>` : relErr ? `<span class="bad">${relErr}</span>` : `<span class="warn">brak release (404)</span>`);
+  const match = ver && rel ? (rel.tag_name || "").includes(ver.versionName) ? `<span class="ok">ZGODNE</span>` : `<span class="warn">NIEZGODNE — wyrównaj tag z version.json</span>` : `<span class="dim">—</span>`;
+  h += row("tag ⇔ version.json", match);
+  h += `<div style="margin-top:12px"><button onclick="main()">↻ odśwież</button></div>`;
+  out.innerHTML = h;
+}
+main();
+</script>
+</body>
+</html>

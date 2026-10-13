@@ -52,6 +52,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -66,6 +67,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -81,6 +83,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -114,6 +117,11 @@ import com.bscompanion.app.notifications.ExactAlarmHelper
 import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.findActivity
+import com.bscompanion.app.update.UpdateState
+import com.bscompanion.app.update.checkForUpdate
+import com.bscompanion.app.update.downloadAndInstall
+import com.bscompanion.app.update.installApkFile
+import com.bscompanion.app.update.rememberIsOnline
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -123,6 +131,7 @@ import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val plLocale = Locale("pl", "PL")
 private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
@@ -311,6 +320,8 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
     // Back z zakładek 1-3 wraca do Dziś, wyjście tylko z 0.
     BackHandler(enabled = tab != 0) { tab = 0 }
     val saveableHolder = rememberSaveableStateHolder()
+    // Subtelny stan sieci dla całej apki — kropka offline, reszta działa lokalnie.
+    val online = rememberIsOnline()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -335,6 +346,31 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
             // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
             // SaveableStateProvider trzyma scroll + saveable stany zakładek.
+            Column(Modifier.fillMaxSize()) {
+                // Offline: jedna cienka linia, bez blokowania. Ikona CloudOff 14dp.
+                AnimatedVisibility(visible = !online) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.CloudOff, null,
+                            Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Offline — plan działa lokalnie",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                androidx.compose.foundation.layout.Box(Modifier.weight(1f).fillMaxWidth()) {
             AnimatedContent(
                 targetState = tab,
                 transitionSpec = {
@@ -349,6 +385,8 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
                         2 -> MealsScreen()
                         3 -> ChangelogScreen(themeMode, onThemeChange)
                     }
+                }
+            }
                 }
             }
             // Godzina policyjna 21:00–07:00: subtelna czerwona winieta nad treścią.
@@ -1272,8 +1310,13 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
         }
-        // O APLIKACJI ZAWSZE NA GÓRZE: karta About + autor, pod nią motyw i historia.
-        // Przy dopisywaniu kolejnych wersji dodawaj nowe itemy PONIŻEJ tej karty.
+        // Karta aktualizacji: stan sieci + version.json z GitHub. Zawsze nad About,
+        // bo to status operacyjny, nie historia.
+        item {
+            UpdateCard()
+        }
+        // O APLIKACJI POD aktualizacją: karta About + autor, pod nią motyw i historia.
+        // Przy dopisywaniu kolejnych wersji dodawaj nowe itemy PONIŻEJ karty motywu.
         item {
             BsSurface(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1323,6 +1366,15 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.2.0 — aktualizacje z GitHub i offline", listOf(
+                "Karta Aktualizacja w Zmiany: sprawdza version.json z GitHub",
+                "Subtelny pasek Offline — plan i alarmy działają lokalnie bez sieci",
+                "Brak sieci pokazuje Nie można sprawdzić zamiast crashu",
+                "Pobieranie apk przez DownloadManager + instalacja przez FileProvider",
+                "Wersja z BuildConfig, URL tylko z backend/api/version.json"
+            ))
         }
         item {
             InfoCard("1.1.3 — czytelność UI i kontrast", listOf(
@@ -1395,6 +1447,98 @@ fun InfoCard(title: String, lines: List<String>) {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(4.dp))
+        }
+    }
+}
+
+/** Karta aktualizacji z GitHub. Działa offline: pokazuje brak sieci, nie blokuje. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun UpdateCard() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
+    val online = rememberIsOnline()
+
+    fun runCheck() {
+        if (state == UpdateState.Checking) return
+        scope.launch {
+            state = UpdateState.Checking
+            state = checkForUpdate(context)
+        }
+    }
+
+    // Pierwsze wejście na Zmiany = jedno sprawdzenie. Bez WorkManagera.
+    LaunchedEffect(Unit) { runCheck() }
+    // Powrót z offline → online: jedno dosprawdzenie, nie pętla.
+    LaunchedEffect(online) {
+        if (online && (state == UpdateState.Offline || state == UpdateState.Idle)) runCheck()
+    }
+
+    BsSurface(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconDot(
+                when (state) {
+                    is UpdateState.Available -> Icons.Filled.Notifications
+                    is UpdateState.Offline -> Icons.Filled.CloudOff
+                    else -> Icons.Filled.History
+                }
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Aktualizacja", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    when (val s = state) {
+                        UpdateState.Idle, UpdateState.Checking -> "Sprawdzanie…"
+                        is UpdateState.Available -> "Dostępna ${s.info.versionName}" + if (s.info.force) " — wymagana" else ""
+                        UpdateState.UpToDate -> "Masz najnowszą wersję"
+                        UpdateState.Offline -> "Brak połączenia — nie można sprawdzić"
+                        is UpdateState.Error -> "Nie sprawdzono: ${s.message}"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (state == UpdateState.Checking) {
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
+        val avail = (state as? UpdateState.Available)?.info
+        if (avail != null && avail.changelog.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                avail.changelog,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(
+                onClick = { runCheck() },
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) { Text(if (state == UpdateState.Checking) "Sprawdzanie…" else "Sprawdź") }
+            if (avail != null) {
+                FilledTonalButton(
+                    onClick = { downloadAndInstall(context, avail) },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) { Text("Pobierz ${avail.versionName}") }
+                TextButton(
+                    onClick = { installApkFile(context, avail.versionName) },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) { Text("Zainstaluj") }
+            }
+        }
+        if (state == UpdateState.Offline) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Plan, posiłki i alarmy działają lokalnie.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

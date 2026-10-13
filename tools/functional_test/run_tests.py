@@ -465,7 +465,7 @@ def g_source() -> None:
     check("TERAZ uses cared helper", "currentCaredEvent(lookupNow" in bs)
     check("banners use now (sun/fri)", bs.count("isNoCare(nowTick)") >= 2)
     check("Upcoming date for +2d", 'format(dateSuffixFmt)' in bs)
-    check("Upcoming/row width floor", "widthIn(min = 52.dp)" in bs and "widthIn(min = 64.dp)" in bs)
+    check("Upcoming/row width floor", "widthIn(min = 52.dp)" in bs and "widthIn(min = 64.dp" in bs)
     check("no double spacing", "spacedBy(0.dp)" in bs)
     check("switch enabled colors", "onCheckedChange = onEnabledChange" in bs)
     check("aligned 30s ticks", bs.count("30_000 - System.currentTimeMillis()") == 2)

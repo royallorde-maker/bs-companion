@@ -12,8 +12,14 @@ android {
         applicationId = "com.bscompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.3"
+        versionCode = 6
+        versionName = "1.2.0"
+        // Jedno źródło URL aktualizacji — reszta czyta BuildConfig.UPDATE_URL.
+        // Surowy plik z main, żeby apka nie czekała na Pages.
+        buildConfigField(
+            "String", "UPDATE_URL",
+            "\"https://raw.githubusercontent.com/royallorde-maker/bs-companion/main/backend/api/version.json\""
+        )
     }
 
     buildTypes {
