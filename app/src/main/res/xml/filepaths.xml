@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-files-path name="updates" path="updates/" />
+    <!-- Ścieżka MUSI pokrywać files/Download/updates (getExternalFilesDir(DOWNLOADS)).
+         Samo "updates/" nie wystarczy — FileProvider rzucał IllegalArgumentException
+         ("Failed to find configured root") i był toast "Nie można otworzyć pliku". -->
+    <external-files-path name="updates" path="Download/updates/" />
     <cache-path name="updates_cache" path="updates/" />
 </paths>

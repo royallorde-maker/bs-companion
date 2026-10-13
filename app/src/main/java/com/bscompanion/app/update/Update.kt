@@ -153,7 +153,9 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
             setTitle("BS Companion ${info.versionName}")
             setDescription("Pobieranie aktualizacji")
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationUri(Uri.fromFile(dest))
+            // Dedykowane API zamiast setDestinationUri(Uri.fromFile) — poprawnie
+            // przechodzi scoped storage; docelowo ten sam plik co dest powyżej.
+            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "updates/$fileName")
             setAllowedOverMetered(true)
             setAllowedOverRoaming(false)
             setMimeType("application/vnd.android.package-archive")
@@ -183,7 +185,8 @@ fun installApkFile(context: Context, versionName: String) {
     try {
         val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
         val f = File(dir, "bs-companion-$versionName.apk")
-        if (!f.exists()) {
+        // DownloadManager tworzy plik docelowy od razu (pusty) — rozmiar 0 = wciąż się pobiera.
+        if (!f.exists() || f.length() <= 0) {
             android.widget.Toast.makeText(context, "Plik jeszcze się pobiera", android.widget.Toast.LENGTH_SHORT).show()
             return
         }

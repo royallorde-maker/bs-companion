@@ -1368,6 +1368,13 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.2.2 — naprawa instalacji", listOf(
+                "FileProvider pokrywa files/Download/updates (koniec z Nie można otworzyć pliku)",
+                "DownloadManager przez setDestinationInExternalFilesDir",
+                "Zainstaluj czeka na niepusty plik zamiast otwierać pobieranie w locie"
+            ))
+        }
+        item {
             InfoCard("1.2.1 — test kanału aktualizacji", listOf(
                 "Wersja testowa: telefon na 1.2.0 ma wykryć tę aktualizację",
                 "Ten sam kanał version.json + latest/download co wydania"
