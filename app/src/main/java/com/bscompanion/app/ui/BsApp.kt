@@ -65,7 +65,6 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -326,27 +325,45 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            Column {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
-                    titles.forEachIndexed { i, t ->
-                        NavigationBarItem(
-                            selected = tab == i,
-                            onClick = { tab = i },
-                            // Jeden węzeł semantyczny — label już niesie nazwę, ikona dekoracyjna.
-                            icon = { Icon(icons[i], contentDescription = null) },
-                            label = { Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            alwaysShowLabel = true
-                        )
+            // Pływająca pigułka zamiast pełnej belki z kreską — premium znamię.
+            Box(
+                Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    NavigationBar(containerColor = Color.Transparent) {
+                        titles.forEachIndexed { i, t ->
+                            NavigationBarItem(
+                                selected = tab == i,
+                                onClick = { tab = i },
+                                // Jeden węzeł semantyczny — label już niesie nazwę, ikona dekoracyjna.
+                                icon = { Icon(icons[i], contentDescription = null) },
+                                label = { Text(t, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                alwaysShowLabel = true
+                            )
+                        }
                     }
                 }
             }
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
+            // Tło: poświata primary u góry, gasnąca w bazę — wspólna dla zakładek.
+            // Bez remember: przeliczenie przy zmianie motywu, koszt znikomy.
+            val glow = Brush.radialGradient(
+                0f to MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                0.7f to Color.Transparent,
+                center = Offset.Unspecified,
+                radius = 900f
+            )
             // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
             // SaveableStateProvider trzyma scroll + saveable stany zakładek.
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().background(glow)) {
                 // Offline: jedna cienka linia, bez blokowania. Ikona CloudOff 14dp.
                 AnimatedVisibility(visible = !online) {
                     Row(
@@ -807,20 +824,34 @@ fun UpcomingCard(nowState: State<LocalDateTime>) {
     }
 }
 
-/** Węglowa karta z włoskowatą ramką — wspólny język całego UI. */
+/** Szklana karta: gradient tonu + włosek — wspólny język całego UI. */
 @Composable
 fun BsSurface(
     modifier: Modifier = Modifier,
     contentPadding: Dp = 22.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val scheme = MaterialTheme.colorScheme
+    // Szkło: jaśniejsza góra schodząca w bazę karty. Bierze kolory ze schematu,
+    // więc działa w obu motywach bez nowych stałych (pin testu 0xFF20242E cały).
+    val glass = Brush.verticalGradient(
+        0f to scheme.surfaceContainerHighest,
+        0.45f to scheme.surfaceContainerHigh,
+        1f to scheme.surfaceContainer
+    )
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(28.dp),
+        color = Color.Transparent,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         // Bez spacedBy: odstępy niosą jawne Spacery (4/8/12dp) — inaczej sumowały się.
-        content = { Column(Modifier.padding(contentPadding), verticalArrangement = Arrangement.spacedBy(0.dp), content = content) }
+        content = {
+            Column(
+                Modifier.background(glass).padding(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                content = content
+            )
+        }
     )
 }
 
@@ -1366,6 +1397,14 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.4.0 — szkło i powrót o czasie", listOf(
+                "Karty w szkle: gradient tonu + pływająca pigułka nawigacji",
+                "Poświata primary w tle, ten sam ink w obu motywach",
+                "Punktualne dla każdego eventu: kasuje slot i dzwoni na nowo",
+                "Koniec z cichym znikaniem przypomnień bez następstwa"
+            ))
         }
         item {
             InfoCard("1.3.0 — finalny test kanału", listOf(

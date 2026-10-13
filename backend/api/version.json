@@ -1,8 +1,8 @@
 {
-  "versionCode": 9,
-  "versionName": "1.3.0",
+  "versionCode": 10,
+  "versionName": "1.4.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.3.0 — finalny test kanału: pobierz i zainstaluj z poziomu apki",
+  "changelog": "1.4.0 — szkło ink + punktualne wraca z dźwiękiem",
   "force": false,
-  "publishedAt": "2026-10-13T16:15:00Z"
+  "publishedAt": "2026-10-13T16:25:00Z"
 }
