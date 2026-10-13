@@ -1,8 +1,8 @@
 {
-  "versionCode": 12,
-  "versionName": "1.6.0",
+  "versionCode": 13,
+  "versionName": "1.7.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.6.0 — wygląd Nexora: mroźne szkło, granatowe akcenty, koniec czerwonej winiety (treść bez zmian)",
+  "changelog": "1.7.0 — pełna przebudowa Dziś w stylu Nexora: karta-bohater, holdingi, wykres planu, szczegóły wydarzenia (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-13T17:32:00Z"
+  "publishedAt": "2026-10-13T17:55:08Z"
 }

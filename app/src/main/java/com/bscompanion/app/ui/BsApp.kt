@@ -1656,6 +1656,14 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.7.0 — pełna przebudowa Dziś", listOf(
+                "Granatowa karta-bohater: żywy zegar, TERAZ/NASTĘPNE, skróty do zakładek",
+                "Nadchodzące jako wiersze holdingów + szczegóły wydarzenia z donutem postępu",
+                "Wykres zajętości planu dziś (6:00–22:00) liczony z planu",
+                "Treść, teksty i alarmy bez zmian"
+            ))
+        }
+        item {
             InfoCard("1.6.0 — wygląd Nexora", listOf(
                 "Mroźne szkło: jasny błękit, granatowe akcenty, pływająca pigułka nawigacji",
                 "Ciemny motyw w tym samym języku: głęboki granat",
