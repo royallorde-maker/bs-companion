@@ -1368,6 +1368,12 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
+            InfoCard("1.2.1 — test kanału aktualizacji", listOf(
+                "Wersja testowa: telefon na 1.2.0 ma wykryć tę aktualizację",
+                "Ten sam kanał version.json + latest/download co wydania"
+            ))
+        }
+        item {
             InfoCard("1.2.0 — aktualizacje z GitHub i offline", listOf(
                 "Karta Aktualizacja w Zmiany: sprawdza version.json z GitHub",
                 "Subtelny pasek Offline — plan i alarmy działają lokalnie bez sieci",
