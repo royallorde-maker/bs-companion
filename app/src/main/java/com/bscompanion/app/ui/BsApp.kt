@@ -499,7 +499,10 @@ fun HomeScreen(
             Appear(0) { HeroCard(nowState, onTab) }
         }
         item {
-            Appear(1) {
+            Appear(1) { NowNextCards(nowState) }
+        }
+        item {
+            Appear(2) {
                 HoldingSection(
                     nowState,
                     onSeeAll = { onTab(1) },
@@ -508,7 +511,7 @@ fun HomeScreen(
             }
         }
         item {
-            Appear(2) {
+            Appear(3) {
                 NotifCard(
                     notifEnabled = notifEnabled,
                     minutesBefore = minutesBefore,
@@ -538,23 +541,7 @@ fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
     val dateStr = remember(now.toLocalDate()) {
         now.toLocalDate().format(dateFmt)
     }
-    val today = now.toLocalDate()
-    val events = remember(today) { DormSchedule.eventsForDate(today) }
-    // Lookup obcięty do minut (12:00:00.5 nie gubi eventu 12:00); licznik pełny.
-    val lookupNow = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
     val closed = DormSchedule.isNoCare(now)
-    val current = remember(lookupNow, events) { DormSchedule.currentCaredEvent(lookupNow, events) }
-    val cared = remember(lookupNow) { DormSchedule.nextCaredEvent(lookupNow) }
-    val nowLabel = when {
-        closed -> "Internat zamknięty"
-        current != null -> current.title
-        else -> "Przerwa"
-    }
-    val nextLabel = if (cared != null) {
-        formatCountdown(now, LocalDateTime.of(cared.first, cared.second.start))
-    } else {
-        "—"
-    }
     val hero = Brush.verticalGradient(
         0f to MaterialTheme.colorScheme.primary,
         1f to MaterialTheme.colorScheme.tertiary
@@ -600,11 +587,6 @@ fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
             if (closed) {
                 Spacer(Modifier.height(8.dp))
                 HeroPill("Brak opieki wychowawczej")
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HeroPill("TERAZ: $nowLabel", Modifier.weight(1f))
-                HeroPill("$nextLabel • NASTĘPNE", Modifier.weight(1f))
             }
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -659,6 +641,180 @@ private fun HeroButton(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+/** Dwie osobne karty TERAZ / NASTĘPNE w języku Nexora — jak dawny EventsGrid. */
+@Composable
+fun NowNextCards(nowState: State<LocalDateTime>) {
+    val now by nowState
+    // Poza godzinami opieki pokazujemy stan zamknięcia zamiast ciszy z planu.
+    val closed = DormSchedule.isNoCare(now)
+    val today = now.toLocalDate()
+    val events = remember(today) { DormSchedule.eventsForDate(today) }
+    // Lookup obcięty do minut (12:00:00.5 nie gubi eventu 12:00); licznik pełny.
+    val lookupNow = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
+    val current = remember(lookupNow, events) { DormSchedule.currentCaredEvent(lookupNow, events) }
+    val cared = remember(lookupNow) { DormSchedule.nextCaredEvent(lookupNow) }
+    val next = cared?.second
+    val nextDate = cared?.first
+    // Obok siebie: TERAZ | NASTĘPNE w jednym wierszu, zawsze równa wysokość.
+    // Wąsko: mniejszy padding + countdown titleMedium, żeby licznik się mieścił.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 380.dp
+        val cardPadding = if (compact) 14.dp else 18.dp
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BsSurface(Modifier.weight(1f).fillMaxHeight(), contentPadding = cardPadding) {
+                Text(
+                    "TERAZ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(8.dp))
+                if (closed) {
+                    // Ta sama kotwica co Ring — ikony w obu kartach w jednej linii.
+                    Ring(progress = null) {
+                        Icon(
+                            Icons.Filled.Bedtime, null,
+                            Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Internat zamknięty",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "czynny ndz 16:00 – pt 18:00",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else if (current != null) {
+                    Ring(eventProgress(now.toLocalTime(), current)) {
+                        Icon(
+                            categoryIcon(current.category), null,
+                            Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        current.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        timeRange(current),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
+                    )
+                } else {
+                    Ring(progress = null) {
+                        Icon(
+                            Icons.Filled.WbSunny, null,
+                            Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Przerwa",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+            BsSurface(Modifier.weight(1f).fillMaxHeight(), contentPadding = cardPadding) {
+                Text(
+                    "NASTĘPNE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(8.dp))
+                if (next != null && nextDate != null) {
+                    val target = LocalDateTime.of(nextDate, next.start)
+                    // Dzień tylko spoza dziś ("Obiad • 13:30–15:30" albo "Obiad • sob • ...").
+                    val day = if (nextDate == today) "" else nextDate.dayOfWeek.getDisplayName(
+                        java.time.format.TextStyle.SHORT, plLocale
+                    )
+                    // Kotwica jak Ring obok + ikona z kategorii.
+                    Ring(progress = null) {
+                        Icon(
+                            categoryIcon(next.category), null,
+                            Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        formatCountdown(now, target),
+                        style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (day.isEmpty()) next.title else "${next.title} • $day",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        timeRange(next),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Clip
+                    )
+                } else {
+                    Ring(progress = null) {
+                        Icon(
+                            Icons.Filled.FreeBreakfast, null,
+                            Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Koniec planu",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+        }
     }
 }
 
@@ -1610,6 +1766,13 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.9.0 — osobne karty TERAZ/NASTĘPNE", listOf(
+                "TERAZ i NASTĘPNE wróciły jako dwie osobne karty pod bohaterem",
+                "Pierścień postępu bieżącego wydarzenia, licznik odliczający",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.8.0 — zakładki w języku Nexora", listOf(
