@@ -132,7 +132,7 @@ suspend fun checkForUpdate(context: Context): UpdateState = withContext(Dispatch
             connectTimeout = 8000
             readTimeout = 8000
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "BSCompanion/${BuildConfig.VERSION_NAME}")
+            setRequestProperty("User-Agent", "Internauta/${BuildConfig.VERSION_NAME}")
         }
         if (conn.responseCode !in 200..299) {
             return@withContext UpdateState.Error("HTTP ${conn.responseCode}")
@@ -160,7 +160,7 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
             try { dest.delete() } catch (_: Exception) { }
         }
         val req = DownloadManager.Request(Uri.parse(info.apkUrl)).apply {
-            setTitle("BS Companion ${info.versionName}")
+            setTitle("Internauta ${info.versionName}")
             setDescription("Pobieranie aktualizacji")
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             // Dedykowane API zamiast setDestinationUri(Uri.fromFile) — poprawnie

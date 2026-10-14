@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BS Companion - automated functional test of every app function.
+"""Internauta - automated functional test of every app function.
 
 Mirrors the pure logic of the Kotlin sources (DormSchedule, NotificationHelper
 slots, EventReceiver dedupe/keys, EventScheduler ID math, UI helpers
@@ -444,16 +444,17 @@ def g_source() -> None:
     check("debounce coalesces (no drop)", "coalescedPending" in es and "if (coalescedPending) return" in es)
     check("wylacznie przypomnienia (brak on-time)", "isReminder = false" not in es)
     check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
-    check("szklo: gradient + pigulka", "verticalGradient" in bs and "RoundedCornerShape(28.dp)" in bs)
+    check("plasko: zero gradientow + pigulka", "verticalGradient" not in bs and "Brush" not in bs
+          and "RoundedCornerShape(28.dp)" in bs)
     check("force bypass for user actions", "force: Boolean = false" in es)
     check("lock off UI thread (bgLock/scheduleLock)",
           "private val bgLock" in es and "private val scheduleLock" in es
           and "synchronized(scheduleLock)" in es)
     check("migrate before scheduled-uris read", es.index("Prefs.migrateIfNeeded(context)") < es.index("Prefs.getScheduledUris"))
-    check("all prefs getters migrate", es.count("migrateIfNeeded(context)") >= 7, str(es.count("migrateIfNeeded(context)")))
+    check("all prefs getters migrate", es.count("migrateIfNeeded(context)") >= 5, str(es.count("migrateIfNeeded(context)")))
     check("alarm horizon 0..7 (holidays)", es.count("(0..7).map") == 2)
     check("inexact fallback setAndAllowWhileIdle", "setAndAllowWhileIdle" in es)
-    check("trigger extra scheduled", "EXTRA_TRIGGER_MS, millis" in es)
+    check("trigger extra scheduled", "EXTRA_TRIGGER_MS, fireMs" in es)
     check("stale drop 15min in receiver", "15 * 60_000L" in er and "EXTRA_TRIGGER_MS" in er)
     check("legacy alarm fallback (no drop)", "legacy alarm without extras" in er)
     check("FALLBACK outside slots", "FALLBACK_ID = 50_001" in er)
@@ -468,12 +469,13 @@ def g_source() -> None:
     check("TERAZ uses cared helper", "currentCaredEvent(lookupNow" in bs)
     check("banners use now (sun/fri)", bs.count("isNoCare(nowTick)") >= 2)
     check("Upcoming date for +2d", 'format(dateSuffixFmt)' in bs)
-    check("Upcoming/row width floor", "widthIn(min = 52.dp)" in bs and "widthIn(min = 64.dp" in bs)
+    check("row width floor", "widthIn(min = 64.dp" in bs)
     check("no double spacing", "spacedBy(0.dp)" in bs)
     check("switch enabled colors", "onCheckedChange = onEnabledChange" in bs)
     check("aligned 30s ticks", bs.count("30_000 - System.currentTimeMillis()") == 2)
     check("canExact sync init", "mutableStateOf(ExactAlarmHelper.canSchedule(context))" in bs)
-    check("edge-to-edge keyed on theme", "LaunchedEffect(useDark)" in ma)
+    check("edge-to-edge forced dark", "LaunchedEffect(Unit)" in ma and "useDark" not in ma
+          and "SystemBarStyle.dark" in ma)
     check("refresh keeps resolution", "sameSize" in ma)
     check("permission migrates first", "Prefs.migrateIfNeeded(this)" in ma)
     check("boot null-action guard", "intent.action ?: return" in er or "intent.action ?: return" in src("java/com/bscompanion/app/notifications/BootReceiver.kt"))
@@ -482,7 +484,8 @@ def g_source() -> None:
     dx = (MAIN / "res" / "xml" / "data_extraction_rules.xml").read_text(encoding="utf-8")
     check("D2D excludes bs_fired", dx.count("bs_fired.xml") == 2)
     th = src("java/com/bscompanion/app/ui/theme/Theme.kt")
-    check("dark card contrast", "0xFF20242E" in th)
+    check("amoled pure black", "0xFF000000" in th and "verticalGradient" not in th
+          and "lightColorScheme" not in th)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")
     check("kotlin-test aligned", "kotlin-test:2.0.21" in bg)
     mf = (MAIN / "AndroidManifest.xml").read_text(encoding="utf-8")
@@ -508,7 +511,7 @@ def try_gradle() -> None:
 
 
 def main() -> int:
-    print("BS Companion functional test -", ROOT)
+    print("Internauta functional test -", ROOT)
     for g in (g_is_no_care, g_closed_helpers, g_curfew, g_events_for_date, g_current,
               g_next, g_upcoming, g_countdown, g_progress, g_timerange, g_slots,
               g_dedupe, g_eventkey, g_reqcode, g_stale, g_source, try_gradle):

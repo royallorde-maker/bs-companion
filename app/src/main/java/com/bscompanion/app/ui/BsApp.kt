@@ -621,7 +621,7 @@ fun HeroCard(nowState: State<LocalDateTime>) {
     ) {
         Column(Modifier.padding(22.dp)) {
             Text(
-                "BS Companion",
+                "Internauta",
                 style = MaterialTheme.typography.labelLarge,
                 color = onHero.copy(alpha = 0.72f),
                 maxLines = 1,
@@ -1381,7 +1381,7 @@ fun NotifCard(
                         NotificationHelper.openAppNotificationSettings(context)
                     } else {
                         NotificationHelper.showEventNotification(
-                            context, 9999, "Test BS Companion",
+                            context, 9999, "Test Internauta",
                             "Powiadomienia działają. Kolejne: $nextTitle", false
                         )
                         android.widget.Toast.makeText(context, "Test wysłany", android.widget.Toast.LENGTH_SHORT).show()
@@ -1744,7 +1744,7 @@ fun ChangelogScreen() {
         item {
             TabHero(
                 "Zmiany",
-                "Co nowego w BS Companion"
+                "Co nowego w Internaucie"
             )
         }
         // Karta aktualizacji: stan sieci + version.json z GitHub. Zawsze nad About,
@@ -1761,7 +1761,7 @@ fun ChangelogScreen() {
                     Column(Modifier.weight(1f)) {
                         Text("O aplikacji", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Text(
-                            "BS Companion • wersja $versionName",
+                            "Internauta • wersja $versionName",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2,
@@ -1778,6 +1778,20 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.27.0 — Internauta", listOf(
+                "Nowa nazwa apki: launcher, nagłówki, powiadomienia",
+                "Pakiet, kanały i klucz bez zmian — aktualizacja bez reinstallu",
+                "Treść i alarmy bez zmian"
+            ))
+        }
+        item {
+            InfoCard("1.27.0 — Internauta", listOf(
+                "Nowa nazwa apki: launcher, nagłówki, powiadomienia",
+                "Pakiet, kanały i klucz bez zmian — aktualizacja bez reinstallu",
+                "Testy funkcyjne zaktualizowane do nowego wyglądu"
+            ))
         }
         item {
             InfoCard("1.26.0 — uczciwe przypomnienia", listOf(

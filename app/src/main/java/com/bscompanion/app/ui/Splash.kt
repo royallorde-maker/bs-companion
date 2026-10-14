@@ -80,7 +80,7 @@ fun SplashScreen() {
             }
             Spacer(Modifier.height(16.dp))
             Text(
-                "BS Companion",
+                "Internauta",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,

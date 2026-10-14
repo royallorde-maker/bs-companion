@@ -1,8 +1,8 @@
 {
-  "versionCode": 32,
-  "versionName": "1.26.0",
+  "versionCode": 33,
+  "versionName": "1.27.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.26.0 — uczciwe minuty w przypomnieniach + chipy bez Przeplanuj (treść bez zmian)",
+  "changelog": "1.27.0 — apka nazywa się Internauta (pakiet i klucz bez zmian, reinstall zbędny)",
   "force": false,
-  "publishedAt": "2026-10-14T11:26:16Z"
+  "publishedAt": "2026-10-14T11:31:54Z"
 }

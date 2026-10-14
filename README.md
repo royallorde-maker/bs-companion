@@ -1,4 +1,4 @@
-# BS Companion
+# Internauta
 
 Polished Material 3 companion app for **Internat ZST Szczecinek** (ul. Koszalińska 81),
 built from `Regulamin_Internatu_ZST_2025_2026`.

@@ -120,7 +120,7 @@ object NotificationHelper {
         nm.notify(notificationId, notification)
     }
 
-    // --- Ciche trwałe powiadomienie ("BS Companion czuwa") ---
+    // --- Ciche trwałe powiadomienie ("Internauta czuwa") ---
 
     fun ensureSilentChannel(context: Context) {
         try {
@@ -131,7 +131,7 @@ object NotificationHelper {
             }
             val channel = NotificationChannel(
                 SILENT_CHANNEL_ID,
-                "BS Companion czuwa",
+                "Internauta czuwa",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Ciche, trwałe powiadomienie z następnym wydarzeniem. Bez dźwięku."
@@ -170,7 +170,7 @@ object NotificationHelper {
         )
         val notification = NotificationCompat.Builder(context, SILENT_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("BS Companion czuwa")
+            .setContentTitle("Internauta czuwa")
             .setContentText(line)
             .setStyle(NotificationCompat.BigTextStyle().bigText(line))
             .setPriority(NotificationCompat.PRIORITY_LOW)
