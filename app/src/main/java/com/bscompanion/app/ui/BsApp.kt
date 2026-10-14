@@ -117,6 +117,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -309,7 +310,8 @@ private fun DrawScope.wavyRing(
     phase: Float = 0f
 ): Path {
     val path = Path()
-    val steps = maxOf(8, (waves * sweepDeg / 360f * 6).toInt())
+    // Gęsto próbkowane (12 na falę) + okrągłe łączenia — zero kantów.
+    val steps = maxOf(16, (waves * sweepDeg / 360f * 12).toInt())
     val cx = size.width / 2
     val cy = size.height / 2
     repeat(steps + 1) { i ->
@@ -381,7 +383,7 @@ fun Ring(
                 )
                 drawPath(
                     worm, arc,
-                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
+                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
             }
         }
@@ -1965,6 +1967,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.43.0 — gładki wąż", listOf(
+                "Koniec kantów: okrągłe łączenia i gęstsze próbkowanie."
+            ))
         }
         item {
             InfoCard("1.42.0 — wąż postępu", listOf(
