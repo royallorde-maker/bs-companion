@@ -51,6 +51,16 @@ class DormScheduleTest {
     }
 
     @Test
+    fun gapsAreExplicitCzasWolny() {
+        val events = DormSchedule.eventsForDate(monday())
+        assertEquals("czas_wolny_2", DormSchedule.currentEvent(LocalTime.of(6, 50), events)?.id)
+        assertEquals("czas_wolny_4", DormSchedule.currentEvent(LocalTime.of(12, 0), events)?.id)
+        assertEquals("czas_wolny_5", DormSchedule.currentEvent(LocalTime.of(21, 50), events)?.id)
+        // Bez alarmów: luki nie budzą.
+        assertTrue(events.filter { it.id.startsWith("czas_wolny_") }.all { !it.notifyDefault })
+    }
+
+    @Test
     fun nextCared_skipsWeekendGap() {
         // Pt 18:30 (po zamknięciu) → następne to ndz 16:00+, czyli ndz nauka 17:30.
         val fridayEvening = LocalDateTime.of(LocalDate.of(2026, 10, 16), LocalTime.of(18, 30))

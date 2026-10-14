@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -92,6 +93,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -636,20 +638,49 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                 transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
                 label = "clock"
             ) { animatedTime ->
-                Text(
-                    animatedTime,
-                    // Tabularne cyfry + ciasny tracking: zmiana minut nie trzęsie układem.
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        letterSpacing = (-1.5).sp,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    color = onHero,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip,
+                // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno,
+                // dwukropek stoi (i tak się nie zmienia). Razem z tabularnymi
+                // cyframi zmiana minut nie trzęsie układem.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    animatedTime.forEachIndexed { idx, ch ->
+                        key(idx) {
+                            AnimatedContent(
+                                targetState = ch,
+                                transitionSpec = {
+                                    (slideInVertically(
+                                        tween(
+                                            FluentMotion.EnterMs,
+                                            easing = LinearOutSlowInEasing
+                                        )
+                                    ) { it / 2 } + fadeIn(tween(FluentMotion.EnterMs))) togetherWith
+                                        (slideOutVertically(
+                                            tween(
+                                                FluentMotion.ExitMs,
+                                                easing = FastOutLinearInEasing
+                                            )
+                                        ) { -it / 2 } + fadeOut(tween(FluentMotion.ExitMs)))
+                                },
+                                label = "digit"
+                            ) { c ->
+                                Text(
+                                    c.toString(),
+                                    style = MaterialTheme.typography.displayLarge.copy(
+                                        letterSpacing = (-1.5).sp,
+                                        fontFeatureSettings = "tnum"
+                                    ),
+                                    fontWeight = FontWeight.Bold,
+                                    color = onHero,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Visible
+                                )
+                            }
+                        }
+                    }
+                }
             }
             Text(
                 dateStr.replaceFirstChar { it.uppercase(plLocale) },
@@ -781,7 +812,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Przerwa",
+                        "Czas wolny",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
@@ -1787,6 +1818,13 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.30.0 — luki to Czas wolny", listOf(
+                "Przerwy między punktami jawnie w Planie i podświetlają się",
+                "Zegar z rolującymi cyframi jak flip-clock",
+                "Więcej powietrza nad Sprawdź"
+            ))
+        }
+        item {
             InfoCard("1.29.0 — szczera sieć", listOf(
                 "Karta mówi wprost: brak Wi-Fi/danych albo połączenie bez netu",
                 "Po powrocie sieci apka sprawdza sama",
@@ -2205,7 +2243,7 @@ fun UpdateCard() {
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(20.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(
                 onClick = { runCheck() },

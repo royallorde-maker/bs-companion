@@ -54,6 +54,10 @@ EVENTS = [
     ("zajecia_wych", time(19, 30), time(21, 0), False),
     ("powrot", time(21, 0), None, True),
     ("toaleta", time(21, 0), time(21, 45), True),
+    ("czas_wolny_2", time(6, 45), time(7, 0), False),
+    ("czas_wolny_3", time(7, 50), time(7, 55), False),
+    ("czas_wolny_4", time(8, 10), time(13, 30), False),
+    ("czas_wolny_5", time(21, 45), time(22, 0), False),
     ("cisza", time(22, 0), time(6, 0), True),
 ]
 # Monday 2026-10-12, Friday 2026-10-16, Saturday 2026-10-17, Sunday 2026-10-18
@@ -279,8 +283,8 @@ def g_curfew() -> None:
 def g_events_for_date() -> None:
     section("eventsForDate")
     evs = sorted(EVENTS, key=lambda e: e[1])
-    check("11 events", len(evs) == 11, str(len(evs)))
-    check("sorted by start", all(evs[i][1] <= evs[i + 1][1] for i in range(10)))
+    check("15 events", len(evs) == 15, str(len(evs)))
+    check("sorted by start", all(evs[i][1] <= evs[i + 1][1] for i in range(14)))
     check("first pobudka 06:30", evs[0][0] == "pobudka" and evs[0][1] == time(6, 30))
 
 
@@ -291,7 +295,8 @@ def g_current() -> None:
     check("06:30 pobudka", current_event(time(6, 30))[0] == "pobudka")
     check("21:00 tie-break powrot (shortest)", current_event(time(21, 5))[0] == "powrot")
     check("21:30 toaleta (powrot 15min over)", current_event(time(21, 30))[0] == "toaleta")
-    check("12:00 gap None", current_event(time(12, 0)) is None)
+    check("12:00 gap is czas_wolny_4", current_event(time(12, 0))[0] == "czas_wolny_4")
+    check("06:50 gap is czas_wolny_2", current_event(time(6, 50))[0] == "czas_wolny_2")
     check("cared sat 23:00 None (no cisza when closed)",
           current_cared(datetime.combine(SAT, time(23, 0))) is None)
     check("cared sun 10:00 None", current_cared(datetime.combine(SUN, time(10, 0))) is None)
@@ -320,7 +325,7 @@ def g_next() -> None:
     check("fri 17:30 nauka dropped (straddles closure)",
           next_cared(datetime(2026, 10, 16, 17, 0)) != (FRI, next(e for e in EVENTS if e[0] == "nauka")))
     check("future cisza present tomorrow evening",
-          any(e[0] == "cisza" for _, e in upcoming_cared(datetime.combine(MON, time(12, 0)), 8)))
+          any(e[0] == "cisza" for _, e in upcoming_cared(datetime.combine(MON, time(12, 0)), 9)))
 
 
 def g_upcoming() -> None:
@@ -335,7 +340,7 @@ def g_upcoming() -> None:
     check("saturday yields no cared (all skipped) or sunday events",
           all(d != SAT for d, _ in lst), str(lst))
     lst = upcoming_cared(datetime.combine(MON, time(6, 0)), 4)
-    check("first two are pobudka,sniadanie", [e[0] for _, e in lst][:2] == ["pobudka", "sniadanie"])
+    check("pobudka first, then gap", [e[0] for _, e in lst][:2] == ["pobudka", "czas_wolny_2"])
     check("no unnotified czas_wolny_1 without flag (present in plan, kept by UI)",
           True)  # UI keeps non-notify events; scheduler skips them (checked in source)
 

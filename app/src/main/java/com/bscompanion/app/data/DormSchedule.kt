@@ -94,6 +94,32 @@ object DormSchedule {
             LocalTime.of(21, 0), LocalTime.of(21, 45),
             EventCategory.ORG
         ),
+        // Luki między punktami jako jawny Czas wolny (FREE, bez alarmów):
+        // TERAZ podświetla je w Planie zamiast pustego "Przerwa".
+        DormEvent(
+            "czas_wolny_2", "Czas wolny",
+            "Między pobudką a śniadaniem.",
+            LocalTime.of(6, 45), LocalTime.of(7, 0),
+            EventCategory.FREE, notifyDefault = false
+        ),
+        DormEvent(
+            "czas_wolny_3", "Czas wolny",
+            "Chwila między śniadaniem a wyjściem.",
+            LocalTime.of(7, 50), LocalTime.of(7, 55),
+            EventCategory.FREE, notifyDefault = false
+        ),
+        DormEvent(
+            "czas_wolny_4", "Czas wolny",
+            "Lekcje w szkole.",
+            LocalTime.of(8, 10), LocalTime.of(13, 30),
+            EventCategory.FREE, notifyDefault = false
+        ),
+        DormEvent(
+            "czas_wolny_5", "Czas wolny",
+            "Chwila przed ciszą nocną.",
+            LocalTime.of(21, 45), LocalTime.of(22, 0),
+            EventCategory.FREE, notifyDefault = false
+        ),
         DormEvent(
             "cisza", "Cisza nocna 22:00–6:00",
             "Od 22:00 przebywaj we własnym pokoju. Zakaz rozmów telefonicznych, drzwi wejściowe zamknięte.",
