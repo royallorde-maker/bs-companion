@@ -1378,6 +1378,38 @@ fun SettingsScreen(
         }
         item {
             BsSurface(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconDot(Icons.Filled.MenuBook, boxSize = 52.dp, iconSize = 28.dp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "O aplikacji",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Internauta • wersja $versionName",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Towarzysz mieszkańca Internatu ZST Szczecinek. Plan dnia, stołówka i przypomnienia o wydarzeniach — zawsze pod ręką.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
                 Text(
                     "Motyw",
                     fontWeight = FontWeight.Bold,
@@ -1447,38 +1479,6 @@ fun SettingsScreen(
                     }
                     Spacer(Modifier.height(8.dp))
                 }
-            }
-        }
-        item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconDot(Icons.Filled.MenuBook, boxSize = 52.dp, iconSize = 28.dp)
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "O aplikacji",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            "Internauta • wersja $versionName",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Towarzysz mieszkańca Internatu ZST Szczecinek. Plan dnia, stołówka i przypomnienia o wydarzeniach — zawsze pod ręką.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -2053,6 +2053,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.51.0 — o aplikacji na górze", listOf(
+                "O aplikacji zawsze pierwsze w Ustawieniach.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.50.0 — jeden dzwonek", listOf(
