@@ -1694,6 +1694,12 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.21.0 — test kanału", listOf(
+                "Wersja testowa: sprawdza nowy system pobierania",
+                "Zero zmian w kodzie poza numerem wersji"
+            ))
+        }
+        item {
             InfoCard("1.20.0 — pobieranie na żywo", listOf(
                 "Pasek postępu z procentem + przycisk Anuluj w trakcie pobierania",
                 "Pobrane czeka przyciskiem Zainstaluj; brak pliku wraca do Pobierz",
