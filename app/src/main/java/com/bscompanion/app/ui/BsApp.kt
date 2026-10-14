@@ -20,7 +20,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -78,6 +77,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.WaterDrop
@@ -100,7 +100,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -128,7 +127,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.bscompanion.app.data.DormEvent
 import com.bscompanion.app.data.DormSchedule
 import com.bscompanion.app.data.EventCategory
@@ -381,16 +379,16 @@ fun BsApp(
     onTabRequestConsumed: () -> Unit = {}
 ) {
     var tab by rememberSaveable { mutableStateOf(0) }
-    val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History)
+    val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany", "Ustawienia")
+    val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History, Icons.Filled.Settings)
     var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
-    // Back: najpierw zamyka szczegóły, potem z zakładek 1-3 wraca do Dziś, wyjście tylko z 0.
+    // Back: najpierw zamyka szczegóły, potem z zakładek 1-4 wraca do Dziś, wyjście tylko z 0.
     BackHandler(enabled = tab != 0 || detailKey != null) {
         if (detailKey != null) detailKey = null else tab = 0
     }
     // Skrót launchera: wskocz na zakładkę raz, potem wyczyść żądanie.
     LaunchedEffect(tabRequest) {
-        if (tabRequest != null && tabRequest in 0..3) {
+        if (tabRequest != null && tabRequest in 0..4) {
             detailKey = null
             tab = tabRequest
             onTabRequestConsumed()
@@ -461,6 +459,7 @@ fun BsApp(
                         1 -> ScheduleScreen()
                         2 -> MealsScreen()
                         3 -> ChangelogScreen()
+                        4 -> SettingsScreen()
                     }
                 }
             }
@@ -661,55 +660,14 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(2.dp))
-            AnimatedContent(
-                targetState = timeStr,
-                transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
-                label = "clock"
-            ) { animatedTime ->
-                // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno,
-                // dwukropek stoi (i tak się nie zmienia). Razem z tabularnymi
-                // cyframi zmiana minut nie trzęsie układem.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    animatedTime.forEachIndexed { idx, ch ->
-                        key(idx) {
-                            AnimatedContent(
-                                targetState = ch,
-                                transitionSpec = {
-                                    (slideInVertically(
-                                        tween(
-                                            FluentMotion.EnterMs,
-                                            easing = LinearOutSlowInEasing
-                                        )
-                                    ) { it / 2 } + fadeIn(tween(FluentMotion.EnterMs))) togetherWith
-                                        (slideOutVertically(
-                                            tween(
-                                                FluentMotion.ExitMs,
-                                                easing = FastOutLinearInEasing
-                                            )
-                                        ) { -it / 2 } + fadeOut(tween(FluentMotion.ExitMs)))
-                                },
-                                label = "digit"
-                            ) { c ->
-                                Text(
-                                    c.toString(),
-                                    style = MaterialTheme.typography.displayLarge.copy(
-                                        fontFamily = Montserrat,
-                                        letterSpacing = 0.sp
-                                    ),
-                                    fontWeight = FontWeight.Bold,
-                                    color = onHero,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Visible
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
+            RollingText(
+                text = timeStr,
+                style = MaterialTheme.typography.displayLarge.copy(fontFamily = Montserrat),
+                fontWeight = FontWeight.Bold,
+                color = onHero,
+                modifier = Modifier.fillMaxWidth()
+            )
             Text(
                 dateStr.replaceFirstChar { it.uppercase(plLocale) },
                 style = MaterialTheme.typography.bodyMedium,
@@ -874,13 +832,11 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text(
-                        formatCountdown(now, target),
+                    // Licznik roluje cyframi jak zegar: 45→44 rusza tylko koniec.
+                    RollingText(
+                        text = formatCountdown(now, target),
                         style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -1307,6 +1263,47 @@ fun TabHero(title: String, subtitle: String) {
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+/** Tymczasowy ekran Ustawień — placeholder pod przyszłe przełączniki. */
+@Composable
+fun SettingsScreen() {
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 24.dp)
+    ) {
+        item {
+            TabHero(
+                "Ustawienia",
+                "Wkrótce."
+            )
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconDot(Icons.Filled.Settings, boxSize = 52.dp, iconSize = 28.dp)
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Ekran w budowie",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Testowy placeholder — tu pojawią się ustawienia.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1844,6 +1841,12 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.36.0 — pusta zakładka", listOf(
+                "Piąta zakładka Ustawienia — na razie placeholder.",
+                "Cyfry odliczania rolują jak zegar."
+            ))
         }
         item {
             InfoCard("1.35.0 — zegar Montserrat", listOf(

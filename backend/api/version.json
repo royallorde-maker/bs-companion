@@ -1,8 +1,8 @@
 {
-  "versionCode": 41,
-  "versionName": "1.35.0",
+  "versionCode": 42,
+  "versionName": "1.36.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.35.0 — zegar w Montserrat Bold",
+  "changelog": "1.36.0 — piąta zakładka Ustawienia (na razie placeholder)",
   "force": false,
-  "publishedAt": "2026-10-14T13:10:28Z"
+  "publishedAt": "2026-10-14T13:17:01Z"
 }

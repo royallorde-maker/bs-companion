@@ -15,8 +15,8 @@ android {
         applicationId = "com.bscompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 41
-        versionName = "1.35.0"
+        versionCode = 42
+        versionName = "1.36.0"
         // Jedno źródło URL aktualizacji — reszta czyta BuildConfig.UPDATE_URL.
         // Surowy plik z main, żeby apka nie czekała na Pages.
         buildConfigField(
