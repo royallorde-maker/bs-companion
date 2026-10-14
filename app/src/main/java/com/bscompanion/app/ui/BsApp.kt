@@ -1845,281 +1845,212 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.32.0 — po ludzku", listOf(
+                "Cała historia wersji napisana krótko i normalnie.",
+                "Nowa ikona: czarny notes."
+            ))
+        }
+        item {
             InfoCard("1.31.0 — własne ikony", listOf(
-                "Każde wydarzenie ma własną ikonę zamiast jednej na kategorię",
-                "Treść i alarmy bez zmian"
+                "Każde wydarzenie ma swoją ikonę."
             ))
         }
         item {
             InfoCard("1.30.0 — luki to Czas wolny", listOf(
-                "Przerwy między punktami jawnie w Planie i podświetlają się",
-                "Zegar z rolującymi cyframi jak flip-clock",
-                "Więcej powietrza nad Sprawdź"
+                "Przerwy w planie widać z nazwy i się podświetlają.",
+                "Zegar przewija cyfry jak flip-clock."
             ))
         }
         item {
             InfoCard("1.29.0 — szczera sieć", listOf(
-                "Karta mówi wprost: brak Wi-Fi/danych albo połączenie bez netu",
-                "Po powrocie sieci apka sprawdza sama",
-                "Treść i alarmy bez zmian"
+                "Karta mówi wprost: nie ma Wi-Fi, czy nie ma netu.",
+                "Po powrocie sieci sprawdza sama."
             ))
         }
         item {
             InfoCard("1.28.0 — oddech i zegar", listOf(
-                "Więcej powietrza nad przyciskiem Sprawdź",
-                "Zegar tabularny — zmiana minut nie trzęsie cyframi",
-                "Treść i alarmy bez zmian"
+                "Luźniej nad przyciskiem Sprawdź.",
+                "Cyfry zegara już nie skaczą."
             ))
         }
         item {
             InfoCard("1.27.0 — Internauta", listOf(
-                "Nowa nazwa apki: launcher, nagłówki, powiadomienia",
-                "Pakiet, kanały i klucz bez zmian — aktualizacja bez reinstallu",
-                "Testy funkcyjne zaktualizowane do nowego wyglądu"
+                "Apka ma nową nazwę.",
+                "Aktualizacja bez reinstallu."
             ))
         }
         item {
             InfoCard("1.26.0 — uczciwe przypomnienia", listOf(
-                "Minuty w powiadomieniu liczone w chwili dzwonka, nie planowania",
-                "Chip minutowy działa od razu — koniec z Przeplanuj",
-                "Treść i alarmy bez zmian"
+                "Minuty liczone w chwili dzwonka.",
+                "Minutnik działa od razu, bez dodatkowego guzika."
             ))
         }
         item {
-            InfoCard("1.25.0 — ruch jak Fluent", listOf(
-                "Wejścia: fade + skala, ease-out, krótkie staggery",
-                "Zakładki suną w bok wg kierunku, wyjścia szybsze",
-                "Dotyk ściska kafelki, wiersze i pigułkę (0.96)"
+            InfoCard("1.25.0 — płynny ruch", listOf(
+                "Wejścia miękko fade'ują i rosną.",
+                "Zakładki suną w bok, przyciski uginają się pod palcem."
             ))
         }
         item {
             InfoCard("1.24.0 — bez białej kreski", listOf(
-                "Usunięta ostra linia świetlna z pigułki — samo szkło wystarczy",
-                "Treść i alarmy bez zmian"
+                "Ostra kreska zniknęła z pigułki."
             ))
         }
         item {
             InfoCard("1.23.0 — bez dublowanych godzin", listOf(
-                "TERAZ/NASTĘPNE nie powtarzają godzin z tytułu (Cisza nocna)",
-                "Pigułka naprawdę szklana: jaśniejsza tafla, poświata, dotyk rozświetla",
-                "Treść i alarmy bez zmian"
+                "Godziny już się nie powtarzają.",
+                "Pigułka naprawdę wygląda jak szkło."
             ))
         }
         item {
             InfoCard("1.22.0 — skróty i płynne szkło", listOf(
-                "Skróty launchera: długi przytrzym → Plan dnia / Posiłki",
-                "Pigułka jak Liquid Glass: tafla, krawędź świetlna, morfowanie",
-                "Treść i alarmy bez zmian"
+                "Przytrzymaj ikonę: Plan i Posiłki od razu.",
+                "Pigułka unosi się jak szkło."
             ))
         }
         item {
             InfoCard("1.21.0 — test kanału", listOf(
-                "Wersja testowa: sprawdza nowy system pobierania",
-                "Zero zmian w kodzie poza numerem wersji"
+                "Próba generalna pobierania. Nic więcej."
             ))
         }
         item {
             InfoCard("1.20.0 — pobieranie na żywo", listOf(
-                "Pasek postępu z procentem + przycisk Anuluj w trakcie pobierania",
-                "Pobrane czeka przyciskiem Zainstaluj; brak pliku wraca do Pobierz",
-                "Nowsza wersja sama proponuje się do pobrania",
-                "Pobieranie trwa w tle mimo zamknięcia apki"
+                "Widać procenty, jest Anuluj.",
+                "Po pobraniu od razu Zainstaluj. Działa w tle."
             ))
         }
         item {
             InfoCard("1.19.0 — porządek w papierach", listOf(
-                "README i strona statusu zgodne z kodem (AMOLED, podpis, URL-e)",
-                "Migracja prefs poza UI thread",
-                "Treść i alarmy bez zmian"
+                "Opisy dogonione z kodem."
             ))
         }
         item {
             InfoCard("1.18.0 — uczciwsze detale", listOf(
-                "Stołówka: każdy posiłek liczony własnym czasem, nie chwilą obecną",
-                "Pobieranie pilnuje stanu DownloadManagera zamiast zgadywać po rozmiarze",
-                "Donut pełznie co sekundę, ponowienie po błędzie, dostępniejsze przyciski",
-                "Koniec martwego theme_mode i przedwczesnego odświeżania baterii"
+                "Posiłki liczone własnym czasem.",
+                "Donut sunie płynnie. Sprzątnięte martwe ustawienia."
             ))
         }
         item {
-            InfoCard("1.17.0 — twardszy plan i pobieranie", listOf(
-                "Debug i testy działają bez klucza — klucz tylko do release",
-                "Aktualizacje tylko z https z domen GitHuba",
-                "Spóźnione przypomnienie strzela za sekundę zamiast przepadać"
+            InfoCard("1.17.0 — twardszy plan", listOf(
+                "Kompilacja działa bez klucza.",
+                "Pobieranie tylko z GitHuba.",
+                "Spóźnione przypomnienie i tak dzwoni."
             ))
         }
         item {
             InfoCard("1.16.0 — czytelny znaczek", listOf(
-                "Ikona bieżącego wydarzenia: czarny krążek zamiast niewidzialnej bieli",
-                "Treść i alarmy bez zmian"
+                "Ikona na białym wierszu w końcu widać."
             ))
         }
         item {
             InfoCard("1.15.0 — czysty mono", listOf(
-                "Koniec błękitu — tylko czerń, szarości i biel",
-                "Biała pigułka i karta-bohater na czerni",
-                "Treść i alarmy bez zmian"
+                "Zero niebieskiego. Czerń, szarość, biel."
             ))
         }
         item {
             InfoCard("1.14.0 — tylko AMOLED", listOf(
-                "Koniec wyboru motywu — zawsze głęboka czerń",
-                "Usunięta karta Motyw ze Zmian",
-                "Treść i alarmy bez zmian"
+                "Jeden motyw: głęboka czerń.",
+                "Przełącznik motywu wyleciał."
             ))
         }
         item {
             InfoCard("1.13.0 — spokojniejszy układ", listOf(
-                "Bohater bez skrótów — nawigacja tylko w pigułce na dole",
-                "Wiersze bez linii i krzykliwej zieleni, lżejsza typografia",
-                "Treść i alarmy bez zmian"
+                "Mniej krzykliwy ekran główny."
             ))
         }
         item {
-            InfoCard("1.12.0 — zwarta pigułka nawigacji", listOf(
-                "Etykieta tylko na wybranej zakładce — nazwy już się nie ucinają",
-                "Treść i alarmy bez zmian"
+            InfoCard("1.12.0 — zwarta pigułka", listOf(
+                "Nazwy zakładek już się nie ucinają."
             ))
         }
         item {
             InfoCard("1.11.0 — pasek nad gestami", listOf(
-                "Pigułka nawigacji uniesiona nad systemowy pasek gestów",
-                "Treść i alarmy bez zmian"
+                "Pigułka nie tonie pod gestami."
             ))
         }
         item {
-            InfoCard("1.10.0 — pierścień i płaskie tło", listOf(
-                "Pierścień postępu rusza też dla wydarzeń punktowych (15 min)",
-                "Donut szczegółów pełznie co sekundę zamiast co minutę",
-                "Koniec gradientów — płaskie tafle w całej apce",
-                "Treść i alarmy bez zmian"
+            InfoCard("1.10.0 — żywy pierścień", listOf(
+                "Kółko postępu zawsze żyje.",
+                "Koniec cieniowań, płaskie karty."
             ))
         }
         item {
-            InfoCard("1.9.0 — osobne karty TERAZ/NASTĘPNE", listOf(
-                "TERAZ i NASTĘPNE wróciły jako dwie osobne karty pod bohaterem",
-                "Pierścień postępu bieżącego wydarzenia, licznik odliczający",
-                "Treść i alarmy bez zmian"
+            InfoCard("1.9.0 — dwie karty", listOf(
+                "TERAZ i NASTĘPNE osobno, obok siebie."
             ))
         }
         item {
-            InfoCard("1.8.0 — zakładki w języku Nexora", listOf(
-                "Granatowe nagłówki Planu, Stołówki i Zmian jak karta-bohater",
-                "Wiersze planu: mroźne szkło, bieżące wydarzenie na granatowo",
-                "Usunięty wykres zajętości dnia",
-                "Treść, teksty i alarmy bez zmian"
+            InfoCard("1.8.0 — jeden styl zakładek", listOf(
+                "Wszystkie zakładki wyglądają tak samo.",
+                "Wykres dnia wyleciał."
             ))
         }
         item {
-            InfoCard("1.7.0 — pełna przebudowa Dziś", listOf(
-                "Granatowa karta-bohater: żywy zegar, TERAZ/NASTĘPNE, skróty do zakładek",
-                "Nadchodzące jako wiersze holdingów + szczegóły wydarzenia z donutem postępu",
-                "Wykres zajętości planu dziś (6:00–22:00) liczony z planu",
-                "Treść, teksty i alarmy bez zmian"
+            InfoCard("1.7.0 — nowy ekran Dziś", listOf(
+                "Bohater z zegarem, lista, szczegóły wydarzeń."
             ))
         }
         item {
-            InfoCard("1.6.0 — wygląd Nexora", listOf(
-                "Mroźne szkło: jasny błękit, granatowe akcenty, pływająca pigułka nawigacji",
-                "Ciemny motyw w tym samym języku: głęboki granat",
-                "Usunięta czerwona winieta godziny policyjnej",
-                "Zero zmian treści — wszystkie teksty i alarmy jak w 1.4.1"
+            InfoCard("1.6.0 — nowy wygląd", listOf(
+                "Pierwsza duża przebudowa wyglądu."
             ))
         }
         item {
             InfoCard("1.4.1 — tylko przypomnienia", listOf(
-                "Przypomnienie N min przed, znika o czasie wydarzenia",
-                "Koniec z powrotami: brak alarmów punktualnych wcale"
+                "Przypomnienie przychodzi i samo znika o czasie."
             ))
         }
         item {
-            InfoCard("1.4.0 — szkło ink", listOf(
-                "Karty w szkle: gradient tonu + pływająca pigułka nawigacji",
-                "Poświata primary w tle, ten sam ink w obu motywach"
+            InfoCard("1.4.0 — szklany wygląd", listOf(
+                "Szklane karty i pływająca nawigacja."
             ))
         }
         item {
-            InfoCard("1.3.0 — finalny test kanału", listOf(
-                "Instalacja wprost z apki: Pobierz → Zainstaluj, bez USB",
-                "Dowód, że kanał 1.2.2 → dalej działa samodzielnie"
+            InfoCard("1.3.0 — instalacja z apki", listOf(
+                "Aktualizacja prosto z apki, bez kabla."
             ))
         }
         item {
-            InfoCard("1.2.2 — naprawa instalacji", listOf(
-                "FileProvider pokrywa files/Download/updates (koniec z Nie można otworzyć pliku)",
-                "DownloadManager przez setDestinationInExternalFilesDir",
-                "Zainstaluj czeka na niepusty plik zamiast otwierać pobieranie w locie"
+            InfoCard("1.2.2 — działa instalacja", listOf(
+                "Instalowanie z apki w końcu działa."
             ))
         }
         item {
-            InfoCard("1.2.1 — test kanału aktualizacji", listOf(
-                "Wersja testowa: telefon na 1.2.0 ma wykryć tę aktualizację",
-                "Ten sam kanał version.json + latest/download co wydania"
+            InfoCard("1.2.1 — próba kanału", listOf(
+                "Test wykrywania nowej wersji."
             ))
         }
         item {
-            InfoCard("1.2.0 — aktualizacje z GitHub i offline", listOf(
-                "Karta Aktualizacja w Zmiany: sprawdza version.json z GitHub",
-                "Subtelny pasek Offline — plan i alarmy działają lokalnie bez sieci",
-                "Brak sieci pokazuje Nie można sprawdzić zamiast crashu",
-                "Pobieranie apk przez DownloadManager + instalacja przez FileProvider",
-                "Wersja z BuildConfig, URL tylko z backend/api/version.json"
+            InfoCard("1.2.0 — aktualizacje i offline", listOf(
+                "Apka sama znajduje aktualizacje.",
+                "Bez netu wszystko działa lokalnie."
             ))
         }
         item {
-            InfoCard("1.1.3 — czytelność UI i kontrast", listOf(
-                "TERAZ / NASTĘPNE znowu obok siebie, ciaśniejszy padding na wąskich ekranach",
-                "Ciemny secondaryContainer jaśniejszy — zaznaczone chipy widać na karcie",
-                "Ramki i Ring na outlineVariant / primary, koniec z niewidzialnymi włoskami",
-                "Zegar i licznik już bez … — Clip zamiast Ellipsis, data do 2 linii",
-                "Godziny w wierszach i kartach zawijają się, nie gubią końcówki",
-                "MealCard: tytuł + godziny osobno, opis rozwijany po tapnięciu",
-                "Zamknięta stołówka pokazuje — i Stołówka nieczynna zamiast menu",
-                "Pojedynczy Switch dla TalkBack, przyciski min. 48dp, banery z animacją",
-                "Splash z insets i wyśrodkowaniem, start 800ms + fade 200ms",
-                "Bary i cutout shortEdges, wczesny motyw bez flesza"
+            InfoCard("1.1.3 — czytelniej", listOf(
+                "Większe, ostrzejsze, nic się nie ucina."
             ))
         }
         item {
-            InfoCard("1.1.2 — poprawki UI i spójność planu", listOf(
-                "NASTĘPNE liczy też koniec wydarzenia — brak licznika bez alarmu (pt 17:30)",
-                "Plan i Stołówka pokazują baner Brak opieki w dni zamknięte",
-                "Poprawiony kontrast podświetlonego wiersza (onPrimaryContainer)",
-                "Banery blokad odświeżają się po powrocie z ustawień",
-                "Zakładki trzymają scroll i ustawienia, Back wraca do Dziś",
-                "Brak ponownych animacji przy scrollu, lżejszy Ring i zegar co minutę",
-                "Odliczanie i godziny nie ucinają się, chipy motywu zawijają się",
-                "Puste Nadchodzące ma komunikat, karty czytelniejsze w obu motywach",
-                "Splash nie odtwarza się po rotacji, wersja z BuildConfig bez fallbacku"
+            InfoCard("1.1.2 — plan mówi prawdę", listOf(
+                "Weekendy pokazane uczciwie.",
+                "Mnóstwo drobnych napraw wyglądu."
             ))
         }
         item {
-            InfoCard("1.1.1 — stabilność alarmów", listOf(
-                "Rotacja / tap w powiadomienie nie zatrzymuje już planisty",
-                "Ndz 22:00 cisza planuje się poprawnie (koniec przez północ)",
-                "Ustawienia backupowane, cache harmonogramu nie (migracja bs_prefs)",
-                "Dokładne alarmy z uczciwym fallbackiem + wiersz Zezwól",
-                "Lżejsze anulowanie alarmów, debounce, brak podwójnych dialogów",
-                "Poprawione podświetlenie Planu dnia i karty TERAZ / NASTĘPNE",
-                "Ciemny start bez białego flesza, ikony barów wg motywu apki"
+            InfoCard("1.1.1 — pewne alarmy", listOf(
+                "Alarmy już się nie gubią.",
+                "Cisza nocna w niedzielę o 22:00 działa."
             ))
         }
         item {
-            InfoCard("1.1.0 — Nadchodzące i motyw", listOf(
-                "Oś czasu Nadchodzące: 4 kolejne punkty planu z dniem",
-                "Wybór motywu System / Ciemny / Jasny",
-                "Obiad codziennie 13:30–15:30, koniec z dyżurami w planie",
-                "Równe karty TERAZ / NASTĘPNE, naprawiona płynność 120 Hz",
-                "Samokasujące się przypomnienia i trwalsze alarmy"
+            InfoCard("1.1.0 — Nadchodzące", listOf(
+                "Lista 4 następnych punktów planu."
             ))
         }
         item {
-            InfoCard("1.0.0 — pierwsze wydanie", listOf(
-                "Plan dnia, stołówka i ekran główny z odliczaniem",
-                "Przypomnienia 5/10/15/30 min przed z samokasowaniem o czasie wydarzenia",
-                "Ciche trwałe powiadomienie z następnym punktem planu",
-                "Pomijanie przerw w opiece (weekendy, zamknięcia)",
-                "Tryb 120 Hz, ciemny motyw premium, ekran startowy"
+            InfoCard("1.0.0 — start", listOf(
+                "Plan, stołówka, odliczanie i przypomnienia."
             ))
         }
     }
