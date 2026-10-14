@@ -43,6 +43,24 @@ sealed interface UpdateState {
     data class Error(val message: String) : UpdateState
 }
 
+/** Jaki transport niesie sieć — żeby karta mówiła wprost, czego brakuje. */
+enum class ConnectionKind { NONE, WIFI, CELLULAR, OTHER }
+
+fun connectionKind(context: Context): ConnectionKind {
+    return try {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val net = cm.activeNetwork ?: return ConnectionKind.NONE
+        val caps = cm.getNetworkCapabilities(net) ?: return ConnectionKind.NONE
+        when {
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> ConnectionKind.WIFI
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> ConnectionKind.CELLULAR
+            else -> ConnectionKind.OTHER
+        }
+    } catch (_: Exception) {
+        ConnectionKind.NONE
+    }
+}
+
 fun isOnline(context: Context): Boolean {
     return try {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

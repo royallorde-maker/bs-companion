@@ -136,6 +136,8 @@ import com.bscompanion.app.update.installApkFile
 import com.bscompanion.app.update.queryDownloadStatus
 import com.bscompanion.app.update.cancelDownload
 import com.bscompanion.app.update.DlState
+import com.bscompanion.app.update.ConnectionKind
+import com.bscompanion.app.update.connectionKind
 import com.bscompanion.app.update.rememberIsOnline
 import java.time.Duration
 import java.time.LocalDate
@@ -1785,6 +1787,13 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.29.0 — szczera sieć", listOf(
+                "Karta mówi wprost: brak Wi-Fi/danych albo połączenie bez netu",
+                "Po powrocie sieci apka sprawdza sama",
+                "Treść i alarmy bez zmian"
+            ))
+        }
+        item {
             InfoCard("1.28.0 — oddech i zegar", listOf(
                 "Więcej powietrza nad przyciskiem Sprawdź",
                 "Zegar tabularny — zmiana minut nie trzęsie cyframi",
@@ -2098,6 +2107,8 @@ fun UpdateCard() {
         avail?.let { queryDownloadStatus(context, it.versionName) }
     }
     val downloading = dl?.state == DlState.RUNNING
+    // Rodzaj łącza do szczerego komunikatu: brak Wi-Fi/danych vs dziwne Wi-Fi.
+    val kind = remember(online, resumeTick) { connectionKind(context) }
     LaunchedEffect(avail?.versionName, downloading) {
         // Sondowanie postępu tylko w trakcie pobierania; reszta stanów stoi.
         if (downloading) {
@@ -2125,7 +2136,11 @@ fun UpdateCard() {
                         UpdateState.Idle, UpdateState.Checking -> "Sprawdzanie…"
                         is UpdateState.Available -> "Dostępna ${s.info.versionName}" + if (s.info.force) " — wymagana" else ""
                         UpdateState.UpToDate -> "Masz najnowszą wersję"
-                        UpdateState.Offline -> "Brak połączenia — nie można sprawdzić"
+                        UpdateState.Offline -> if (kind == ConnectionKind.NONE) {
+                            "Brak Wi-Fi i danych — podłącz się, apka sprawdzi sama"
+                        } else {
+                            "Połączenie bez internetu — nie można sprawdzić"
+                        }
                         is UpdateState.Error -> "Nie sprawdzono: ${s.message}"
                     },
                     style = MaterialTheme.typography.bodySmall,

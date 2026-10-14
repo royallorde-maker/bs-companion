@@ -1,8 +1,8 @@
 {
-  "versionCode": 34,
-  "versionName": "1.28.0",
+  "versionCode": 35,
+  "versionName": "1.29.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.28.0 — oddech nad Sprawdź + tabularny zegar bez trzęsienia (treść bez zmian)",
+  "changelog": "1.29.0 — szczera sieć: karta mówi, czy brak Wi-Fi/danych, czy netu (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T11:37:03Z"
+  "publishedAt": "2026-10-14T11:41:13Z"
 }
