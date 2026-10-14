@@ -40,12 +40,15 @@ private val AppTypography = Typography().let { t ->
     )
 }
 
-/** Cztery motywy do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
+/** Siedem motywów do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
 enum class AppTheme(val label: String, val darkBars: Boolean, val windowBg: Long) {
     MONO("Mono", true, 0xFF000000),
     GRAFIT("Grafit", true, 0xFF131316),
     MLEKO("Mleko", false, 0xFFF1F1EC),
-    CANDY("Cukierek", true, 0xFF1A0E14)
+    CANDY("Cukierek", true, 0xFF1A0E14),
+    BURSZTYN("Bursztyn", true, 0xFF171208),
+    LAS("Las", true, 0xFF0C1510),
+    LAWENDA("Lawenda", true, 0xFF14101C)
 }
 
 fun appThemeOf(name: String?): AppTheme = try {
@@ -206,6 +209,120 @@ private val CandyScheme = darkColorScheme(
     surfaceDim = Color(0xFF12070C)
 )
 
+// Bursztyn: miodowy akcent na prawie czarnej kawie. Ciemne bary.
+private val BursztynScheme = darkColorScheme(
+    primary = Color(0xFFFFC15C),
+    onPrimary = Color(0xFF3A2200),
+    primaryContainer = Color(0xFF4A2E0A),
+    onPrimaryContainer = Color(0xFFFFE3B3),
+    secondary = Color(0xFFE0A44A),
+    secondaryContainer = Color(0xFF2E1F0C),
+    onSecondaryContainer = Color(0xFFFFE3B3),
+    tertiary = Color(0xFFD8B36A),
+    tertiaryContainer = Color(0xFF33230F),
+    onTertiaryContainer = Color(0xFFFFEFD4),
+    background = Color(0xFF171208),
+    onBackground = Color(0xFFFFEFD4),
+    surface = Color(0xFF171208),
+    onSurface = Color(0xFFFFEFD4),
+    surfaceVariant = Color(0xFF201812),
+    onSurfaceVariant = Color(0xFFC9AE7E),
+    surfaceContainerLowest = Color(0xFF0F0B05),
+    surfaceContainerLow = Color(0xFF171208),
+    surfaceContainer = Color(0xFF201812),
+    surfaceContainerHigh = Color(0xFF2A2013),
+    surfaceContainerHighest = Color(0xFF362917),
+    outline = Color(0xFF5C4A2E),
+    outlineVariant = Color(0xFF33270F),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFFFFC15C),
+    inverseSurface = Color(0xFFFFEFD4),
+    inverseOnSurface = Color(0xFF171208),
+    inversePrimary = Color(0xFF7A5210),
+    surfaceBright = Color(0xFF362917),
+    surfaceDim = Color(0xFF0F0B05)
+)
+
+// Las: leśna zieleń na ciemnym mchu. Ciemne bary.
+private val LasScheme = darkColorScheme(
+    primary = Color(0xFF9BE2A8),
+    onPrimary = Color(0xFF0B3D1F),
+    primaryContainer = Color(0xFF1D4A2A),
+    onPrimaryContainer = Color(0xFFD2F2D6),
+    secondary = Color(0xFF8CC49A),
+    secondaryContainer = Color(0xFF122019),
+    onSecondaryContainer = Color(0xFFD2F2D6),
+    tertiary = Color(0xFFA9C7AE),
+    tertiaryContainer = Color(0xFF1A2B20),
+    onTertiaryContainer = Color(0xFFE4F2E6),
+    background = Color(0xFF0C1510),
+    onBackground = Color(0xFFE4F2E6),
+    surface = Color(0xFF0C1510),
+    onSurface = Color(0xFFE4F2E6),
+    surfaceVariant = Color(0xFF122019),
+    onSurfaceVariant = Color(0xFFA9C7AE),
+    surfaceContainerLowest = Color(0xFF070D09),
+    surfaceContainerLow = Color(0xFF0C1510),
+    surfaceContainer = Color(0xFF122019),
+    surfaceContainerHigh = Color(0xFF182720),
+    surfaceContainerHighest = Color(0xFF1F3129),
+    outline = Color(0xFF33473A),
+    outlineVariant = Color(0xFF1B2A20),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFF9BE2A8),
+    inverseSurface = Color(0xFFE4F2E6),
+    inverseOnSurface = Color(0xFF0C1510),
+    inversePrimary = Color(0xFF2E6B3C),
+    surfaceBright = Color(0xFF1F3129),
+    surfaceDim = Color(0xFF070D09)
+)
+
+// Lawenda: fiolet na ciemnej śliwce. Ciemne bary.
+private val LawendaScheme = darkColorScheme(
+    primary = Color(0xFFD3B8FF),
+    onPrimary = Color(0xFF35145E),
+    primaryContainer = Color(0xFF472A76),
+    onPrimaryContainer = Color(0xFFEBDDFF),
+    secondary = Color(0xFFBFA3EC),
+    secondaryContainer = Color(0xFF221A33),
+    onSecondaryContainer = Color(0xFFEBDDFF),
+    tertiary = Color(0xFFE0A6D5),
+    tertiaryContainer = Color(0xFF3A1E38),
+    onTertiaryContainer = Color(0xFFF5D9FF),
+    background = Color(0xFF14101C),
+    onBackground = Color(0xFFF0E9FB),
+    surface = Color(0xFF14101C),
+    onSurface = Color(0xFFF0E9FB),
+    surfaceVariant = Color(0xFF1B1626),
+    onSurfaceVariant = Color(0xFFC2B3D9),
+    surfaceContainerLowest = Color(0xFF0D0A13),
+    surfaceContainerLow = Color(0xFF14101C),
+    surfaceContainer = Color(0xFF1B1626),
+    surfaceContainerHigh = Color(0xFF241D33),
+    surfaceContainerHighest = Color(0xFF2F2642),
+    outline = Color(0xFF4A3D63),
+    outlineVariant = Color(0xFF2A2138),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFFD3B8FF),
+    inverseSurface = Color(0xFFF0E9FB),
+    inverseOnSurface = Color(0xFF14101C),
+    inversePrimary = Color(0xFF5F3FA3),
+    surfaceBright = Color(0xFF2F2642),
+    surfaceDim = Color(0xFF0D0A13)
+)
+
 @Composable
 fun BSCompanionTheme(
     theme: AppTheme = AppTheme.MONO,
@@ -216,6 +333,9 @@ fun BSCompanionTheme(
         AppTheme.GRAFIT -> GrafitScheme
         AppTheme.MLEKO -> MlekoScheme
         AppTheme.CANDY -> CandyScheme
+        AppTheme.BURSZTYN -> BursztynScheme
+        AppTheme.LAS -> LasScheme
+        AppTheme.LAWENDA -> LawendaScheme
     }
     MaterialTheme(colorScheme = scheme, typography = AppTypography, content = content)
 }

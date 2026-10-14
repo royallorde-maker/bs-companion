@@ -505,8 +505,9 @@ def g_source() -> None:
     dx = (MAIN / "res" / "xml" / "data_extraction_rules.xml").read_text(encoding="utf-8")
     check("D2D excludes bs_fired", dx.count("bs_fired.xml") == 2)
     th = src("java/com/bscompanion/app/ui/theme/Theme.kt")
-    check("four themes mono/grafit/mleko/cukierek", all(x in th for x in
-          ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme", "CandyScheme"))
+    check("seven themes mono..lawenda", all(x in th for x in
+          ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme", "CandyScheme",
+           "BursztynScheme", "LasScheme", "LawendaScheme"))
           and "verticalGradient" not in th)
     check("semester countdown on Today", "SemesterCountdown" in bs
           and "fun semesterEnd" in bs and "lastInMonth" in bs)

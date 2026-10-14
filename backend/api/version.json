@@ -1,8 +1,8 @@
 {
-  "versionCode": 57,
-  "versionName": "1.51.0",
+  "versionCode": 58,
+  "versionName": "1.52.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.51.0 — O aplikacji na górze Ustawień",
+  "changelog": "1.52.0 — trzy nowe motywy: Bursztyn, Las, Lawenda",
   "force": false,
-  "publishedAt": "2026-10-14T18:30:00Z"
+  "publishedAt": "2026-10-14T18:45:00Z"
 }

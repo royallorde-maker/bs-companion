@@ -1453,6 +1453,9 @@ fun SettingsScreen(
                                         AppTheme.GRAFIT -> Color(0xFF232329)
                                         AppTheme.MLEKO -> Color(0xFFF1F1EC)
                                         AppTheme.CANDY -> Color(0xFFFFB1C8)
+                                        AppTheme.BURSZTYN -> Color(0xFFFFC15C)
+                                        AppTheme.LAS -> Color(0xFF9BE2A8)
+                                        AppTheme.LAWENDA -> Color(0xFFD3B8FF)
                                     }
                                 )
                                 .border(
@@ -2053,6 +2056,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.52.0 — trzy nowe motywy", listOf(
+                "Bursztyn, Las i Lawenda w Ustawieniach.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.51.0 — o aplikacji na górze", listOf(
