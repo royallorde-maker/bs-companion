@@ -1291,7 +1291,7 @@ private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modif
 
 /** Nagłówek zakładki w kolorze primary — te same napisy, nowa oprawa. */
 @Composable
-fun TabHero(title: String, subtitle: String) {
+fun TabHero(title: String, subtitle: String = "") {
     // Płaski kolor primary — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
     Surface(
@@ -1308,14 +1308,16 @@ fun TabHero(title: String, subtitle: String) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = onHero.copy(alpha = 0.72f),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (subtitle.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = onHero.copy(alpha = 0.72f),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -1326,16 +1328,14 @@ fun SettingsScreen(
     appTheme: String,
     onThemeChange: (String) -> Unit
 ) {
+    val versionName = com.bscompanion.app.BuildConfig.VERSION_NAME
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            TabHero(
-                "Ustawienia",
-                "Motyw aktywny od razu."
-            )
+            TabHero("Ustawienia")
         }
         item {
             BsSurface(Modifier.fillMaxWidth()) {
@@ -1412,25 +1412,33 @@ fun SettingsScreen(
         item {
             BsSurface(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconDot(Icons.Filled.Settings, boxSize = 52.dp, iconSize = 28.dp)
+                    IconDot(Icons.Filled.MenuBook, boxSize = 52.dp, iconSize = 28.dp)
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "Więcej wkrótce",
+                            "O aplikacji",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            "Testowy placeholder — tu pojawią się ustawienia.",
+                            "Internauta • wersja $versionName",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 3,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Towarzysz mieszkańca Internatu ZST Szczecinek. Plan dnia, stołówka i przypomnienia o wydarzeniach — zawsze pod ręką.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -1926,7 +1934,6 @@ fun MealCard(title: String, hours: String, desc: String, icon: ImageVector = Ico
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChangelogScreen() {
-    val versionName = com.bscompanion.app.BuildConfig.VERSION_NAME
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1943,32 +1950,11 @@ fun ChangelogScreen() {
         item {
             UpdateCard()
         }
-        // O APLIKACJI POD aktualizacją: karta About + autor, pod nią historia.
         item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconDot(Icons.Filled.MenuBook, boxSize = 52.dp, iconSize = 28.dp)
-                    Spacer(Modifier.width(16.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("O aplikacji", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            "Internauta • wersja $versionName",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Towarzysz mieszkańca Internatu ZST Szczecinek. Plan dnia, stołówka i przypomnienia o wydarzeniach — zawsze pod ręką.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
+            InfoCard("1.45.0 — Ustawienia rosną", listOf(
+                "O aplikacji przeprowadzone do Ustawień.",
+                "Zmiana motywu wjeżdża z boku."
+            ))
         }
         item {
             InfoCard("1.44.0 — audyt naprawczy", listOf(
