@@ -63,7 +63,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
@@ -74,8 +77,12 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Weekend
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
@@ -165,6 +172,26 @@ fun categoryIcon(cat: EventCategory): ImageVector = when (cat) {
     EventCategory.DUTY -> Icons.Filled.CheckCircle
     EventCategory.FREE -> Icons.Filled.WbSunny
     EventCategory.ORG -> Icons.Filled.Schedule
+}
+
+/** Ikona konkretnego wydarzenia — żeby wiersze nie wyglądały identycznie. */
+fun eventIcon(e: DormEvent): ImageVector = when (e.id) {
+    "pobudka" -> Icons.Filled.Alarm
+    "sniadanie" -> Icons.Filled.FreeBreakfast
+    "wyjscie" -> Icons.Filled.School
+    "obiad" -> Icons.Filled.LunchDining
+    "czas_wolny_1" -> Icons.Filled.Weekend
+    "nauka" -> Icons.Filled.MenuBook
+    "kolacja" -> Icons.Filled.Restaurant
+    "zajecia_wych" -> Icons.Filled.Group
+    "powrot" -> Icons.Filled.Home
+    "toaleta" -> Icons.Filled.WaterDrop
+    "cisza" -> Icons.Filled.Bedtime
+    "czas_wolny_2" -> Icons.Filled.WbSunny
+    "czas_wolny_3" -> Icons.Filled.FlashOn
+    "czas_wolny_4" -> Icons.Filled.Book
+    "czas_wolny_5" -> Icons.Filled.Star
+    else -> categoryIcon(e.category)
 }
 
 fun formatCountdown(now: LocalDateTime, target: LocalDateTime): String {
@@ -776,7 +803,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                 } else if (current != null) {
                     Ring(eventProgress(now.toLocalTime(), current)) {
                         Icon(
-                            categoryIcon(current.category), null,
+                            eventIcon(current), null,
                             Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -840,7 +867,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                     // Kotwica jak Ring obok + ikona z kategorii.
                     Ring(progress = null) {
                         Icon(
-                            categoryIcon(next.category), null,
+                            eventIcon(next), null,
                             Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -960,7 +987,7 @@ fun HoldingSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        categoryIcon(e.category), null,
+                        eventIcon(e), null,
                         Modifier.size(23.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -1541,8 +1568,8 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     ) {
         Row(Modifier.fluentScale(rowScale).padding(20.dp), verticalAlignment = Alignment.Top) {
             // Ikona zawsze w tym samym kole — żaden wiersz nie "pływa".
-            if (isCurrent) IconDotOnContainer(categoryIcon(e.category))
-            else IconDot(categoryIcon(e.category))
+            if (isCurrent) IconDotOnContainer(eventIcon(e))
+            else IconDot(eventIcon(e))
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -1816,6 +1843,12 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.31.0 — własne ikony", listOf(
+                "Każde wydarzenie ma własną ikonę zamiast jednej na kategorię",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.30.0 — luki to Czas wolny", listOf(
