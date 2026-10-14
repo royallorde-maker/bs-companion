@@ -1,8 +1,8 @@
 {
-  "versionCode": 54,
-  "versionName": "1.48.0",
+  "versionCode": 55,
+  "versionName": "1.49.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.48.0 — licznik dni do końca zajęć na Dziś",
+  "changelog": "1.49.0 — stabilizacja: audyt dwóch patroli",
   "force": false,
-  "publishedAt": "2026-10-14T17:45:00Z"
+  "publishedAt": "2026-10-14T18:00:00Z"
 }

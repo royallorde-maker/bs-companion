@@ -201,23 +201,25 @@ class MainActivity : ComponentActivity() {
 
     private fun requestNotifPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Jednorazowa migracja prefs (blocking commit) — poza UI thread.
-            // Reszta czyta SharedPreferences z pamięci, więc jest tania.
-            Thread {
-                try { Prefs.migrateIfNeeded(this) } catch (_: Exception) { }
-            }.start()
             val granted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
-            // Pytamy tylko raz — przy trwałej odmowie wracamy przez wiersz w ustawieniach.
-            val asked = try { Prefs.isNotifAsked(this) } catch (_: Exception) { false }
-            if (!granted && !asked) {
-                try {
-                    notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } catch (e: Exception) {
-                    android.util.Log.w("MainActivity", "permission launch failed", e)
+            if (granted) return
+            // Jednorazowa migracja prefs (blocking commit) + odczyt flagi — poza UI thread.
+            // Reszta czyta SharedPreferences z pamięci, więc jest tania.
+            Thread {
+                val asked = try { Prefs.isNotifAsked(this) } catch (_: Exception) { false }
+                // Pytamy tylko raz — przy trwałej odmowie wracamy przez wiersz w ustawieniach.
+                if (!asked) {
+                    runOnUiThread {
+                        try {
+                            notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } catch (e: Exception) {
+                            android.util.Log.w("MainActivity", "permission launch failed", e)
+                        }
+                    }
                 }
-            }
+            }.start()
         }
     }
 

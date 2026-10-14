@@ -252,6 +252,17 @@ private fun apkFile(context: Context, versionName: String): File {
     return File(dir, "bs-companion-$safe.apk")
 }
 
+/** Plik udaje skończone pobranie? Parsowanie pakietu odrzuca ucięte/obce pliki —
+ *  te wracają jako MISSING i apka pobiera od nowa zamiast sypać instalatorem. */
+private fun isIntactApk(context: Context, f: File): Boolean {
+    return try {
+        if (!f.exists() || f.length() <= 0) false
+        else context.packageManager.getPackageArchiveInfo(f.absolutePath, 0) != null
+    } catch (_: Exception) {
+        false
+    }
+}
+
 /** Pyta DownloadManager o stan NASZEGO pobrania; spójne z plikiem na dysku. */
 fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
     return try {
@@ -260,13 +271,13 @@ fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
         // (kasuje je dopiero start nowego pobierania, żeby "Zainstaluj" działało wstecz).
         if (prefs.getString(KEY_DL_VERSION, "") != versionName) {
             val f = apkFile(context, versionName)
-            return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+            return if (isIntactApk(context, f)) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
             else DownloadStatus(DlState.MISSING)
         }
         val id = prefs.getLong(KEY_DL_ID, -1L)
         if (id < 0) {
             val f = apkFile(context, versionName)
-            return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+            return if (isIntactApk(context, f)) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
             else DownloadStatus(DlState.MISSING)
         }
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -274,9 +285,9 @@ fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
         try {
             if (!c.moveToFirst()) {
                 // Rekord zniknął z DownloadManagera (reboot/wyczyszczone dane):
-                // plik na dysku nadal może być dobry.
+                // plik na dysku nadal może być dobry — ale tylko gdy się parsuje.
                 val f = apkFile(context, versionName)
-                return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+                return if (isIntactApk(context, f)) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
                 else DownloadStatus(DlState.MISSING)
             }
             val status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))

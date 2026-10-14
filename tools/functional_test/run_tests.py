@@ -192,7 +192,9 @@ def format_countdown(now: datetime, target: datetime) -> str:
 
 def event_progress(now: time, start: time, end: time | None):
     if end is None:
-        return None
+        # Punktowe jak 15 min obecności (Kotlin: e.end ?: e.start.plusMinutes(15)).
+        m = start.minute + 15
+        end = time((start.hour + m // 60) % 24, m % 60)
     s = start.hour * 3600 + start.minute * 60
     en = end.hour * 3600 + end.minute * 60
     n = now.hour * 3600 + now.minute * 60
@@ -364,7 +366,8 @@ def g_progress() -> None:
     section("eventProgress")
     check("half of 13:30-15:30", event_progress(time(14, 30), time(13, 30), time(15, 30)) == 0.5)
     check("start = 0", event_progress(time(13, 30), time(13, 30), time(15, 30)) == 0.0)
-    check("point event None", event_progress(time(7, 55), time(7, 55), None) is None)
+    check("point event starts at 0", event_progress(time(7, 55), time(7, 55), None) == 0.0)
+    check("point event mid ~7/15", abs(event_progress(time(8, 2), time(7, 55), None) - 7 / 15) < 1e-9)
     p = event_progress(time(2, 0), time(22, 0), time(6, 0))
     check("overnight cisza 02:00 = 0.5", abs(p - 0.5) < 1e-9, str(p))
     check("clamped >= 0", event_progress(time(6, 0), time(13, 30), time(15, 30)) == 0.0)
@@ -451,7 +454,7 @@ def g_source() -> None:
     check("debounce coalesces (no drop)", "coalescedPending" in es and "if (coalescedPending) return" in es)
     check("force clears coalesced (no double burst)", "coalescedPending = false" in es)
     check("scheduler skips non-notify, UI keeps them", "if (!event.notifyDefault) continue" in es)
-    check("grace clamp fires once per event", "isGraceClamped" in es and "markGraceClamped" in es)
+    check("grace clamp fires once per event", "isGraceClamped" in es and "markGraceClamped" in es and "graceDeadline" in es)
     check("wylacznie przypomnienia (brak on-time)", "isReminder = false" not in es)
     check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
     check("plasko: zero gradientow + pigulka", "verticalGradient" not in bs and "Brush" not in bs
@@ -486,7 +489,7 @@ def g_source() -> None:
     check("canExact sync init", "mutableStateOf(ExactAlarmHelper.canSchedule(context))" in bs)
     check("bars follow app theme, not system", "appThemeOf" in ma and "isSystemInDarkTheme" not in ma)
     check("refresh keeps resolution", "sameSize" in ma)
-    check("permission migrates first", "Prefs.migrateIfNeeded(this)" in ma)
+    check("permission migrates first", "Prefs.isNotifAsked(this)" in ma and "runOnUiThread" in ma)
     check("boot null-action guard", "intent.action ?: return" in er or "intent.action ?: return" in src("java/com/bscompanion/app/notifications/BootReceiver.kt"))
     check("worker no infinite retry", "Result.failure()" in src("java/com/bscompanion/app/notifications/RescheduleWorker.kt"))
 
@@ -497,7 +500,7 @@ def g_source() -> None:
           ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme", "CandyScheme"))
           and "verticalGradient" not in th)
     check("semester countdown on Today", "SemesterCountdown" in bs
-          and "SemesterEnd = LocalDate.of(2027, 6, 25)" in bs)
+          and "fun semesterEnd" in bs and "lastInMonth" in bs)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")
     check("kotlin-test aligned", "kotlin-test:2.0.21" in bg)
     mf = (MAIN / "AndroidManifest.xml").read_text(encoding="utf-8")

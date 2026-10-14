@@ -296,6 +296,7 @@ object EventScheduler {
     /** Znaczniki jednorazowej łaski: alarmKey -> startMs wydarzenia. */
     private const val GRACE_FILE = "bs_fired"
     private const val GRACE_PREFIX = "grace_"
+    private const val GRACE_FIRE_PREFIX = "grace_fire_"
 
     private fun isGraceClamped(context: Context, alarmKey: String, startMs: Long): Boolean {
         return try {
@@ -306,11 +307,21 @@ object EventScheduler {
         }
     }
 
-    private fun markGraceClamped(context: Context, alarmKey: String, startMs: Long) {
+    private fun markGraceClamped(context: Context, alarmKey: String, startMs: Long, fireMs: Long = 0L) {
         try {
             context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE).edit()
-                .putLong(GRACE_PREFIX + alarmKey, startMs).apply()
+                .putLong(GRACE_PREFIX + alarmKey, startMs)
+                .putLong(GRACE_FIRE_PREFIX + alarmKey, fireMs).apply()
         } catch (_: Exception) { }
+    }
+
+    private fun graceDeadline(context: Context, alarmKey: String): Long {
+        return try {
+            context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE)
+                .getLong(GRACE_FIRE_PREFIX + alarmKey, 0L)
+        } catch (_: Exception) {
+            0L
+        }
     }
 
     private fun pruneGraceMarkers(context: Context, nowMs: Long) {
@@ -348,9 +359,17 @@ object EventScheduler {
         // strzel za sekundę, ale TYLKO RAZ na wystąpienie — każde kolejne
         // rescheduleAsync w tym oknie by stawiał budzik od nowa (patrz raport QA).
         val fireMs = if (millis <= nowMs) {
-            if (isGraceClamped(context, uri, startMs)) return null
-            markGraceClamped(context, uri, startMs)
-            nowMs + 1_000
+            if (isGraceClamped(context, uri, startMs)) {
+                // Alarm łaski mógł paść w cancelAll z równoległego force-reschedule
+                // (okno ~1 s): dozbrój, ale tylko póki wisi jego termin — po nim zero re-armów.
+                val deadline = graceDeadline(context, uri)
+                if (deadline <= 0L || nowMs > deadline + 5_000) return null
+                deadline
+            } else {
+                val fire = nowMs + 1_000
+                markGraceClamped(context, uri, startMs, fire)
+                fire
+            }
         } else millis
 
         val requestCode = requestCodeFor(eventId, date, offsetMinutes, isReminder)

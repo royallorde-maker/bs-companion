@@ -1099,6 +1099,12 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
             center = "Zakończone"
             caption = "wydarzenie minęło"
         }
+        endDT == null -> {
+            // Punktowe (wyjście/powrót): po starcie nie ma już czego odliczać.
+            progress = 1f
+            center = "Zakończone"
+            caption = "wydarzenie minęło"
+        }
         else -> {
             val doneSec = Duration.between(startDT, now).seconds.coerceIn(0, totalSec)
             progress = doneSec / totalSec.toFloat()
@@ -1503,14 +1509,22 @@ fun BsSurface(
     )
 }
 
-/** Licznik do końca zajęć: czysta matematyka dat, zero tykania i zero stanu.
- *  Koniec roku 2026/27 = ostatni piątek czerwca (25.06.2027). */
-private val SemesterEnd = LocalDate.of(2027, 6, 25)
+/** Ostatni piątek czerwca danego roku — ustawowy koniec zajęć. */
+private fun lastFridayOfJune(year: Int): LocalDate =
+    LocalDate.of(year, 6, 30)
+        .with(java.time.temporal.TemporalAdjusters.lastInMonth(java.time.DayOfWeek.FRIDAY))
+
+/** Koniec bieżącego roku szkolnego: tegoroczny, a po nim przyszłoroczny. */
+private fun semesterEnd(today: LocalDate): LocalDate {
+    val thisYear = lastFridayOfJune(today.year)
+    return if (today.isAfter(thisYear)) lastFridayOfJune(today.year + 1) else thisYear
+}
 
 @Composable
 fun SemesterCountdown() {
     // Bez remember: LocalDate.now() to grosze, a po północy wynik świeży bez roboty.
-    val days = ChronoUnit.DAYS.between(LocalDate.now(), SemesterEnd)
+    val today = LocalDate.now()
+    val days = ChronoUnit.DAYS.between(today, semesterEnd(today))
     val text = when {
         days > 1 -> "Do końca zajęć: $days dni"
         days == 1L -> "Do końca zajęć: 1 dzień"
@@ -2039,6 +2053,14 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.49.0 — stabilizacja", listOf(
+                "Szczegóły punktu już nie kraszują.",
+                "Licznik do wakacji działa co roku.",
+                "Zainstaluj nie pokazuje uciętego pliku.",
+                "Łaska alarmu wraca po szybkim przeplanowaniu."
+            ))
         }
         item {
             InfoCard("1.48.0 — licznik do wakacji", listOf(
