@@ -1,8 +1,8 @@
 {
-  "versionCode": 39,
-  "versionName": "1.33.0",
+  "versionCode": 40,
+  "versionName": "1.34.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.33.0 — ikona notesu pomniejszona, maska launchera nic nie ucina",
+  "changelog": "1.34.0 — nowe kroje: apka w Space Grotesk, zegar w Clockerze",
   "force": false,
-  "publishedAt": "2026-10-14T12:48:55Z"
+  "publishedAt": "2026-10-14T13:05:53Z"
 }

@@ -138,6 +138,7 @@ import com.bscompanion.app.notifications.ExactAlarmHelper
 import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.findActivity
+import com.bscompanion.app.ui.theme.Clocker
 import com.bscompanion.app.update.UpdateState
 import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
@@ -695,8 +696,8 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                                 Text(
                                     c.toString(),
                                     style = MaterialTheme.typography.displayLarge.copy(
-                                        letterSpacing = (-1.5).sp,
-                                        fontFeatureSettings = "tnum"
+                                        fontFamily = Clocker,
+                                        letterSpacing = 0.sp
                                     ),
                                     fontWeight = FontWeight.Bold,
                                     color = onHero,
@@ -1843,6 +1844,12 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.34.0 — nowe kroje", listOf(
+                "Cała apka w Space Grotesk.",
+                "Zegar w Clockerze."
+            ))
         }
         item {
             InfoCard("1.33.0 — ikona mieści się", listOf(

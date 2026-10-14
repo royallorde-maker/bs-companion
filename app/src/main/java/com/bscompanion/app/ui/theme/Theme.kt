@@ -2,8 +2,42 @@ package com.bscompanion.app.ui.theme
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import com.bscompanion.app.R
+
+// Space Grotesk w całej apce (OFL, w res/font); Clocker tylko do zegara.
+private val SpaceGrotesk = FontFamily(
+    Font(R.font.space_grotesk_regular, FontWeight.Normal),
+    Font(R.font.space_grotesk_medium, FontWeight.Medium),
+    Font(R.font.space_grotesk_bold, FontWeight.Bold)
+)
+
+val Clocker = FontFamily(Font(R.font.clocker, FontWeight.Normal))
+
+private val AppTypography = Typography().let { t ->
+    Typography(
+        displayLarge = t.displayLarge.copy(fontFamily = SpaceGrotesk),
+        displayMedium = t.displayMedium.copy(fontFamily = SpaceGrotesk),
+        displaySmall = t.displaySmall.copy(fontFamily = SpaceGrotesk),
+        headlineLarge = t.headlineLarge.copy(fontFamily = SpaceGrotesk),
+        headlineMedium = t.headlineMedium.copy(fontFamily = SpaceGrotesk),
+        headlineSmall = t.headlineSmall.copy(fontFamily = SpaceGrotesk),
+        titleLarge = t.titleLarge.copy(fontFamily = SpaceGrotesk),
+        titleMedium = t.titleMedium.copy(fontFamily = SpaceGrotesk),
+        titleSmall = t.titleSmall.copy(fontFamily = SpaceGrotesk),
+        bodyLarge = t.bodyLarge.copy(fontFamily = SpaceGrotesk),
+        bodyMedium = t.bodyMedium.copy(fontFamily = SpaceGrotesk),
+        bodySmall = t.bodySmall.copy(fontFamily = SpaceGrotesk),
+        labelLarge = t.labelLarge.copy(fontFamily = SpaceGrotesk),
+        labelMedium = t.labelMedium.copy(fontFamily = SpaceGrotesk),
+        labelSmall = t.labelSmall.copy(fontFamily = SpaceGrotesk)
+    )
+}
 
 // AMOLED mono: czysta czerń + szarości + biel. Zero błękitu. Jedyny motyw.
 private val AmoledScheme = darkColorScheme(
@@ -45,5 +79,5 @@ private val AmoledScheme = darkColorScheme(
 
 @Composable
 fun BSCompanionTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = AmoledScheme, content = content)
+    MaterialTheme(colorScheme = AmoledScheme, typography = AppTypography, content = content)
 }
