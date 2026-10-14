@@ -171,12 +171,22 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
             setMimeType("application/vnd.android.package-archive")
         }
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        // Nowe pobieranie unieważnia stare: anuluj w locie + posprzątaj obce pliki.
+        // Dzięki temu v3 po v2 nie miesza rekordów ani nie zjada miejsca.
+        try {
+            val prefs = context.getSharedPreferences(PREFS_UPDATE, Context.MODE_PRIVATE)
+            val oldId = prefs.getLong(KEY_DL_ID, -1L)
+            if (oldId >= 0) {
+                try { dm.remove(oldId) } catch (_: Exception) { }
+            }
+        } catch (_: Exception) { }
+        deleteStaleApks(context, keepVersion = info.versionName)
         // Zapamiętaj id — "Zainstaluj" pyta DownloadManager o STAN zamiast zgadywać po rozmiarze.
         val id = dm.enqueue(req)
         try {
-            context.getSharedPreferences("bs_update", Context.MODE_PRIVATE).edit()
-                .putLong("dl_id", id)
-                .putString("dl_version", info.versionName)
+            context.getSharedPreferences(PREFS_UPDATE, Context.MODE_PRIVATE).edit()
+                .putLong(KEY_DL_ID, id)
+                .putString(KEY_DL_VERSION, info.versionName)
                 .apply()
         } catch (_: Exception) { }
         android.widget.Toast.makeText(context, "Pobieranie ${info.versionName}…", android.widget.Toast.LENGTH_SHORT).show()
@@ -194,25 +204,117 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
     }
 }
 
-/** Prawda, gdy DownloadManager zgłasza SUCCESS dla naszego pobrania tej wersji. */
-private fun downloadSucceeded(context: Context, versionName: String): Boolean {
+/** Stan lokalnego pobrania danej wersji — niezależny od version.json. */
+enum class DlState { MISSING, RUNNING, SUCCESS, FAILED }
+
+data class DownloadStatus(
+    val state: DlState,
+    val downloaded: Long = 0L,
+    val total: Long = -1L
+) {
+    /** Ułamek 0..1 albo null, gdy rozmiar nieznany (pasek nieokreślony). */
+    val fraction: Float?
+        get() = if (total > 0) (downloaded.toFloat() / total).coerceIn(0f, 1f) else null
+}
+
+private const val PREFS_UPDATE = "bs_update"
+private const val KEY_DL_ID = "dl_id"
+private const val KEY_DL_VERSION = "dl_version"
+
+private fun apkFile(context: Context, versionName: String): File {
+    val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
+    return File(dir, "bs-companion-$versionName.apk")
+}
+
+/** Pyta DownloadManager o stan NASZEGO pobrania; spójne z plikiem na dysku. */
+fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
     return try {
-        val prefs = context.getSharedPreferences("bs_update", Context.MODE_PRIVATE)
-        if (prefs.getString("dl_version", "") != versionName) return false
-        val id = prefs.getLong("dl_id", -1L)
-        if (id < 0) return false
+        val prefs = context.getSharedPreferences(PREFS_UPDATE, Context.MODE_PRIVATE)
+        // Nowsza wersja w version.json unieważnia stare pobranie — bez kasowania pliku
+        // (kasuje je dopiero start nowego pobierania, żeby "Zainstaluj" działało wstecz).
+        if (prefs.getString(KEY_DL_VERSION, "") != versionName) {
+            val f = apkFile(context, versionName)
+            return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+            else DownloadStatus(DlState.MISSING)
+        }
+        val id = prefs.getLong(KEY_DL_ID, -1L)
+        if (id < 0) {
+            val f = apkFile(context, versionName)
+            return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+            else DownloadStatus(DlState.MISSING)
+        }
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val c = dm.query(DownloadManager.Query().setFilterById(id))
         try {
-            if (!c.moveToFirst()) return false
+            if (!c.moveToFirst()) {
+                // Rekord zniknął z DownloadManagera (reboot/wyczyszczone dane):
+                // plik na dysku nadal może być dobry.
+                val f = apkFile(context, versionName)
+                return if (f.exists() && f.length() > 0) DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+                else DownloadStatus(DlState.MISSING)
+            }
             val status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-            status == DownloadManager.STATUS_SUCCESSFUL
+            when (status) {
+                DownloadManager.STATUS_SUCCESSFUL -> {
+                    val f = apkFile(context, versionName)
+                    if (f.exists() && f.length() > 0) {
+                        DownloadStatus(DlState.SUCCESS, f.length(), f.length())
+                    } else {
+                        // Sukces w bazie, pliku brak (ręcznie skasowany) — wracamy do pobierania.
+                        DownloadStatus(DlState.MISSING)
+                    }
+                }
+                DownloadManager.STATUS_FAILED -> DownloadStatus(DlState.FAILED)
+                else -> {
+                    val done = try {
+                        c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                    } catch (_: Exception) { 0L }
+                    val total = try {
+                        c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                    } catch (_: Exception) { -1L }
+                    DownloadStatus(DlState.RUNNING, done.coerceAtLeast(0L), total)
+                }
+            }
         } finally {
             try { c.close() } catch (_: Exception) { }
         }
     } catch (_: Exception) {
-        false
+        DownloadStatus(DlState.MISSING)
     }
+}
+
+/** Anuluje bieżące pobieranie i sprząta po nim (rekord + pliki). */
+fun cancelDownload(context: Context) {
+    try {
+        val prefs = context.getSharedPreferences(PREFS_UPDATE, Context.MODE_PRIVATE)
+        val id = prefs.getLong(KEY_DL_ID, -1L)
+        if (id >= 0) {
+            try {
+                val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                dm.remove(id)
+            } catch (_: Exception) { }
+        }
+        try { prefs.edit().remove(KEY_DL_ID).remove(KEY_DL_VERSION).apply() } catch (_: Exception) { }
+        deleteStaleApks(context, keepVersion = null)
+    } catch (_: Exception) { }
+}
+
+/** Kasuje apk wszystkich wersji poza wskazaną (wołane przy starcie nowego pobierania). */
+private fun deleteStaleApks(context: Context, keepVersion: String?) {
+    try {
+        val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
+        dir.listFiles { f -> f.isFile && f.name.startsWith("bs-companion-") && f.name.endsWith(".apk") }
+            ?.forEach {
+                if (keepVersion == null || it.name != "bs-companion-$keepVersion.apk") {
+                    try { it.delete() } catch (_: Exception) { }
+                }
+            }
+    } catch (_: Exception) { }
+}
+
+/** Prawda, gdy DownloadManager zgłasza SUCCESS dla naszego pobrania tej wersji. */
+private fun downloadSucceeded(context: Context, versionName: String): Boolean {
+    return queryDownloadStatus(context, versionName).state == DlState.SUCCESS
 }
 
 /** Otwiera lokalnie pobrany apk (gdy użytkownik tapnie "Zainstaluj"). */
@@ -222,8 +324,12 @@ fun installApkFile(context: Context, versionName: String) {
         val f = File(dir, "bs-companion-$versionName.apk")
         // Najpierw STAN z DownloadManagera (zapisane id): rozmiar kłamie, bo
         // DownloadManager tworzy pusty plik docelowy już przy starcie.
-        if (!downloadSucceeded(context, versionName) && (!f.exists() || f.length() <= 0)) {
-            android.widget.Toast.makeText(context, "Plik jeszcze się pobiera", android.widget.Toast.LENGTH_SHORT).show()
+        if (!downloadSucceeded(context, versionName)) {
+            if (!f.exists()) {
+                android.widget.Toast.makeText(context, "Plik zniknął — pobierz ponownie", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                android.widget.Toast.makeText(context, "Plik jeszcze się pobiera", android.widget.Toast.LENGTH_SHORT).show()
+            }
             return
         }
         val uri = FileProvider.getUriForFile(context, context.packageName + ".provider", f)

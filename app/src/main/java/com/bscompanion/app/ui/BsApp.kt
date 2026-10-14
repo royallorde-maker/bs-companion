@@ -121,6 +121,9 @@ import com.bscompanion.app.update.UpdateState
 import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
 import com.bscompanion.app.update.installApkFile
+import com.bscompanion.app.update.queryDownloadStatus
+import com.bscompanion.app.update.cancelDownload
+import com.bscompanion.app.update.DlState
 import com.bscompanion.app.update.rememberIsOnline
 import java.time.Duration
 import java.time.LocalDate
@@ -1691,6 +1694,14 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.20.0 — pobieranie na żywo", listOf(
+                "Pasek postępu z procentem + przycisk Anuluj w trakcie pobierania",
+                "Pobrane czeka przyciskiem Zainstaluj; brak pliku wraca do Pobierz",
+                "Nowsza wersja sama proponuje się do pobrania",
+                "Pobieranie trwa w tle mimo zamknięcia apki"
+            ))
+        }
+        item {
             InfoCard("1.19.0 — porządek w papierach", listOf(
                 "README i strona statusu zgodne z kodem (AMOLED, podpis, URL-e)",
                 "Migracja prefs poza UI thread",
@@ -1929,6 +1940,29 @@ fun UpdateCard() {
         if (online && (state == UpdateState.Offline || state == UpdateState.Idle || state is UpdateState.Error)) runCheck()
     }
 
+    // Stan lokalnego pobrania dla ZNALEZIONEJ wersji: odświeżany co sekundę
+    // w trakcie pobierania + po powrocie z tła (apka mogła nie żyć).
+    val avail = (state as? UpdateState.Available)?.info
+    var dlTick by remember { mutableStateOf(0) }
+    var resumeTick by remember { mutableStateOf(0) }
+    LifecycleResumeEffect(Unit) {
+        resumeTick++
+        onPauseOrDispose { }
+    }
+    val dl = remember(avail?.versionName, dlTick, resumeTick) {
+        avail?.let { queryDownloadStatus(context, it.versionName) }
+    }
+    val downloading = dl?.state == DlState.RUNNING
+    LaunchedEffect(avail?.versionName, downloading) {
+        // Sondowanie postępu tylko w trakcie pobierania; reszta stanów stoi.
+        if (downloading) {
+            while (true) {
+                delay(1000 - System.currentTimeMillis() % 1000)
+                dlTick++
+            }
+        }
+    }
+
     BsSurface(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconDot(
@@ -1960,7 +1994,36 @@ fun UpdateCard() {
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(Modifier.fillMaxWidth())
         }
-        val avail = (state as? UpdateState.Available)?.info
+        // Pobieranie w toku: pasek + procent + Anuluj. Samo pobieranie żyje
+        // w DownloadManagerze (powiadomienie systemowe), więc trwa mimo zamknięcia apki.
+        if (downloading && dl != null) {
+            Spacer(Modifier.height(8.dp))
+            val frac = dl.fraction
+            if (frac != null) {
+                LinearProgressIndicator(
+                    progress = { frac },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Pobieranie… ${(frac * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Pobieranie…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
         if (avail != null && avail.changelog.isNotEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -1969,18 +2032,45 @@ fun UpdateCard() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        // Pobrane = tylko Instaluj. W trakcie = tylko Anuluj. Brak/porażka = Pobierz.
+        // Nowsza wersja w version.json sama wraca do Pobierz (inny versionName).
+        val downloaded = dl?.state == DlState.SUCCESS
+        if (downloaded) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Pobrano — gotowe do instalacji",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         Spacer(Modifier.height(8.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(
                 onClick = { runCheck() },
                 modifier = Modifier.heightIn(min = 48.dp)
             ) { Text(if (state == UpdateState.Checking) "Sprawdzanie…" else "Sprawdź") }
-            if (avail != null) {
+            if (avail != null && !downloaded && !downloading) {
                 FilledTonalButton(
-                    onClick = { downloadAndInstall(context, avail) },
+                    onClick = {
+                        downloadAndInstall(context, avail)
+                        dlTick++
+                    },
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) { Text("Pobierz ${avail.versionName}") }
+            }
+            if (downloading) {
                 TextButton(
+                    onClick = {
+                        cancelDownload(context)
+                        dlTick++
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) { Text("Anuluj") }
+            }
+            if (avail != null && downloaded) {
+                FilledTonalButton(
                     onClick = { installApkFile(context, avail.versionName) },
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) { Text("Zainstaluj") }

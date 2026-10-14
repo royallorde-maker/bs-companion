@@ -1,8 +1,8 @@
 {
-  "versionCode": 25,
-  "versionName": "1.19.0",
+  "versionCode": 26,
+  "versionName": "1.20.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.19.0 — porządek w papierach: docs zgodne z kodem, migracja poza UI (treść bez zmian)",
+  "changelog": "1.20.0 — pobieranie na żywo: pasek postępu, Instaluj po pobraniu, nowsze wersje same się proponują",
   "force": false,
-  "publishedAt": "2026-10-14T00:52:26Z"
+  "publishedAt": "2026-10-14T01:07:57Z"
 }
