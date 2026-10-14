@@ -1,8 +1,8 @@
 {
-  "versionCode": 33,
-  "versionName": "1.27.0",
+  "versionCode": 34,
+  "versionName": "1.28.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.27.0 — apka nazywa się Internauta (pakiet i klucz bez zmian, reinstall zbędny)",
+  "changelog": "1.28.0 — oddech nad Sprawdź + tabularny zegar bez trzęsienia (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T11:31:54Z"
+  "publishedAt": "2026-10-14T11:37:03Z"
 }

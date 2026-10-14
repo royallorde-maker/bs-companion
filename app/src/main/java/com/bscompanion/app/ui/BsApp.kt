@@ -119,6 +119,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bscompanion.app.data.DormEvent
 import com.bscompanion.app.data.DormSchedule
 import com.bscompanion.app.data.EventCategory
@@ -635,7 +636,11 @@ fun HeroCard(nowState: State<LocalDateTime>) {
             ) { animatedTime ->
                 Text(
                     animatedTime,
-                    style = MaterialTheme.typography.displayLarge,
+                    // Tabularne cyfry + ciasny tracking: zmiana minut nie trzęsie układem.
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        letterSpacing = (-1.5).sp,
+                        fontFeatureSettings = "tnum"
+                    ),
                     fontWeight = FontWeight.Bold,
                     color = onHero,
                     maxLines = 1,
@@ -1780,9 +1785,9 @@ fun ChangelogScreen() {
             }
         }
         item {
-            InfoCard("1.27.0 — Internauta", listOf(
-                "Nowa nazwa apki: launcher, nagłówki, powiadomienia",
-                "Pakiet, kanały i klucz bez zmian — aktualizacja bez reinstallu",
+            InfoCard("1.28.0 — oddech i zegar", listOf(
+                "Więcej powietrza nad przyciskiem Sprawdź",
+                "Zegar tabularny — zmiana minut nie trzęsie cyframi",
                 "Treść i alarmy bez zmian"
             ))
         }
@@ -2185,7 +2190,7 @@ fun UpdateCard() {
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(14.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FilledTonalButton(
                 onClick = { runCheck() },
