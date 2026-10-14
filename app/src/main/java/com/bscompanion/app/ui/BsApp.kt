@@ -138,7 +138,7 @@ import com.bscompanion.app.notifications.ExactAlarmHelper
 import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.findActivity
-import com.bscompanion.app.ui.theme.Clocker
+import com.bscompanion.app.ui.theme.Montserrat
 import com.bscompanion.app.update.UpdateState
 import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
@@ -696,7 +696,7 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                                 Text(
                                     c.toString(),
                                     style = MaterialTheme.typography.displayLarge.copy(
-                                        fontFamily = Clocker,
+                                        fontFamily = Montserrat,
                                         letterSpacing = 0.sp
                                     ),
                                     fontWeight = FontWeight.Bold,
@@ -1844,6 +1844,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.35.0 — zegar Montserrat", listOf(
+                "Cyfry mocne i równe."
+            ))
         }
         item {
             InfoCard("1.34.0 — nowe kroje", listOf(

@@ -17,7 +17,7 @@ private val SpaceGrotesk = FontFamily(
     Font(R.font.space_grotesk_bold, FontWeight.Bold)
 )
 
-val Clocker = FontFamily(Font(R.font.clocker, FontWeight.Normal))
+val Montserrat = FontFamily(Font(R.font.montserrat_bold, FontWeight.Bold))
 
 private val AppTypography = Typography().let { t ->
     Typography(
