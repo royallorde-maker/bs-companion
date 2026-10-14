@@ -5,18 +5,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// AMOLED: prawdziwa czerń + grafitowe tafle + spokojny błękit. Jedyny motyw.
+// AMOLED mono: czysta czerń + szarości + biel. Zero błękitu. Jedyny motyw.
 private val AmoledScheme = darkColorScheme(
-    primary = Color(0xFF8AB4F8),
-    onPrimary = Color(0xFF001233),
-    primaryContainer = Color(0xFF16283F),
-    onPrimaryContainer = Color(0xFFC9DFFA),
-    secondary = Color(0xFF9AA0A6),
-    secondaryContainer = Color(0xFF1C1C1E),
+    primary = Color(0xFFF2F2F2),
+    onPrimary = Color(0xFF000000),
+    primaryContainer = Color(0xFF232323),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+    secondary = Color(0xFF9A9A9A),
+    secondaryContainer = Color(0xFF1C1C1C),
     onSecondaryContainer = Color(0xFFF2F2F2),
-    tertiary = Color(0xFF7FA8D4),
-    tertiaryContainer = Color(0xFF12233A),
-    onTertiaryContainer = Color(0xFFC9DFFA),
+    tertiary = Color(0xFFB5B5B5),
+    tertiaryContainer = Color(0xFF1A1A1A),
+    onTertiaryContainer = Color(0xFFFFFFFF),
     background = Color(0xFF000000),
     onBackground = Color(0xFFF2F2F2),
     surface = Color(0xFF000000),
@@ -35,10 +35,10 @@ private val AmoledScheme = darkColorScheme(
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6),
     scrim = Color(0xFF000000),
-    surfaceTint = Color(0xFF8AB4F8),
-    inverseSurface = Color(0xFFE8EAED),
+    surfaceTint = Color(0xFFF2F2F2),
+    inverseSurface = Color(0xFFE8E8E8),
     inverseOnSurface = Color(0xFF000000),
-    inversePrimary = Color(0xFF12325E),
+    inversePrimary = Color(0xFF2A2A2A),
     surfaceBright = Color(0xFF1E1E1E),
     surfaceDim = Color(0xFF000000)
 )

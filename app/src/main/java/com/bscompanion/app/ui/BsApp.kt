@@ -1679,6 +1679,13 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.15.0 — czysty mono", listOf(
+                "Koniec błękitu — tylko czerń, szarości i biel",
+                "Biała pigułka i karta-bohater na czerni",
+                "Treść i alarmy bez zmian"
+            ))
+        }
+        item {
             InfoCard("1.14.0 — tylko AMOLED", listOf(
                 "Koniec wyboru motywu — zawsze głęboka czerń",
                 "Usunięta karta Motyw ze Zmian",
