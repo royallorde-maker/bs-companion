@@ -29,6 +29,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -111,6 +112,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -137,6 +140,7 @@ import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.findActivity
 import com.bscompanion.app.ui.theme.Montserrat
+import com.bscompanion.app.ui.theme.AppTheme
 import com.bscompanion.app.update.UpdateState
 import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
@@ -157,6 +161,8 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val plLocale = Locale("pl", "PL")
 private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
@@ -292,6 +298,28 @@ fun IconDotOnContainer(
     }
 }
 
+/** Falisty tor pierścienia: promień pływa sinusem (orbitka jak na screenie). */
+private fun DrawScope.wavyRing(
+    radius: Float,
+    waves: Int,
+    ampPx: Float,
+    sweepDeg: Float
+): Path {
+    val path = Path()
+    val steps = maxOf(8, (waves * sweepDeg / 360f * 6).toInt())
+    val cx = size.width / 2
+    val cy = size.height / 2
+    repeat(steps + 1) { i ->
+        val deg = -90f + sweepDeg * i / steps
+        val rad = Math.toRadians(deg.toDouble())
+        val rr = radius + ampPx * sin(rad * waves).toFloat()
+        val x = cx + rr * cos(rad).toFloat()
+        val y = cy + rr * sin(rad).toFloat()
+        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    return path
+}
+
 /** Pierścień postępu: łuk dryfu płynnie, a przy zmianie wydarzenia SKACZE. */
 @Composable
 fun Ring(
@@ -333,7 +361,14 @@ fun Ring(
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
         // Inset o połowę stroku (2.dp), żeby zewnętrzne 2dp nie było ucinane.
         Canvas(Modifier.fillMaxSize().padding(2.dp)) {
-            drawArc(track, -90f, 360f, false, style = strokeButt)
+            // Tor falisty jak orbitka, postęp gładkim łukiem po nim.
+            val trackPath = wavyRing(
+                radius = size.minDimension / 2,
+                waves = 18,
+                ampPx = 2.dp.toPx(),
+                sweepDeg = 360f
+            )
+            drawPath(trackPath, track, style = Stroke(3.dp.toPx()))
             if (anim.value > 0.01f) {
                 // Przy pełnym kole Round cap robi garb na łączeniu — wtedy Butt.
                 val style = if (anim.value >= 0.999f) strokeButt else strokeRound
@@ -376,7 +411,9 @@ fun Appear(index: Int = 0, content: @Composable () -> Unit) {
 @Composable
 fun BsApp(
     tabRequest: Int? = null,
-    onTabRequestConsumed: () -> Unit = {}
+    onTabRequestConsumed: () -> Unit = {},
+    appTheme: String = "MONO",
+    onThemeChange: (String) -> Unit = {}
 ) {
     var tab by rememberSaveable { mutableStateOf(2) }
     val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Zmiany", "Ustawienia")
@@ -459,7 +496,7 @@ fun BsApp(
                             onOpenEvent = { d, e -> detailKey = "$d|${e.id}" }
                         )
                         3 -> ChangelogScreen()
-                        4 -> SettingsScreen()
+                        4 -> SettingsScreen(appTheme, onThemeChange)
                     }
                 }
             }
@@ -1267,9 +1304,12 @@ fun TabHero(title: String, subtitle: String) {
     }
 }
 
-/** Tymczasowy ekran Ustawień — placeholder pod przyszłe przełączniki. */
+/** Ustawienia: wybór motywu z natychmiastowym podglądem. */
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    appTheme: String,
+    onThemeChange: (String) -> Unit
+) {
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1278,8 +1318,80 @@ fun SettingsScreen() {
         item {
             TabHero(
                 "Ustawienia",
-                "Wkrótce."
+                "Motyw aktywny od razu."
             )
+        }
+        item {
+            BsSurface(Modifier.fillMaxWidth()) {
+                Text(
+                    "Motyw",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Dotknij — cała apka przebudowuje się natychmiast.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(12.dp))
+                AppTheme.entries.forEach { t ->
+                    val sel = appTheme == t.name
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (sel) MaterialTheme.colorScheme.primary
+                                else Color.Transparent
+                            )
+                            .selectable(
+                                selected = sel,
+                                onClick = { onThemeChange(t.name) },
+                                role = Role.RadioButton
+                            )
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Żywa próbka: kropka w docelowych barwach motywu.
+                        Box(
+                            Modifier.size(28.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when (t) {
+                                        AppTheme.MONO -> Color.Black
+                                        AppTheme.GRAFIT -> Color(0xFF232329)
+                                        AppTheme.MLEKO -> Color(0xFFF1F1EC)
+                                    }
+                                )
+                                .border(
+                                    BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    CircleShape
+                                )
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            t.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                            color = if (sel) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (sel) {
+                            Icon(
+                                Icons.Filled.CheckCircle, null,
+                                Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
         }
         item {
             BsSurface(Modifier.fillMaxWidth()) {
@@ -1288,7 +1400,7 @@ fun SettingsScreen() {
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "Ekran w budowie",
+                            "Więcej wkrótce",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
@@ -1841,6 +1953,17 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.40.0 — trzy motywy", listOf(
+                "Mono, Grafit i Mleko w Ustawieniach — od razu.",
+                "Falisty tor pierścienia TERAZ."
+            ))
+        }
+        item {
+            InfoCard("1.39.0 — falisty pierścień", listOf(
+                "Tor TERAZ faluje jak orbitka, postęp gładkim łukiem."
+            ))
         }
         item {
             InfoCard("1.38.0 — zamiana miejsc", listOf(

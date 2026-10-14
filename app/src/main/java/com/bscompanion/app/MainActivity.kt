@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -26,7 +27,9 @@ import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.RescheduleWorker
 import com.bscompanion.app.ui.BsApp
 import com.bscompanion.app.ui.SplashScreen
+import com.bscompanion.app.ui.theme.AppTheme
 import com.bscompanion.app.ui.theme.BSCompanionTheme
+import com.bscompanion.app.ui.theme.appThemeOf
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -74,11 +77,14 @@ class MainActivity : ComponentActivity() {
         // Dokładny tryb z systemu (nie sztywne 120f), odnawiane też w onResume
         // (w onCreate okno bywa jeszcze niepodpięte i display == null).
         applyRefreshRate()
-        // Zawsze AMOLED: ciemne bary od pierwszej klatki, bez flesza.
+        // Wczesne bary wg zapisanego motywu — bez flesza złych ikon przed kompozycją.
         try {
+            val early = appThemeOf(Prefs.appTheme(this))
             enableEdgeToEdge(
-                statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-                navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                statusBarStyle = if (early.darkBars) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+                navigationBarStyle = if (early.darkBars) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
             )
         } catch (_: Exception) { }
         NotificationHelper.ensureChannel(this)
@@ -99,21 +105,25 @@ class MainActivity : ComponentActivity() {
 
         val activity = this
         setContent {
-            // Tylko AMOLED: jasne bary nigdy nie występują.
-            LaunchedEffect(Unit) {
+            // Motyw żyje TU — wybór w Ustawieniach przebudowuje apkę natychmiast.
+            var appTheme by rememberSaveable { mutableStateOf(Prefs.appTheme(this@MainActivity)) }
+            val theme = appThemeOf(appTheme)
+            LaunchedEffect(theme) {
                 activity.enableEdgeToEdge(
-                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-                    navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    statusBarStyle = if (theme.darkBars) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+                    navigationBarStyle = if (theme.darkBars) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
                 )
                 try {
                     activity.window.setBackgroundDrawable(
-                        android.graphics.drawable.ColorDrawable(0xFF000000.toInt())
+                        android.graphics.drawable.ColorDrawable(theme.windowBg.toInt())
                     )
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "window bg failed", e)
                 }
             }
-            BSCompanionTheme {
+            BSCompanionTheme(theme = theme) {
                 // Splash tylko przy zimnym starcie procesu. Celowo `remember`, nie
                 // `rememberSaveable` — saveable odtwarzałby true po rotacji z bundla
                 // zapisanego gdy splash jeszcze wisiał i logo grałoby od nowa.
@@ -127,7 +137,12 @@ class MainActivity : ComponentActivity() {
                 Crossfade(targetState = showSplash, animationSpec = tween(200), label = "splash") { splash ->
                     if (splash) SplashScreen() else BsApp(
                         tabRequest = tabRequest.value,
-                        onTabRequestConsumed = { tabRequest.value = null }
+                        onTabRequestConsumed = { tabRequest.value = null },
+                        appTheme = appTheme,
+                        onThemeChange = {
+                            Prefs.setAppTheme(this@MainActivity, it)
+                            appTheme = it
+                        }
                     )
                 }
             }

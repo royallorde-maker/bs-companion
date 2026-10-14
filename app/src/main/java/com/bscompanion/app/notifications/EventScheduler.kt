@@ -22,6 +22,23 @@ object Prefs {
     const val KEY_BATTERY_ASKED = "battery_asked"
     const val KEY_NOTIF_ASKED = "notif_asked"
     const val KEY_SCHEDULED = "scheduled_uris"
+    const val KEY_APP_THEME = "app_theme"
+
+    fun appTheme(context: Context): String {
+        return try {
+            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+                .getString(KEY_APP_THEME, "MONO") ?: "MONO"
+        } catch (_: Exception) {
+            "MONO"
+        }
+    }
+
+    fun setAppTheme(context: Context, value: String) {
+        try {
+            context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+                .edit().putString(KEY_APP_THEME, value).apply()
+        } catch (_: Exception) { }
+    }
 
     fun isEnabled(context: Context): Boolean {
         migrateIfNeeded(context)

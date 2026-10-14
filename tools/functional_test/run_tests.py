@@ -489,8 +489,9 @@ def g_source() -> None:
     dx = (MAIN / "res" / "xml" / "data_extraction_rules.xml").read_text(encoding="utf-8")
     check("D2D excludes bs_fired", dx.count("bs_fired.xml") == 2)
     th = src("java/com/bscompanion/app/ui/theme/Theme.kt")
-    check("amoled pure black", "0xFF000000" in th and "verticalGradient" not in th
-          and "lightColorScheme" not in th)
+    check("three themes mono/grafit/mleko", all(x in th for x in
+          ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme"))
+          and "verticalGradient" not in th)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")
     check("kotlin-test aligned", "kotlin-test:2.0.21" in bg)
     mf = (MAIN / "AndroidManifest.xml").read_text(encoding="utf-8")
