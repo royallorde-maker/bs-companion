@@ -235,14 +235,15 @@ fun IconDotOnContainer(
     boxSize: Dp = 44.dp,
     iconSize: Dp = 24.dp
 ) {
+    // Czarny krążek + jasna ikona — czytelne na podświetlonym (jasnym) wierszu.
     Box(
         modifier
             .size(boxSize)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f)),
+            .background(MaterialTheme.colorScheme.onPrimary),
         contentAlignment = Alignment.Center
     ) {
-        Icon(icon, null, Modifier.size(iconSize), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        Icon(icon, null, Modifier.size(iconSize), tint = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -1677,6 +1678,12 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.16.0 — czytelny znaczek", listOf(
+                "Ikona bieżącego wydarzenia: czarny krążek zamiast niewidzialnej bieli",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.15.0 — czysty mono", listOf(

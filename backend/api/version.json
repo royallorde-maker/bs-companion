@@ -1,8 +1,8 @@
 {
-  "versionCode": 21,
-  "versionName": "1.15.0",
+  "versionCode": 22,
+  "versionName": "1.16.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.15.0 — czysty mono: koniec błękitu, tylko czerń, szarości i biel (treść bez zmian)",
+  "changelog": "1.16.0 — czytelna ikona bieżącego wydarzenia w Planie (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T00:23:17Z"
+  "publishedAt": "2026-10-14T00:30:41Z"
 }
