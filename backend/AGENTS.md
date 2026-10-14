@@ -27,7 +27,25 @@ Nie hardkoduj URL w Kotlin — tylko przez BuildConfig.
 - `apkUrl` MUSI wskazywać na asset z GitHub Release (nie commituj apk do repo).
 - `force=true` tylko gdy stara wersja jest łamana (apka pokazuje mocniejszy baner).
 
-## Jak wydać nową wersję (krok po kroku, sprawdzone do 1.43.0)
+## Twarda weryfikacja przed releasem (lekcje z 1.45.0)
+
+Narzędzia potrafią kłamać: edit zgłasza sukces bez zapisu, read pokazuje
+stare treści. Weryfikuj niezależnie, powłoką (nie cached readerem):
+
+- Po KAŻDYM edycie struktury: `Select-String "fun X" File` — policz funkcje
+  przed/po. Spadek liczby = wycięty kod, szukaj go.
+- Kotwice do cięć (python/splice): długie, unikalne, ze sprawdzonym `assert`;
+  krótkie prefiksy (`/** P`) trafiają wcześniejsze komentarze.
+- Przed releasem: `aapt dump badging` (wersja/kod/nazwa) + dex-grep na ciągi
+  danej zmiany (np. nowy tekst w dex) + `apksigner verify`.
+- `git add` TYLKO jawną listą plików — nigdy gołe `-A` (wciąga `.concord/`).
+- Skrypty pythona: NIC nie printują poza ASCII na konsolę cp1252 — wyniki do plików.
+- Tag jest niezmienny: pomyłka w świeżym (minuty, jeden user) = usuń release+tag,
+  popraw, otaguj od nowa. W przeciwnym razie nowa wersja, nigdy rewrite starego.
+- Pierwszy FAIL gradle'a po serii zielonych = najczęściej lock/daemon, nie kod:
+  powtórz build przed diagnozą.
+
+## Jak wydać nową wersję (krok po kroku, sprawdzone do 1.45.0)
 
 Zasada: KAŻDA zmiana w apce = osobny release + wpis w instrukcji (InfoCard poniżej).
 Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build).
