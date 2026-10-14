@@ -412,7 +412,7 @@ fun BsApp(
 }
 
 /** Płynne szkło w duchu Liquid Glass: półprzezroczysta tafla nad treścią,
- *  włosowa krawędź świetlna u góry, nieprzezroczysta wybrana pastylka,
+ *  włosowy obrys, poświata, nieprzezroczysta wybrana pastylka,
  *  morfująca szerokość przy zmianie zakładki. Bez gradientów. */
 @Composable
 fun PillBar(
@@ -423,7 +423,6 @@ fun PillBar(
 ) {
     val glass = Color.White.copy(alpha = 0.18f)
     val edge = Color.White.copy(alpha = 0.28f)
-    val glint = Color.White.copy(alpha = 0.50f)
     Box(
         Modifier.fillMaxWidth()
             .background(Color.Transparent)
@@ -441,20 +440,11 @@ fun PillBar(
                 spotColor = Color.White.copy(alpha = 0.10f)
             )
         ) {
-            Column {
-                // Krawędź świetlna: cienka jasna linia = grubość szkła.
-                Box(
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 26.dp)
-                        .height(1.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(glint)
-                )
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                     titles.forEachIndexed { i, t ->
                         val sel = selected == i
                         // Dotyk rozświetla ikonę — szkło reaguje na palec.
@@ -503,7 +493,6 @@ fun PillBar(
                 }
             }
         }
-    }
 }
 
 /** Klucz szczegółów wydarzenia: "2026-10-13|cisza". */
@@ -1750,6 +1739,12 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.24.0 — bez białej kreski", listOf(
+                "Usunięta ostra linia świetlna z pigułki — samo szkło wystarczy",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.23.0 — bez dublowanych godzin", listOf(
