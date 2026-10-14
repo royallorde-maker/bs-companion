@@ -1,7 +1,7 @@
 package com.bscompanion.app.ui
 
 // EKRANY APLIKACJI (Compose, Material3).
-// Zakładki: 0 = Posiłki, 1 = Plan dnia, 2 = Dziś, 3 = Ustawienia, 4 = Zmiany.
+// Zakładki: 0 = Posiłki, 1 = Plan dnia, 2 = Dziś, 3 = Zmiany, 4 = Ustawienia.
 // Wspólny język wizualny: BsSurface (węgiel + włosek), StatusChip, Ring.
 // Animacje: Appear (wejścia), splash (MainActivity), morph cyfr (AnimatedContent), płynny Ring (Animatable).
 
@@ -379,8 +379,8 @@ fun BsApp(
     onTabRequestConsumed: () -> Unit = {}
 ) {
     var tab by rememberSaveable { mutableStateOf(2) }
-    val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Ustawienia", "Zmiany")
-    val icons = listOf(Icons.Filled.LunchDining, Icons.Filled.Schedule, Icons.Filled.Home, Icons.Filled.Settings, Icons.Filled.History)
+    val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Zmiany", "Ustawienia")
+    val icons = listOf(Icons.Filled.LunchDining, Icons.Filled.Schedule, Icons.Filled.Home, Icons.Filled.History, Icons.Filled.Settings)
     var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
     // Back: najpierw zamyka szczegóły, potem z reszty wraca do Dziś (2), wyjście tylko z 2.
     BackHandler(enabled = tab != 2 || detailKey != null) {
@@ -458,8 +458,8 @@ fun BsApp(
                             onTab = { tab = it },
                             onOpenEvent = { d, e -> detailKey = "$d|${e.id}" }
                         )
-                        3 -> SettingsScreen()
-                        4 -> ChangelogScreen()
+                        3 -> ChangelogScreen()
+                        4 -> SettingsScreen()
                     }
                 }
             }
@@ -1841,6 +1841,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.38.0 — zamiana miejsc", listOf(
+                "Zmiany i Ustawienia zamienione miejscami."
+            ))
         }
         item {
             InfoCard("1.37.0 — Dziś na środku", listOf(
