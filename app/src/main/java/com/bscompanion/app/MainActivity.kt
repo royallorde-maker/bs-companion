@@ -31,6 +31,26 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val ACTION_OPEN_PLAN = "com.bscompanion.app.action.OPEN_PLAN"
+        const val ACTION_OPEN_MEALS = "com.bscompanion.app.action.OPEN_MEALS"
+    }
+
+    // Zakładka żądana skrótem launchera (null = zwykły start).
+    private val tabRequest = mutableStateOf<Int?>(null)
+
+    private fun tabForIntent(intent: android.content.Intent?): Int? = when (intent?.action) {
+        ACTION_OPEN_PLAN -> 1
+        ACTION_OPEN_MEALS -> 2
+        else -> null
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        tabRequest.value = tabForIntent(intent)
+    }
+
     // Zgoda na powiadomienia (Android 13+). Wynik: przy zgodzie dopinamy alarmy.
     private val notifPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -72,6 +92,11 @@ class MainActivity : ComponentActivity() {
         // i odpalał dwa dialogi systemowe pod rząd.
         requestNotifPermissionIfNeeded()
 
+        // Skrót launchera przy zimnym starcie; akcję kasujemy, żeby rotacja
+        // nie odtwarzała żądania w kółko.
+        tabRequest.value = tabForIntent(intent)
+        try { intent.action = null } catch (_: Exception) { }
+
         val activity = this
         setContent {
             // Tylko AMOLED: jasne bary nigdy nie występują.
@@ -100,7 +125,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 Crossfade(targetState = showSplash, animationSpec = tween(200), label = "splash") { splash ->
-                    if (splash) SplashScreen() else BsApp()
+                    if (splash) SplashScreen() else BsApp(
+                        tabRequest = tabRequest.value,
+                        onTabRequestConsumed = { tabRequest.value = null }
+                    )
                 }
             }
         }

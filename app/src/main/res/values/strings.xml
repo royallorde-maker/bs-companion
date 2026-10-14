@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">BS Companion</string>
+    <string name="shortcut_plan">Plan dnia</string>
+    <string name="shortcut_plan_long">Otwórz plan dnia</string>
+    <string name="shortcut_meals">Posiłki</string>
+    <string name="shortcut_meals_long">Otwórz stołówkę</string>
 </resources>

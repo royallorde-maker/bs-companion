@@ -7,6 +7,7 @@ package com.bscompanion.app.ui
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -318,7 +319,10 @@ fun Appear(index: Int = 0, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun BsApp() {
+fun BsApp(
+    tabRequest: Int? = null,
+    onTabRequestConsumed: () -> Unit = {}
+) {
     var tab by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History)
@@ -326,6 +330,14 @@ fun BsApp() {
     // Back: najpierw zamyka szczegóły, potem z zakładek 1-3 wraca do Dziś, wyjście tylko z 0.
     BackHandler(enabled = tab != 0 || detailKey != null) {
         if (detailKey != null) detailKey = null else tab = 0
+    }
+    // Skrót launchera: wskocz na zakładkę raz, potem wyczyść żądanie.
+    LaunchedEffect(tabRequest) {
+        if (tabRequest != null && tabRequest in 0..3) {
+            detailKey = null
+            tab = tabRequest
+            onTabRequestConsumed()
+        }
     }
     val saveableHolder = rememberSaveableStateHolder()
     // Subtelny stan sieci dla całej apki — kropka offline, reszta działa lokalnie.
@@ -394,7 +406,9 @@ fun BsApp() {
     }
 }
 
-/** Pływająca szklana pigułka w języku Nexora: wybrana zakładka to granatowa pastylka. */
+/** Płynne szkło w duchu Liquid Glass: półprzezroczysta tafla nad treścią,
+ *  włosowa krawędź świetlna u góry, nieprzezroczysta wybrana pastylka,
+ *  morfująca szerokość przy zmianie zakładki. Bez gradientów. */
 @Composable
 fun PillBar(
     titles: List<String>,
@@ -402,51 +416,65 @@ fun PillBar(
     selected: Int,
     onSelect: (Int) -> Unit
 ) {
+    val glass = Color.White.copy(alpha = 0.12f)
+    val edge = Color.White.copy(alpha = 0.16f)
+    val glint = Color.White.copy(alpha = 0.30f)
     Box(
         Modifier.fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color.Transparent)
             // Pigułka nad paskiem gestów — bez tego tonie pod systemową nawigację.
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLowest,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            color = glass,
+            border = BorderStroke(1.dp, edge)
         ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                titles.forEachIndexed { i, t ->
-                    val sel = selected == i
-                    Row(
-                        Modifier
-                            .clip(RoundedCornerShape(22.dp))
-                            .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
-                            .selectable(selected = sel, onClick = { onSelect(i) }, role = Role.Tab)
-                            .semantics { contentDescription = t }
-                            .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            icons[i], contentDescription = null,
-                            Modifier.size(20.dp),
-                            tint = if (sel) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        // Etykieta tylko na wybranej — cztery pełne podpisy nie mieszczą się w rzędzie.
-                        if (sel) {
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                t,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+            Column {
+                // Krawędź świetlna: cienka jasna linia = grubość szkła.
+                Box(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 26.dp)
+                        .height(1.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(glint)
+                )
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    titles.forEachIndexed { i, t ->
+                        val sel = selected == i
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                .selectable(selected = sel, onClick = { onSelect(i) }, role = Role.Tab)
+                                .semantics { contentDescription = t }
+                                .animateContentSize()
+                                .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                icons[i], contentDescription = null,
+                                Modifier.size(20.dp),
+                                tint = if (sel) MaterialTheme.colorScheme.onPrimary
+                                else Color.White.copy(alpha = 0.6f)
                             )
+                            // Etykieta tylko na wybranej — cztery pełne podpisy nie mieszczą się w rzędzie.
+                            if (sel) {
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    t,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                 }
@@ -1692,6 +1720,13 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.22.0 — skróty i płynne szkło", listOf(
+                "Skróty launchera: długi przytrzym → Plan dnia / Posiłki",
+                "Pigułka jak Liquid Glass: tafla, krawędź świetlna, morfowanie",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.21.0 — test kanału", listOf(

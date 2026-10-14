@@ -1,8 +1,8 @@
 {
-  "versionCode": 27,
-  "versionName": "1.21.0",
+  "versionCode": 28,
+  "versionName": "1.22.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.21.0 — TEST: sprawdź pasek pobierania, Instaluj i Anuluj (nic więcej nie zmieniono)",
+  "changelog": "1.22.0 — skróty launchera i pigułka jak płynne szkło (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T01:11:27Z"
+  "publishedAt": "2026-10-14T01:28:33Z"
 }

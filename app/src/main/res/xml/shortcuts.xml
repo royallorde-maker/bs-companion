@@ -1,0 +1,24 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="plan"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_plan"
+        android:shortcutShortLabel="@string/shortcut_plan"
+        android:shortcutLongLabel="@string/shortcut_plan_long">
+        <intent
+            android:action="com.bscompanion.app.action.OPEN_PLAN"
+            android:targetPackage="com.bscompanion.app"
+            android:targetClass="com.bscompanion.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="meals"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_meals"
+        android:shortcutShortLabel="@string/shortcut_meals"
+        android:shortcutLongLabel="@string/shortcut_meals_long">
+        <intent
+            android:action="com.bscompanion.app.action.OPEN_MEALS"
+            android:targetPackage="com.bscompanion.app"
+            android:targetClass="com.bscompanion.app.MainActivity" />
+    </shortcut>
+</shortcuts>
