@@ -11,12 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -87,31 +85,21 @@ class MainActivity : ComponentActivity() {
 
         val activity = this
         setContent {
-            // 0 = system, 1 = ciemny, 2 = jasny. Stan TU (nie w zakładce),
-            // więc wybór przebudowuje motyw natychmiast, bez restartu.
-            var themeMode by rememberSaveable { mutableStateOf(Prefs.getThemeMode(this@MainActivity)) }
-            val useDark = when (themeMode) {
-                1 -> true
-                2 -> false
-                else -> isSystemInDarkTheme()
-            }
-            // Ikony systemowe wg efektywnego motywu apki, nie systemu.
-            // Tło okna też pod motyw apki (bez flesza systemowego przy Jasny/Ciemny).
-            LaunchedEffect(useDark) {
+            // Tylko AMOLED: jasne bary nigdy nie występują.
+            LaunchedEffect(Unit) {
                 activity.enableEdgeToEdge(
-                    statusBarStyle = if (useDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
-                    navigationBarStyle = if (useDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                    navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
                 )
                 try {
-                    val bg = if (useDark) 0xFF0A1728.toInt() else 0xFFCBDDF1.toInt()
-                    activity.window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(bg))
+                    activity.window.setBackgroundDrawable(
+                        android.graphics.drawable.ColorDrawable(0xFF000000.toInt())
+                    )
                 } catch (e: Exception) {
                     android.util.Log.w("MainActivity", "window bg failed", e)
                 }
             }
-            BSCompanionTheme(darkTheme = useDark) {
+            BSCompanionTheme {
                 // Splash tylko przy zimnym starcie procesu. Celowo `remember`, nie
                 // `rememberSaveable` — saveable odtwarzałby true po rotacji z bundla
                 // zapisanego gdy splash jeszcze wisiał i logo grałoby od nowa.
@@ -123,13 +111,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 Crossfade(targetState = showSplash, animationSpec = tween(200), label = "splash") { splash ->
-                    if (splash) SplashScreen() else BsApp(
-                        themeMode = themeMode,
-                        onThemeChange = {
-                            Prefs.setThemeMode(this@MainActivity, it)
-                            themeMode = it
-                        }
-                    )
+                    if (splash) SplashScreen() else BsApp()
                 }
             }
         }

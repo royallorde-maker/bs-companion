@@ -1,6 +1,6 @@
 ﻿<resources>
     <!-- Adaptive-icon tło dopasowane do czerni grafiki (próbkowane z krawędzi ikony). -->
     <color name="ic_launcher_background">#2B2B2B</color>
-    <color name="bs_window_light">#CBDDF1</color>
-    <color name="bs_window_dark">#0A1728</color>
+    <color name="bs_window_light">#000000</color>
+    <color name="bs_window_dark">#000000</color>
 </resources>

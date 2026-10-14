@@ -314,7 +314,7 @@ fun Appear(index: Int = 0, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
+fun BsApp() {
     var tab by rememberSaveable { mutableStateOf(0) }
     val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany")
     val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History)
@@ -380,7 +380,7 @@ fun BsApp(themeMode: Int, onThemeChange: (Int) -> Unit) {
                         )
                         1 -> ScheduleScreen()
                         2 -> MealsScreen()
-                        3 -> ChangelogScreen(themeMode, onThemeChange)
+                        3 -> ChangelogScreen()
                     }
                 }
             }
@@ -1633,7 +1633,7 @@ fun MealCard(title: String, hours: String, desc: String, icon: ImageVector = Ico
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
+fun ChangelogScreen() {
     val versionName = com.bscompanion.app.BuildConfig.VERSION_NAME
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -1651,8 +1651,7 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
         item {
             UpdateCard()
         }
-        // O APLIKACJI POD aktualizacją: karta About + autor, pod nią motyw i historia.
-        // Przy dopisywaniu kolejnych wersji dodawaj nowe itemy PONIŻEJ karty motywu.
+        // O APLIKACJI POD aktualizacją: karta About + autor, pod nią historia.
         item {
             BsSurface(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1680,28 +1679,11 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
             }
         }
         item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                // Motyw: 0 = system, 1 = ciemny, 2 = jasny.
-                // Stan żyje w MainActivity — zmiana przebudowuje motyw natychmiast.
-                Text("Motyw", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    "Jasny dopełnia ciemny „ink”.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(8.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0 to "System", 1 to "Ciemny", 2 to "Jasny").forEach { (v, label) ->
-                        FilterChip(
-                            selected = themeMode == v,
-                            onClick = { onThemeChange(v) },
-                            label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                        )
-                    }
-                }
-            }
+            InfoCard("1.14.0 — tylko AMOLED", listOf(
+                "Koniec wyboru motywu — zawsze głęboka czerń",
+                "Usunięta karta Motyw ze Zmian",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.13.0 — spokojniejszy układ", listOf(

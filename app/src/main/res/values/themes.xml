@@ -1,11 +1,11 @@
 <resources>
-    <!-- Jasny start: tło jak w Compose LightScheme, transparentne bary pod edge-to-edge. -->
-    <style name="Theme.BSCompanion" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/bs_window_light</item>
+    <!-- Zawsze AMOLED: czarne tło, ciemne bary, wycięcie shortEdges. -->
+    <style name="Theme.BSCompanion" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bs_window_dark</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>
