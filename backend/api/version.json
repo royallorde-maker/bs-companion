@@ -1,8 +1,8 @@
 {
-  "versionCode": 59,
-  "versionName": "1.53.0",
+  "versionCode": 60,
+  "versionName": "1.54.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.53.0 — fala narasta: płaski łuk przechodzi w falę jak w M3",
+  "changelog": "1.54.0 — płynniejsze wejścia kart",
   "force": false,
-  "publishedAt": "2026-10-14T19:00:00Z"
+  "publishedAt": "2026-10-14T19:15:00Z"
 }

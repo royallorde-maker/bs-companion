@@ -418,28 +418,35 @@ fun Ring(
 fun Appear(index: Int = 0, content: @Composable () -> Unit) {
     // Saveable — powrót na zakładkę nie odtwarza wejścia. Nie używać w leniwych
     // wierszach (LazyColumn kasuje kompozycję poza viewportem i tak odtworzy).
-    // Fluent: fade + lekki scale + krótki slide, ease-out, stagger 40 ms.
+    // Fluent: fade + lekki scale + krótki slide na JEDNEJ krzywej ease-out,
+    // dłużej i gęstszym staggerem — karty płyną jedna za drugą zamiast schodkowo.
     var visible by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
     }
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(FluentMotion.EnterMs, delayMillis = index * FluentMotion.StaggerMs)) +
+        enter = fadeIn(
+            tween(
+                FluentMotion.CardEnterMs,
+                delayMillis = index * FluentMotion.CardStaggerMs,
+                easing = LinearOutSlowInEasing
+            )
+        ) +
             scaleIn(
                 tween(
-                    FluentMotion.EnterMs,
-                    delayMillis = index * FluentMotion.StaggerMs,
+                    FluentMotion.CardEnterMs,
+                    delayMillis = index * FluentMotion.CardStaggerMs,
                     easing = LinearOutSlowInEasing
-                ), initialScale = 0.96f
+                ), initialScale = 0.98f
             ) +
             slideInVertically(
                 tween(
-                    FluentMotion.EnterMs,
-                    delayMillis = index * FluentMotion.StaggerMs,
+                    FluentMotion.CardEnterMs,
+                    delayMillis = index * FluentMotion.CardStaggerMs,
                     easing = LinearOutSlowInEasing
                 )
-            ) { it / 5 }
+            ) { it / 10 }
     ) { content() }
 }
 
@@ -2062,6 +2069,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.54.0 — płynniejsze karty", listOf(
+                "Wejścia kart na jednej krzywej, krótszy ruch.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.53.0 — fala narasta", listOf(

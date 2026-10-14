@@ -37,6 +37,10 @@ object FluentMotion {
     const val EnterMs = 250
     const val ExitMs = 167
     const val StaggerMs = 40
+    // Wejścia kart: dłuższe, wspólny ease-out i gęstszy stagger —
+    // karty płyną jedna za drugą zamiast wchodzić schodkowo.
+    const val CardEnterMs = 320
+    const val CardStaggerMs = 28
 }
 
 /** Skala wciśnięcia śledząca palec (0.96 w dół, sprężyście w górę). */
