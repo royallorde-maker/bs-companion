@@ -1369,16 +1369,11 @@ fun NotifCard(
             }
         }
         Spacer(Modifier.height(8.dp))
+        // Chip minutowy od razu przeplanowuje (onMinutesChange) — osobny guzik zbędny.
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilledTonalButton(
-                onClick = {
-                    EventScheduler.rescheduleAsync(context, force = true)
-                },
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) { Text("Przeplanuj") }
             TextButton(
                 onClick = {
                     if (NotificationHelper.notificationsBlocked(context)) {
@@ -1783,6 +1778,13 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.26.0 — uczciwe przypomnienia", listOf(
+                "Minuty w powiadomieniu liczone w chwili dzwonka, nie planowania",
+                "Chip minutowy działa od razu — koniec z Przeplanuj",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.25.0 — ruch jak Fluent", listOf(

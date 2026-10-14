@@ -99,12 +99,41 @@ class EventReceiver : BroadcastReceiver() {
         val slotId = NotificationHelper.stableSlotId(eventKey)
         // Sync: przypomnienie na N minut przed kasuje się samo dokładnie o czasie wydarzenia.
         val timeout = if (isReminder && offsetMin > 0) offsetMin * 60_000L else null
+        // Tekst liczony W CHWILI DZWONKA: spóźniony alarm (doza, inexact, dopięcie
+        // przy otwarciu) pokazywałby "Za 30 min" na 14 min przed startem.
+        val body = if (isReminder && offsetMin > 0) refreshReminderText(eventKey, text) else text
         // Szybkie (jeden notify) synchronicznie; ciężkie przeplanowanie w tle z debounce.
-        NotificationHelper.showEventNotification(app, slotId, title, text, isReminder, timeout)
+        NotificationHelper.showEventNotification(app, slotId, title, body, isReminder, timeout)
         try { NotificationHelper.refreshPersistent(app) } catch (e: Exception) {
             android.util.Log.w("EventReceiver", "refresh failed", e)
         }
         EventScheduler.rescheduleAsync(app)
+    }
+
+    /**
+     * Przelicza "Za N min:" na faktyczną resztę do startu. Spadek z nieba:
+     * alarm spóźniony (doza, inexact, dopięty przy otwarciu apki) inaczej kłamie.
+     * Zwraca oryginał, gdy klucza nie da się rozpoznać.
+     */
+    private fun refreshReminderText(eventKey: String, fallback: String): String {
+        return try {
+            val sep = eventKey.indexOf('/')
+            if (sep < 0) return fallback
+            val date = java.time.LocalDate.parse(eventKey.substring(0, sep))
+            val id = eventKey.substring(sep + 1)
+            val e = com.bscompanion.app.data.DormSchedule.eventsForDate(date)
+                .firstOrNull { it.id == id } ?: return fallback
+            val remain = java.time.temporal.ChronoUnit.MINUTES.between(
+                java.time.LocalDateTime.now(),
+                java.time.LocalDateTime.of(date, e.start)
+            )
+            val prefix = Regex("^Za \\d+ min: ")
+            if (!prefix.containsMatchIn(fallback)) return fallback
+            if (remain <= 0) prefix.replace(fallback, "Teraz: ")
+            else prefix.replace(fallback, "Za $remain min: ")
+        } catch (_: Exception) {
+            fallback
+        }
     }
 
     /**

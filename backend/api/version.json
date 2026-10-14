@@ -1,8 +1,8 @@
 {
-  "versionCode": 31,
-  "versionName": "1.25.0",
+  "versionCode": 32,
+  "versionName": "1.26.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.25.0 — ruch jak Fluent: wejścia fade+skala, boczne zakładki, ściskany dotyk (treść bez zmian)",
+  "changelog": "1.26.0 — uczciwe minuty w przypomnieniach + chipy bez Przeplanuj (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T01:57:19Z"
+  "publishedAt": "2026-10-14T11:26:16Z"
 }
