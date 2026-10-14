@@ -119,7 +119,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -333,13 +332,6 @@ fun Ring(
 ) {
     val track = MaterialTheme.colorScheme.outlineVariant
     val arc = MaterialTheme.colorScheme.primary
-    val density = LocalDensity.current
-    val strokeRound = remember(density) {
-        Stroke(with(density) { 4.dp.toPx() }, cap = StrokeCap.Round)
-    }
-    val strokeButt = remember(density) {
-        Stroke(with(density) { 4.dp.toPx() }, cap = StrokeCap.Butt)
-    }
     val anim = remember { Animatable(0f) }
     val want = progress?.coerceIn(0f, 1f) ?: 0f
     var inited by remember { mutableStateOf(false) }
@@ -372,21 +364,25 @@ fun Ring(
                 phase = (phase + (2 * PI / 48).toFloat()) % (2 * PI).toFloat()
             }
         }
-        // Inset o połowę stroku (2.dp), żeby zewnętrzne 2dp nie było ucinane.
-        Canvas(Modifier.fillMaxSize().padding(2.dp)) {
-            // Tor falisty jak orbitka, postęp gładkim łukiem po nim.
-            val trackPath = wavyRing(
-                radius = size.minDimension / 2,
-                waves = 18,
-                ampPx = 2.dp.toPx(),
-                sweepDeg = 360f,
-                phase = phase
-            )
-            drawPath(trackPath, track, style = Stroke(3.dp.toPx()))
+        // Większy inset: gruby falisty postęp potrzebuje miejsca na fale.
+        Canvas(Modifier.fillMaxSize().padding(3.dp)) {
+            val trackR = size.minDimension / 2
+            // Tor cienki i spokojny.
+            drawArc(track, -90f, 360f, false, style = Stroke(2.5.dp.toPx()))
             if (anim.value > 0.01f) {
-                // Przy pełnym kole Round cap robi garb na łączeniu — wtedy Butt.
-                val style = if (anim.value >= 0.999f) strokeButt else strokeRound
-                drawArc(arc, -90f, 360f * anim.value, false, style = style)
+                // Postęp to gruby wąż na tym samym torze (węższy promień,
+                // żeby fale z grubością zmieściły się w insecie).
+                val worm = wavyRing(
+                    radius = trackR - 1.dp.toPx(),
+                    waves = 14,
+                    ampPx = 1.5.dp.toPx(),
+                    sweepDeg = 360f * anim.value,
+                    phase = phase
+                )
+                drawPath(
+                    worm, arc,
+                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
+                )
             }
         }
         content()
@@ -1969,6 +1965,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.42.0 — wąż postępu", listOf(
+                "Wypełnienie pierścienia faluje jak robak, tor cichy."
+            ))
         }
         item {
             InfoCard("1.41.0 — żywa fala", listOf(
