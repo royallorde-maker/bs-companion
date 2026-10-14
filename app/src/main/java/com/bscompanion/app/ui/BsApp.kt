@@ -316,8 +316,8 @@ private fun DrawScope.wavyRing(
     phase: Float = 0f
 ): Path {
     val path = Path()
-    // Gęsto próbkowane (12 na falę) + okrągłe łączenia — zero kantów.
-    val steps = maxOf(16, (waves * sweepDeg / 360f * 12).toInt())
+    // Gęsto próbkowane (64 na falę) + okrągłe łączenia — gładkie jak okrąg.
+    val steps = maxOf(64, (waves * sweepDeg / 360f * 64).toInt())
     val cx = size.width / 2
     val cy = size.height / 2
     repeat(steps + 1) { i ->
@@ -2075,6 +2075,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.56.0 — gładszy wąż", listOf(
+                "Wężyk rysowany gęściej — zero kantów.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.55.0 — grzeczna fala", listOf(

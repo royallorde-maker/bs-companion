@@ -1,8 +1,8 @@
 {
-  "versionCode": 61,
-  "versionName": "1.55.0",
+  "versionCode": 62,
+  "versionName": "1.56.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.55.0 — grzeczna fala: końce na torze, gładsze pełzanie",
+  "changelog": "1.56.0 — gładszy wąż: gęstsze próbkowanie fali",
   "force": false,
-  "publishedAt": "2026-10-14T19:30:00Z"
+  "publishedAt": "2026-10-14T19:45:00Z"
 }
