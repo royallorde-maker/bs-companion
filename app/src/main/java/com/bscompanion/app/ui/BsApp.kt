@@ -100,6 +100,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -161,6 +162,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -298,12 +300,14 @@ fun IconDotOnContainer(
     }
 }
 
-/** Falisty tor pierścienia: promień pływa sinusem (orbitka jak na screenie). */
+/** Falisty tor pierścienia: promień pływa sinusem (orbitka jak na screenie).
+ *  Faza sunie w kółko o pełną długość fali — wzór wędruje, szew niewidoczny. */
 private fun DrawScope.wavyRing(
     radius: Float,
     waves: Int,
     ampPx: Float,
-    sweepDeg: Float
+    sweepDeg: Float,
+    phase: Float = 0f
 ): Path {
     val path = Path()
     val steps = maxOf(8, (waves * sweepDeg / 360f * 6).toInt())
@@ -312,7 +316,7 @@ private fun DrawScope.wavyRing(
     repeat(steps + 1) { i ->
         val deg = -90f + sweepDeg * i / steps
         val rad = Math.toRadians(deg.toDouble())
-        val rr = radius + ampPx * sin(rad * waves).toFloat()
+        val rr = radius + ampPx * sin(rad * waves - phase).toFloat()
         val x = cx + rr * cos(rad).toFloat()
         val y = cy + rr * sin(rad).toFloat()
         if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -359,6 +363,15 @@ fun Ring(
         }
     }
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
+        // Fala wędruje o pełną długość co ~2,4 s — ruch jak w M3 Expressive.
+        // Ręczny takt 20 fps: ta wersja Compose nie ma infiniteRepeatable.
+        var phase by remember { mutableFloatStateOf(0f) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(50)
+                phase = (phase + (2 * PI / 48).toFloat()) % (2 * PI).toFloat()
+            }
+        }
         // Inset o połowę stroku (2.dp), żeby zewnętrzne 2dp nie było ucinane.
         Canvas(Modifier.fillMaxSize().padding(2.dp)) {
             // Tor falisty jak orbitka, postęp gładkim łukiem po nim.
@@ -366,7 +379,8 @@ fun Ring(
                 radius = size.minDimension / 2,
                 waves = 18,
                 ampPx = 2.dp.toPx(),
-                sweepDeg = 360f
+                sweepDeg = 360f,
+                phase = phase
             )
             drawPath(trackPath, track, style = Stroke(3.dp.toPx()))
             if (anim.value > 0.01f) {
@@ -516,8 +530,10 @@ fun PillBar(
     selected: Int,
     onSelect: (Int) -> Unit
 ) {
-    val glass = Color.White.copy(alpha = 0.18f)
-    val edge = Color.White.copy(alpha = 0.28f)
+    // Szkło z ról schematu (nie z twardej bieli): na Mleku tafla przyciemnia,
+    // na ciemnych motywach jest mleczna jak dotąd.
+    val glass = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
+    val edge = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.20f)
     Box(
         Modifier.fillMaxWidth()
             .background(Color.Transparent)
@@ -532,7 +548,7 @@ fun PillBar(
             modifier = Modifier.shadow(
                 20.dp,
                 RoundedCornerShape(28.dp),
-                spotColor = Color.White.copy(alpha = 0.10f)
+                spotColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.10f)
             )
         ) {
             Row(
@@ -570,7 +586,7 @@ fun PillBar(
                                 icons[i], contentDescription = null,
                                 Modifier.size(20.dp),
                                 tint = if (sel) MaterialTheme.colorScheme.onPrimary
-                                else Color.White.copy(alpha = iconGlow)
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = iconGlow)
                             )
                             // Etykieta tylko na wybranej — cztery pełne podpisy nie mieszczą się w rzędzie.
                             if (sel) {
@@ -1953,6 +1969,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.41.0 — żywa fala", listOf(
+                "Fale pierścienia wędrują jak w M3 Expressive."
+            ))
         }
         item {
             InfoCard("1.40.0 — trzy motywy", listOf(

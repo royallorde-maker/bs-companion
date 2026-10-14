@@ -1,8 +1,8 @@
 {
-  "versionCode": 46,
-  "versionName": "1.40.0",
+  "versionCode": 47,
+  "versionName": "1.41.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.40.0 — trzy motywy w Ustawieniach (Mono, Grafit, Mleko) + falisty pierścień",
+  "changelog": "1.41.0 — fale pierścienia wędrują na żywo jak w M3 Expressive",
   "force": false,
-  "publishedAt": "2026-10-14T13:41:11Z"
+  "publishedAt": "2026-10-14T13:55:43Z"
 }
