@@ -1,8 +1,8 @@
 {
-  "versionCode": 30,
-  "versionName": "1.24.0",
+  "versionCode": 31,
+  "versionName": "1.25.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.24.0 — koniec dziwnej białej kreski na pigułce (treść bez zmian)",
+  "changelog": "1.25.0 — ruch jak Fluent: wejścia fade+skala, boczne zakładki, ściskany dotyk (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-14T01:46:12Z"
+  "publishedAt": "2026-10-14T01:57:19Z"
 }

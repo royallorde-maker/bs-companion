@@ -17,7 +17,12 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.togetherWith
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -312,14 +317,28 @@ fun Ring(
 fun Appear(index: Int = 0, content: @Composable () -> Unit) {
     // Saveable — powrót na zakładkę nie odtwarza wejścia. Nie używać w leniwych
     // wierszach (LazyColumn kasuje kompozycję poza viewportem i tak odtworzy).
+    // Fluent: fade + lekki scale + krótki slide, ease-out, stagger 40 ms.
     var visible by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
     }
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(tween(250, delayMillis = index * 40)) +
-            slideInVertically(tween(250, delayMillis = index * 40)) { it / 4 }
+        enter = fadeIn(tween(FluentMotion.EnterMs, delayMillis = index * FluentMotion.StaggerMs)) +
+            scaleIn(
+                tween(
+                    FluentMotion.EnterMs,
+                    delayMillis = index * FluentMotion.StaggerMs,
+                    easing = LinearOutSlowInEasing
+                ), initialScale = 0.96f
+            ) +
+            slideInVertically(
+                tween(
+                    FluentMotion.EnterMs,
+                    delayMillis = index * FluentMotion.StaggerMs,
+                    easing = LinearOutSlowInEasing
+                )
+            ) { it / 5 }
     ) { content() }
 }
 
@@ -383,17 +402,24 @@ fun BsApp(
                 androidx.compose.foundation.layout.Box(Modifier.weight(1f).fillMaxWidth()) {
             // Miękkie przejście między zakładkami; treść od razu WIDOCZNA (bez przezroczystego otwarcia).
             // SaveableStateProvider trzyma scroll + saveable stany zakładek.
+            // Fluent: boczny slide wg kierunku + fade; wyjście szybsze niż wejście.
             AnimatedContent(
                 targetState = tab,
                 transitionSpec = {
-                    fadeIn(tween(150)) togetherWith fadeOut(tween(150))
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(
+                        tween(FluentMotion.EnterMs, easing = LinearOutSlowInEasing)
+                    ) { dir * it / 5 } + fadeIn(tween(FluentMotion.EnterMs))) togetherWith
+                        (slideOutHorizontally(
+                            tween(FluentMotion.ExitMs, easing = FastOutLinearInEasing)
+                        ) { -dir * it / 5 } + fadeOut(tween(FluentMotion.ExitMs)))
                 },
                 label = "tabs"
             ) { t ->
                 saveableHolder.SaveableStateProvider(t) {
                     val detail = remember(detailKey) { detailKey?.let { parseDetailKey(it) } }
                     if (detail != null) {
-                        DetailScreen(detail.first, detail.second) { detailKey = null }
+                        Appear(0) { DetailScreen(detail.first, detail.second) { detailKey = null } }
                     } else when (t) {
                         0 -> HomeScreen(
                             onTab = { tab = it },
@@ -467,6 +493,7 @@ fun PillBar(
                                 )
                                 .semantics { contentDescription = t }
                                 .animateContentSize()
+                                .fluentScale(rememberFluentPress(interaction, 0.93f))
                                 .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -874,10 +901,17 @@ fun HoldingSection(
         }
         items.forEach { (date, e) ->
             val target = LocalDateTime.of(date, e.start)
+            val rowPress = remember(e.id, date) { MutableInteractionSource() }
             Row(
                 Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { onOpen(date, e) }
+                    .clickable(
+                        onClick = { onOpen(date, e) },
+                        role = Role.Button,
+                        interactionSource = rowPress,
+                        indication = LocalIndication.current
+                    )
+                    .fluentScale(rememberFluentPress(rowPress))
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -992,11 +1026,18 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val backPress = remember { MutableInteractionSource() }
                 Box(
                     Modifier.size(44.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                        .clickable(onClick = onBack),
+                        .clickable(
+                            onClick = onBack,
+                            role = Role.Button,
+                            interactionSource = backPress,
+                            indication = LocalIndication.current
+                        )
+                        .fluentScale(rememberFluentPress(backPress)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -1455,14 +1496,17 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     val borderColor = if (isCurrent) scheme.onPrimary.copy(alpha = 0.35f)
     else scheme.outlineVariant
     var expanded by remember(e.id) { mutableStateOf(false) }
+    val rowPress = remember { MutableInteractionSource() }
+    val rowScale = rememberFluentPress(rowPress)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = if (isCurrent) scheme.primary else scheme.surfaceContainerLowest,
         border = BorderStroke(1.dp, borderColor),
-        onClick = { expanded = !expanded }
+        onClick = { expanded = !expanded },
+        interactionSource = rowPress
     ) {
-        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.fluentScale(rowScale).padding(20.dp), verticalAlignment = Alignment.Top) {
             // Ikona zawsze w tym samym kole — żaden wiersz nie "pływa".
             if (isCurrent) IconDotOnContainer(categoryIcon(e.category))
             else IconDot(categoryIcon(e.category))
@@ -1739,6 +1783,13 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.25.0 — ruch jak Fluent", listOf(
+                "Wejścia: fade + skala, ease-out, krótkie staggery",
+                "Zakładki suną w bok wg kierunku, wyjścia szybsze",
+                "Dotyk ściska kafelki, wiersze i pigułkę (0.96)"
+            ))
         }
         item {
             InfoCard("1.24.0 — bez białej kreski", listOf(
