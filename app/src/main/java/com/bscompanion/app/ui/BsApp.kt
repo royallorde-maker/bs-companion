@@ -1680,6 +1680,13 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.17.0 — twardszy plan i pobieranie", listOf(
+                "Debug i testy działają bez klucza — klucz tylko do release",
+                "Aktualizacje tylko z https z domen GitHuba",
+                "Spóźnione przypomnienie strzela za sekundę zamiast przepadać"
+            ))
+        }
+        item {
             InfoCard("1.16.0 — czytelny znaczek", listOf(
                 "Ikona bieżącego wydarzenia: czarny krążek zamiast niewidzialnej bieli",
                 "Treść i alarmy bez zmian"

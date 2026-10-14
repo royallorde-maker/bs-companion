@@ -297,7 +297,13 @@ object EventScheduler {
     ): String? {
         val dateTime = LocalDateTime.of(date, start).minusMinutes(offsetMinutes.toLong())
         val millis = dateTime.atZone(zone).toInstant().toEpochMilli()
-        if (millis <= System.currentTimeMillis()) return null
+        val nowMs = System.currentTimeMillis()
+        val startMs = LocalDateTime.of(date, start).atZone(zone).toInstant().toEpochMilli()
+        // Wydarzenie całe w przeszłości — nic do planowania.
+        if (startMs <= nowMs) return null
+        // Czas przypomnienia minął o włos (wybudzenie 1 s po), a wydarzenie daleko:
+        // strzel za sekundę zamiast gubić przypomnienie do następnego punktu.
+        val fireMs = if (millis <= nowMs) nowMs + 1_000 else millis
 
         val requestCode = requestCodeFor(eventId, date, offsetMinutes, isReminder)
         val uri = "$URI_SCHEME://event/$date/$eventId/$offsetMinutes/$isReminder"
@@ -315,7 +321,7 @@ object EventScheduler {
             putExtra(EventReceiver.EXTRA_ID, requestCode)
             // Czas planowanego odpalenia — odbiornik odrzuca dostawy przeterminowane
             // (urządzenie wyłączone przez weekend) zamiast budzić starym tytułem.
-            putExtra(EventReceiver.EXTRA_TRIGGER_MS, millis)
+            putExtra(EventReceiver.EXTRA_TRIGGER_MS, fireMs)
         }
         val pending = PendingIntent.getBroadcast(
             context, requestCode, intent,
@@ -329,20 +335,20 @@ object EventScheduler {
                 // "Dokładne alarmy: Wyłączone". Nie używamy USE_EXACT_ALARM
                 // (Play ogranicza do zegarów/kalendarzy).
                 try {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireMs, pending)
                 } catch (_: Exception) {
-                    am.setWindow(AlarmManager.RTC_WAKEUP, millis, 60_000L, pending)
+                    am.setWindow(AlarmManager.RTC_WAKEUP, fireMs, 60_000L, pending)
                 }
             } else {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireMs, pending)
             }
         } catch (e: SecurityException) {
             android.util.Log.w("EventScheduler", "exact denied, inexact fallback", e)
             try {
                 try {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pending)
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireMs, pending)
                 } catch (_: Exception) {
-                    am.setWindow(AlarmManager.RTC_WAKEUP, millis, 60_000L, pending)
+                    am.setWindow(AlarmManager.RTC_WAKEUP, fireMs, 60_000L, pending)
                 }
             } catch (e2: Exception) {
                 android.util.Log.w("EventScheduler", "fallback schedule failed", e2)

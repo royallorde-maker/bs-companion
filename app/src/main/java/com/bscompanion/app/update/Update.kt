@@ -101,6 +101,16 @@ private fun parseUpdate(json: String): UpdateInfo? {
         val name = o.optString("versionName", "")
         val url = o.optString("apkUrl", "")
         if (code <= 0 || name.isEmpty() || url.isEmpty()) return null
+        // Twarda zasada: tylko https z domen GitHuba. DownloadManager podąża za
+        // redirectem releases/download → objects.githubusercontent.com, więc obie
+        // rodziny hostów muszą przejść. Android i tak odrzuci update spod innego
+        // klucza, ale nie pobieramy w ogóle niczego spoza allowlisty.
+        val uri = try { Uri.parse(url) } catch (_: Exception) { return null }
+        if (uri.scheme != "https") return null
+        val host = (uri.host ?: "").lowercase(java.util.Locale.ROOT)
+        val okHost = host == "github.com" || host.endsWith(".github.com") ||
+            host.endsWith("githubusercontent.com")
+        if (!okHost) return null
         UpdateInfo(
             versionCode = code,
             versionName = name,

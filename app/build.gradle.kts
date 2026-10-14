@@ -15,8 +15,8 @@ android {
         applicationId = "com.bscompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "1.16.0"
+        versionCode = 23
+        versionName = "1.17.0"
         // Jedno źródło URL aktualizacji — reszta czyta BuildConfig.UPDATE_URL.
         // Surowy plik z main, żeby apka nie czekała na Pages.
         buildConfigField(
@@ -35,26 +35,30 @@ android {
             )
             // Podpis release: utwórz keystore.properties (nie commituj) z:
             // storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
-            // Brak klucza = twardy błąd (cichy unsigned APK łamie OTA).
+            // Klucz wymagany TYLKO przy taskach *Release* — debug/testy działają bez niego.
+            // Cichy unsigned APK w Release łamie OTA, więc tam brak klucza = twardy błąd.
             val ksPropsFile = rootProject.file("keystore.properties")
-            if (!ksPropsFile.exists()) {
+            if (ksPropsFile.exists()) {
+                signingConfigs {
+                    getByName("debug")
+                    create("release") {
+                        val ksProps = Properties()
+                        FileInputStream(ksPropsFile).use { ksProps.load(it) }
+                        storeFile = file(ksProps["storeFile"] as String)
+                        storePassword = ksProps["storePassword"] as String
+                        keyAlias = ksProps["keyAlias"] as String
+                        keyPassword = ksProps["keyPassword"] as String
+                    }
+                }
+                signingConfig = signingConfigs.getByName("release")
+            } else if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
                 throw GradleException(
                     "Brak keystore.properties — release MUSI być podpisany tym samym kluczem. " +
                         "Utwórz plik wg backend/AGENTS.md; nie omijaj tego (unsigned APK łamie aktualizacje)."
                 )
+            } else {
+                logger.warn("Brak keystore.properties — build bez podpisu release (tylko debug/test).")
             }
-            signingConfigs {
-                getByName("debug")
-                create("release") {
-                    val ksProps = Properties()
-                    FileInputStream(ksPropsFile).use { ksProps.load(it) }
-                    storeFile = file(ksProps["storeFile"] as String)
-                    storePassword = ksProps["storePassword"] as String
-                    keyAlias = ksProps["keyAlias"] as String
-                    keyPassword = ksProps["keyPassword"] as String
-                }
-            }
-            signingConfig = signingConfigs.getByName("release")
         }
     }
 
