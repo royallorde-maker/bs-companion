@@ -1691,6 +1691,13 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.19.0 — porządek w papierach", listOf(
+                "README i strona statusu zgodne z kodem (AMOLED, podpis, URL-e)",
+                "Migracja prefs poza UI thread",
+                "Treść i alarmy bez zmian"
+            ))
+        }
+        item {
             InfoCard("1.18.0 — uczciwsze detale", listOf(
                 "Stołówka: każdy posiłek liczony własnym czasem, nie chwilą obecną",
                 "Pobieranie pilnuje stanu DownloadManagera zamiast zgadywać po rozmiarze",

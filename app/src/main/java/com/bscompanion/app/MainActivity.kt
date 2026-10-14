@@ -141,7 +141,11 @@ class MainActivity : ComponentActivity() {
 
     private fun requestNotifPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try { Prefs.migrateIfNeeded(this) } catch (_: Exception) {}
+            // Jednorazowa migracja prefs (blocking commit) — poza UI thread.
+            // Reszta czyta SharedPreferences z pamięci, więc jest tania.
+            Thread {
+                try { Prefs.migrateIfNeeded(this) } catch (_: Exception) { }
+            }.start()
             val granted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
