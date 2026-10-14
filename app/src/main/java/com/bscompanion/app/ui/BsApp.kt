@@ -8,6 +8,10 @@ package com.bscompanion.app.ui
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -92,6 +96,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -416,9 +421,9 @@ fun PillBar(
     selected: Int,
     onSelect: (Int) -> Unit
 ) {
-    val glass = Color.White.copy(alpha = 0.12f)
-    val edge = Color.White.copy(alpha = 0.16f)
-    val glint = Color.White.copy(alpha = 0.30f)
+    val glass = Color.White.copy(alpha = 0.18f)
+    val edge = Color.White.copy(alpha = 0.28f)
+    val glint = Color.White.copy(alpha = 0.50f)
     Box(
         Modifier.fillMaxWidth()
             .background(Color.Transparent)
@@ -429,7 +434,12 @@ fun PillBar(
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = glass,
-            border = BorderStroke(1.dp, edge)
+            border = BorderStroke(1.dp, edge),
+            modifier = Modifier.shadow(
+                20.dp,
+                RoundedCornerShape(28.dp),
+                spotColor = Color.White.copy(alpha = 0.10f)
+            )
         ) {
             Column {
                 // Krawędź świetlna: cienka jasna linia = grubość szkła.
@@ -447,11 +457,24 @@ fun PillBar(
                 ) {
                     titles.forEachIndexed { i, t ->
                         val sel = selected == i
+                        // Dotyk rozświetla ikonę — szkło reaguje na palec.
+                        val interaction = remember { MutableInteractionSource() }
+                        val pressed by interaction.collectIsPressedAsState()
+                        val iconGlow by animateFloatAsState(
+                            if (pressed || sel) 1f else 0.6f,
+                            label = "press"
+                        )
                         Row(
                             Modifier
                                 .clip(RoundedCornerShape(22.dp))
                                 .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                .selectable(selected = sel, onClick = { onSelect(i) }, role = Role.Tab)
+                                .selectable(
+                                    selected = sel,
+                                    onClick = { onSelect(i) },
+                                    role = Role.Tab,
+                                    interactionSource = interaction,
+                                    indication = LocalIndication.current
+                                )
                                 .semantics { contentDescription = t }
                                 .animateContentSize()
                                 .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
@@ -461,7 +484,7 @@ fun PillBar(
                                 icons[i], contentDescription = null,
                                 Modifier.size(20.dp),
                                 tint = if (sel) MaterialTheme.colorScheme.onPrimary
-                                else Color.White.copy(alpha = 0.6f)
+                                else Color.White.copy(alpha = iconGlow)
                             )
                             // Etykieta tylko na wybranej — cztery pełne podpisy nie mieszczą się w rzędzie.
                             if (sel) {
@@ -713,14 +736,18 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(4.dp))
-                    Text(
-                        timeRange(current),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip
-                    )
+                    // Tytuł ciszy niesie godziny w sobie ("Cisza nocna 22:00–6:00") —
+                    // osobna linia zakresu dublowałaby się pod spodem.
+                    if (!current.title.any { it.isDigit() }) {
+                        Text(
+                            timeRange(current),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Clip
+                        )
+                    }
                 } else {
                     Ring(progress = null) {
                         Icon(
@@ -781,14 +808,17 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        timeRange(next),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Clip
-                    )
+                    // Jak w TERAZ: tytuł z cyframi niesie godziny w sobie.
+                    if (!next.title.any { it.isDigit() }) {
+                        Text(
+                            timeRange(next),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Clip
+                        )
+                    }
                 } else {
                     Ring(progress = null) {
                         Icon(
@@ -1720,6 +1750,13 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.23.0 — bez dublowanych godzin", listOf(
+                "TERAZ/NASTĘPNE nie powtarzają godzin z tytułu (Cisza nocna)",
+                "Pigułka naprawdę szklana: jaśniejsza tafla, poświata, dotyk rozświetla",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.22.0 — skróty i płynne szkło", listOf(
