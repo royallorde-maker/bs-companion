@@ -496,6 +496,8 @@ def g_source() -> None:
     check("four themes mono/grafit/mleko/cukierek", all(x in th for x in
           ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme", "CandyScheme"))
           and "verticalGradient" not in th)
+    check("semester countdown on Today", "SemesterCountdown" in bs
+          and "SemesterEnd = LocalDate.of(2027, 6, 25)" in bs)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")
     check("kotlin-test aligned", "kotlin-test:2.0.21" in bg)
     mf = (MAIN / "AndroidManifest.xml").read_text(encoding="utf-8")

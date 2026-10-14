@@ -699,6 +699,9 @@ fun HomeScreen(
                 )
             }
         }
+        item {
+            Appear(4) { SemesterCountdown() }
+        }
     }
 }
 
@@ -1500,6 +1503,53 @@ fun BsSurface(
     )
 }
 
+/** Licznik do końca zajęć: czysta matematyka dat, zero tykania i zero stanu.
+ *  Koniec roku 2026/27 = ostatni piątek czerwca (25.06.2027). */
+private val SemesterEnd = LocalDate.of(2027, 6, 25)
+
+@Composable
+fun SemesterCountdown() {
+    // Bez remember: LocalDate.now() to grosze, a po północy wynik świeży bez roboty.
+    val days = ChronoUnit.DAYS.between(LocalDate.now(), SemesterEnd)
+    val text = when {
+        days > 1 -> "Do końca zajęć: $days dni"
+        days == 1L -> "Do końca zajęć: 1 dzień"
+        days == 0L -> "Dziś koniec zajęć!"
+        else -> "Wakacje!"
+    }
+    BsSurface(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = text
+            },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.School, null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Koniec roku",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
 /** Karta ustawień powiadomień + pracy w tle (własny takt minutowy). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1989,6 +2039,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.48.0 — licznik do wakacji", listOf(
+                "Dziś na dole: dni do końca zajęć.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.47.0 — Cukierek", listOf(

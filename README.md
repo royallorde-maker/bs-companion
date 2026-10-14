@@ -4,7 +4,7 @@ Polished Material 3 companion app for **Internat ZST Szczecinek** (ul. Koszaliń
 built from `Regulamin_Internatu_ZST_2025_2026`.
 
 ## Features
-- **Home (Dziś):** live phone clock (date + time, 1s refresh), current event, next-event countdown.
+- **Home (Dziś):** live phone clock (date + time, 1s refresh), current event, next-event countdown, semester countdown.
 - **Plan dnia:** full daily order from Załącznik nr 6 (pobudka → cisza nocna 22:00–6:00), current event highlighted (suppressed when dorm closed).
 - **Posiłki:** meal hours + stołówka rules (Zał. nr 3).
 - **Zmiany:** changelog + update card (O aplikacji mieszka w Ustawieniach).
