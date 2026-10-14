@@ -54,7 +54,6 @@ import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -66,7 +65,6 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
@@ -497,7 +495,7 @@ fun HomeScreen(
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            Appear(0) { HeroCard(nowState, onTab) }
+            Appear(0) { HeroCard(nowState) }
         }
         item {
             Appear(1) { NowNextCards(nowState) }
@@ -534,7 +532,7 @@ fun HomeScreen(
 
 /** Granatowa karta-bohater w języku Nexora: żywy zegar + TERAZ/NASTĘPNE + skróty. */
 @Composable
-fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
+fun HeroCard(nowState: State<LocalDateTime>) {
     val now by nowState
     // Kwantyzacja do minuty — AnimatedContent odpala się tylko przy zmianie "HH:mm".
     val minuteKey = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
@@ -567,7 +565,7 @@ fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
                 Text(
                     animatedTime,
                     style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = onHero,
                     maxLines = 1,
                     softWrap = false,
@@ -585,12 +583,6 @@ fun HeroCard(nowState: State<LocalDateTime>, onTab: (Int) -> Unit) {
             if (closed) {
                 Spacer(Modifier.height(8.dp))
                 HeroPill("Brak opieki wychowawczej")
-            }
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                HeroButton(Icons.Filled.DateRange, "Plan dnia", Modifier.weight(1f)) { onTab(1) }
-                HeroButton(Icons.Filled.Restaurant, "Posiłki", Modifier.weight(1f)) { onTab(2) }
-                HeroButton(Icons.Filled.History, "Zmiany", Modifier.weight(1f)) { onTab(3) }
             }
         }
     }
@@ -611,33 +603,6 @@ private fun HeroPill(text: String, modifier: Modifier = Modifier) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-        )
-    }
-}
-
-@Composable
-private fun HeroButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f))
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(icon, null, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onPrimary)
-        Spacer(Modifier.height(6.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -771,7 +736,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                     Text(
                         formatCountdown(now, target),
                         style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Clip
@@ -824,7 +789,7 @@ fun HoldingSection(
     onOpen: (LocalDate, DormEvent) -> Unit
 ) {
     val now by nowState
-    val gain = if (isSystemInDarkTheme()) Color(0xFF63D68F) else Color(0xFF1E8E5A)
+    // Bez krzykliwej zieleni — odliczanie w stonowanym kolorze tekstu.
     // Stan minutowy (pochodny) — rekompozycja 1/min, nie 1/s.
     val items = remember(now.truncatedTo(ChronoUnit.MINUTES)) {
         DormSchedule.upcomingCared(now.truncatedTo(ChronoUnit.MINUTES), 4)
@@ -854,7 +819,7 @@ fun HoldingSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        items.forEachIndexed { i, (date, e) ->
+        items.forEach { (date, e) ->
             val target = LocalDateTime.of(date, e.start)
             Row(
                 Modifier.fillMaxWidth()
@@ -907,20 +872,12 @@ fun HoldingSection(
                         formatCountdown(now, target),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = gain,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Clip
                     )
                 }
-            }
-            if (i < items.lastIndex) {
-                Box(
-                    Modifier.fillMaxWidth()
-                        .height(1.dp)
-                        .padding(horizontal = 58.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                )
             }
         }
     }
@@ -1033,7 +990,7 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
                         Text(
                             center,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1745,6 +1702,13 @@ fun ChangelogScreen(themeMode: Int, onThemeChange: (Int) -> Unit) {
                     }
                 }
             }
+        }
+        item {
+            InfoCard("1.13.0 — spokojniejszy układ", listOf(
+                "Bohater bez skrótów — nawigacja tylko w pigułce na dole",
+                "Wiersze bez linii i krzykliwej zieleni, lżejsza typografia",
+                "Treść i alarmy bez zmian"
+            ))
         }
         item {
             InfoCard("1.12.0 — zwarta pigułka nawigacji", listOf(

@@ -1,8 +1,8 @@
 {
-  "versionCode": 18,
-  "versionName": "1.12.0",
+  "versionCode": 19,
+  "versionName": "1.13.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.12.0 — zwarta pigułka nawigacji: etykieta tylko na wybranej zakładce (treść bez zmian)",
+  "changelog": "1.13.0 — spokojniejszy układ Dziś: bohater bez skrótów, wiersze bez linii i zieleni (treść bez zmian)",
   "force": false,
-  "publishedAt": "2026-10-13T19:37:50Z"
+  "publishedAt": "2026-10-14T00:11:22Z"
 }
