@@ -1,8 +1,8 @@
 {
-  "versionCode": 55,
-  "versionName": "1.49.0",
+  "versionCode": 56,
+  "versionName": "1.50.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.49.0 — stabilizacja: audyt dwóch patroli",
+  "changelog": "1.50.0 — jeden dzwonek: łączone przypomnienia, TERAZ po 21:00",
   "force": false,
-  "publishedAt": "2026-10-14T18:00:00Z"
+  "publishedAt": "2026-10-14T18:15:00Z"
 }

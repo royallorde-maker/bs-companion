@@ -2055,6 +2055,13 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.50.0 — jeden dzwonek", listOf(
+                "Dwa przypomnienia z tej samej minuty to jeden wiersz.",
+                "Powrót oddaje TERAZ toalecie już po 21:00.",
+                "Reszta bez zmian."
+            ))
+        }
+        item {
             InfoCard("1.49.0 — stabilizacja", listOf(
                 "Szczegóły punktu już nie kraszują.",
                 "Licznik do wakacji działa co roku.",

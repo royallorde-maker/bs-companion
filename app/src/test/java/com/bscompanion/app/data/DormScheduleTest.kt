@@ -51,6 +51,15 @@ class DormScheduleTest {
     }
 
     @Test
+    fun currentEvent_expiredPointYieldsToSpanning() {
+        val events = DormSchedule.eventsForDate(monday())
+        // 21:00: punkt jeszcze w swojej minucie — powrót.
+        assertEquals("powrot", DormSchedule.currentEvent(LocalTime.of(21, 0), events)?.id)
+        // 21:02: deadline minął, trwa toaleta 21:00–21:45.
+        assertEquals("toaleta", DormSchedule.currentEvent(LocalTime.of(21, 2), events)?.id)
+    }
+
+    @Test
     fun gapsAreExplicitCzasWolny() {
         val events = DormSchedule.eventsForDate(monday())
         assertEquals(16, events.size)

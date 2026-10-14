@@ -27,6 +27,29 @@ class EventReceiver : BroadcastReceiver() {
         private const val FIRED_FILE = "bs_fired"
         private const val FIRED_PREFIX = "fire_"
         private const val FIRED_PRUNE_THRESHOLD = 300
+        // Łączenie przypomnień: dwa różne wydarzenia startujące o tej samej minucie
+        // (powrót 21:00 + toaleta 21:00) dzwoniłyby w tej samej minucie dwoma wierszami.
+        // Drugie dokleja się do pierwszego slotu zamiast stawiać własny.
+        const val COALESCE_WINDOW_MS = 120_000L
+        const val COALESCE_START_SPREAD_MS = 5 * 60_000L
+        private const val CO_SLOT = "co_slot"
+        private const val CO_POSTED = "co_posted"
+        private const val CO_START = "co_start"
+        private const val CO_KEY = "co_key"
+        private const val CO_TITLE = "co_title"
+        private const val CO_BODY = "co_body"
+
+        /** Czysta funkcja: czy to przypomnienie dokleić do poprzedniego (testowalna bez Androida). */
+        fun shouldCoalesce(
+            lastPostedMs: Long, lastStartMs: Long, lastKey: String,
+            nowMs: Long, thisStartMs: Long, thisKey: String,
+            windowMs: Long = COALESCE_WINDOW_MS
+        ): Boolean {
+            if (lastKey == thisKey) return false
+            if (lastPostedMs <= 0L || lastStartMs <= 0L || thisStartMs <= 0L) return false
+            if (nowMs - lastPostedMs > windowMs) return false
+            return kotlin.math.abs(thisStartMs - lastStartMs) <= COALESCE_START_SPREAD_MS
+        }
 
         /** Czysta funkcja: czy dostawa to duplikat (testowalna bez Androida). */
         fun isDuplicateDelivery(lastFiredMs: Long, nowMs: Long, windowMs: Long = DEDUPE_WINDOW_MS): Boolean {
@@ -103,6 +126,16 @@ class EventReceiver : BroadcastReceiver() {
         // przy otwarciu) pokazywałby "Za 30 min" na 14 min przed startem.
         val body = if (isReminder && offsetMin > 0) refreshReminderText(eventKey, text) else text
         // Szybkie (jeden notify) synchronicznie; ciężkie przeplanowanie w tle z debounce.
+        if (isReminder && offsetMin > 0) {
+            if (tryCoalesceReminder(app, nowMs, eventKey, title, body, slotId) != null) {
+                // Doklejone do poprzedniego slotu — własnego wiersza nie stawiamy.
+                try { NotificationHelper.refreshPersistent(app) } catch (e: Exception) {
+                    android.util.Log.w("EventReceiver", "refresh failed", e)
+                }
+                EventScheduler.rescheduleAsync(app)
+                return
+            }
+        }
         NotificationHelper.showEventNotification(app, slotId, title, body, isReminder, timeout)
         try { NotificationHelper.refreshPersistent(app) } catch (e: Exception) {
             android.util.Log.w("EventReceiver", "refresh failed", e)
@@ -133,6 +166,70 @@ class EventReceiver : BroadcastReceiver() {
             else prefix.replace(fallback, "Za $remain min: ")
         } catch (_: Exception) {
             fallback
+        }
+    }
+
+    /** Start wystąpienia z klucza "data/eventId" (null, gdy nie do rozpoznania). */
+    private fun eventStartMs(eventKey: String): Long? {
+        return try {
+            val sep = eventKey.indexOf('/')
+            if (sep < 0) return null
+            val date = java.time.LocalDate.parse(eventKey.substring(0, sep))
+            val id = eventKey.substring(sep + 1)
+            val e = com.bscompanion.app.data.DormSchedule.eventsForDate(date)
+                .firstOrNull { it.id == id } ?: return null
+            java.time.LocalDateTime.of(date, e.start)
+                .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Dokleja przypomnienie do wiersza poprzednika z tej samej minuty.
+     * Zwraca slot pierwszego (i aktualizuje go łączonym tekstem) albo null,
+     * gdy to my jesteśmy pierwsi — wtedy tylko zostawiamy ślad dla następnego.
+     */
+    private fun tryCoalesceReminder(
+        context: Context, nowMs: Long, eventKey: String,
+        title: String, body: String, slotId: Int
+    ): Int? {
+        return try {
+            val thisStart = eventStartMs(eventKey) ?: return null
+            val prefs = context.getSharedPreferences(FIRED_FILE, Context.MODE_PRIVATE)
+            val lastKey = try { prefs.getString(CO_KEY, "") ?: "" } catch (_: Exception) { "" }
+            val lastPosted = try { prefs.getLong(CO_POSTED, 0L) } catch (_: Exception) { 0L }
+            val lastStart = try { prefs.getLong(CO_START, 0L) } catch (_: Exception) { 0L }
+            if (!shouldCoalesce(lastPosted, lastStart, lastKey, nowMs, thisStart, eventKey)) {
+                prefs.edit()
+                    .putInt(CO_SLOT, slotId)
+                    .putLong(CO_POSTED, nowMs)
+                    .putLong(CO_START, thisStart)
+                    .putString(CO_KEY, eventKey)
+                    .putString(CO_TITLE, title)
+                    .putString(CO_BODY, body)
+                    .apply()
+                return null
+            }
+            val firstSlot = try { prefs.getInt(CO_SLOT, 0) } catch (_: Exception) { 0 }
+            if (firstSlot <= 0) return null
+            val oldTitle = try { prefs.getString(CO_TITLE, "") ?: "" } catch (_: Exception) { "" }
+            val oldBody = try { prefs.getString(CO_BODY, "") ?: "" } catch (_: Exception) { "" }
+            val comboTitle = if (oldTitle.isEmpty()) title else "$oldTitle • $title"
+            val comboBody = if (oldBody.isEmpty()) body else "$oldBody\n$body"
+            // Wiersz znika o starcie wcześniejszego (jak pojedyncze o swoim).
+            val comboTimeout = (minOf(lastStart, thisStart) - nowMs).coerceAtLeast(60_000L)
+            NotificationHelper.showEventNotification(context, firstSlot, comboTitle, comboBody, true, comboTimeout)
+            // Ślad zostaje na pierwszym slocie — trzecie wydarzenie doklei się tam samo.
+            prefs.edit()
+                .putLong(CO_POSTED, nowMs)
+                .putLong(CO_START, minOf(lastStart, thisStart))
+                .putString(CO_TITLE, comboTitle)
+                .putString(CO_BODY, comboBody)
+                .apply()
+            firstSlot
+        } catch (_: Exception) {
+            null
         }
     }
 

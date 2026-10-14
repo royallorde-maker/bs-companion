@@ -49,4 +49,30 @@ class EventDedupeTest {
         assertNull(EventReceiver.eventKeyFromDataString("not-a-uri"))
         assertNull(EventReceiver.eventKeyFromDataString("bs://event/2026-10-12//30/true"))
     }
+
+    @Test
+    fun coalesce_mergesSameMinuteDifferentEvents() {
+        val now = 1_700_000_000_000L
+        val start = now + 1_800_000L
+        // Dwa różne wydarzenia o tej samej minucie, chwilę po pierwszym — doklej.
+        assertTrue(EventReceiver.shouldCoalesce(
+            now - 60_000L, start, "2026-10-14/powrot",
+            now, start, "2026-10-14/toaleta"
+        ))
+        // To samo wystąpienie — nigdy (slot sam nadpisuje).
+        assertFalse(EventReceiver.shouldCoalesce(
+            now - 60_000L, start, "2026-10-14/powrot",
+            now, start, "2026-10-14/powrot"
+        ))
+        // Za stary poprzednik — osobny wiersz.
+        assertFalse(EventReceiver.shouldCoalesce(
+            now - 300_000L, start, "2026-10-14/powrot",
+            now, start, "2026-10-14/toaleta"
+        ))
+        // Starty daleko od siebie — osobny wiersz.
+        assertFalse(EventReceiver.shouldCoalesce(
+            now - 60_000L, start, "2026-10-14/powrot",
+            now, start + 3_600_000L, "2026-10-14/nauka"
+        ))
+    }
 }

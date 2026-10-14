@@ -115,7 +115,12 @@ def current_event(now: time):
             cands.append(e)
     if not cands:
         return None
-    return min(cands, key=lambda e: span_seconds(e[1], e[2]))
+    def rank(e):
+        _id, s, en, _n = e
+        one_min = (datetime.combine(date.today(), s) + timedelta(minutes=1)).time()
+        expired_point = en is None and now >= one_min
+        return (1 if expired_point else 0, span_seconds(s, en))
+    return min(cands, key=rank)
 
 
 def current_cared(now: datetime):
@@ -298,7 +303,8 @@ def g_current() -> None:
     check("23:00 cisza", current_event(time(23, 0))[0] == "cisza")
     check("02:00 cisza", current_event(time(2, 0))[0] == "cisza")
     check("06:30 pobudka", current_event(time(6, 30))[0] == "pobudka")
-    check("21:00 tie-break powrot (shortest)", current_event(time(21, 5))[0] == "powrot")
+    check("21:00 tie-break powrot (shortest)", current_event(time(21, 0))[0] == "powrot")
+    check("21:02 expired point yields to toaleta", current_event(time(21, 2))[0] == "toaleta")
     check("21:30 toaleta (powrot 15min over)", current_event(time(21, 30))[0] == "toaleta")
     check("12:00 gap is czas_wolny_4", current_event(time(12, 0))[0] == "czas_wolny_4")
     check("06:10 gap is czas_wolny_6", current_event(time(6, 10))[0] == "czas_wolny_6")
@@ -392,6 +398,9 @@ def g_slots() -> None:
           stable_slot("2026-10-12/nauka") != stable_slot("2026-10-13/nauka")
           or stable_slot("2026-10-12/nauka") != stable_slot("2026-10-12/kolacja"))
     check("FALLBACK outside slot range", not 100_000 <= 50_001 <= 100_100_000)
+    er = src("java/com/bscompanion/app/notifications/EventReceiver.kt")
+    check("reminders coalesce same minute", "shouldCoalesce" in er and "COALESCE_WINDOW_MS" in er
+          and "tryCoalesceReminder" in er)
 
 
 def g_dedupe() -> None:

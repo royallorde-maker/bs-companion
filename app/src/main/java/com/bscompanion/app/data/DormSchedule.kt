@@ -253,10 +253,17 @@ object DormSchedule {
             return events.firstOrNull { it.id == "cisza" }
         }
         // Przy nakładających się pozycjach wygrywa najbardziej konkretna (najkrótsza).
+        // Ale punkt po swojej minucie ustępuje trwającym: deadline minął (powrót 21:00),
+        // a toaleta 21:00–21:45 trwa. Bez trwającej konkurencji punkt zostaje jak dotąd.
         return events.filter { e ->
             val end = e.end ?: e.start.plusMinutes(15)
             !now.isBefore(e.start) && now.isBefore(end)
-        }.minByOrNull { spanSeconds(it) }
+        }.minWithOrNull(
+            compareBy(
+                { e -> if (e.end == null && !now.isBefore(e.start.plusMinutes(1))) 1 else 0 },
+                { spanSeconds(it) }
+            )
+        )
     }
 
     /**

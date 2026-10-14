@@ -8,7 +8,7 @@ built from `Regulamin_Internatu_ZST_2025_2026`.
 - **Plan dnia:** full daily order from Załącznik nr 6 (pobudka → cisza nocna 22:00–6:00), current event highlighted (suppressed when dorm closed).
 - **Posiłki:** meal hours + stołówka rules (Zał. nr 3).
 - **Zmiany:** changelog + update card (O aplikacji mieszka w Ustawieniach).
-- **Notifications:** alarms via `AlarmManager` — reminder N min before each event (self-dismisses on time, no re-buzz).
+- **Notifications:** alarms via `AlarmManager` — reminder N min before each event (self-dismisses on time, no re-buzz). Same-minute reminders merge into one row.
   Toggle + 5/10/15/30 min chips, test button with Toast feedback, auto-reschedule on boot / time change / app open.
   Weekends (no care: sob all day, ndz to 16:00, pt from 18:00) are skipped.
   Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact `setWindow` fallback (may be late) with in-app "Zezwól" row.
