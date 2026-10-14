@@ -1845,6 +1845,11 @@ fun ChangelogScreen() {
             }
         }
         item {
+            InfoCard("1.33.0 — ikona mieści się", listOf(
+                "Notes pomniejszony — maska launchera już nic nie ucina."
+            ))
+        }
+        item {
             InfoCard("1.32.0 — po ludzku", listOf(
                 "Cała historia wersji napisana krótko i normalnie.",
                 "Nowa ikona: czarny notes."

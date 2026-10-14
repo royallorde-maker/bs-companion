@@ -1,8 +1,8 @@
 {
-  "versionCode": 38,
-  "versionName": "1.32.0",
+  "versionCode": 39,
+  "versionName": "1.33.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.32.0 — cała historia wersji napisana krótko i po ludzku",
+  "changelog": "1.33.0 — ikona notesu pomniejszona, maska launchera nic nie ucina",
   "force": false,
-  "publishedAt": "2026-10-14T12:03:38Z"
+  "publishedAt": "2026-10-14T12:48:55Z"
 }
