@@ -1,8 +1,8 @@
 {
-  "versionCode": 58,
-  "versionName": "1.52.0",
+  "versionCode": 59,
+  "versionName": "1.53.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.52.0 — trzy nowe motywy: Bursztyn, Las, Lawenda",
+  "changelog": "1.53.0 — fala narasta: płaski łuk przechodzi w falę jak w M3",
   "force": false,
-  "publishedAt": "2026-10-14T18:45:00Z"
+  "publishedAt": "2026-10-14T19:00:00Z"
 }

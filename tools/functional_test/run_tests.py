@@ -468,6 +468,7 @@ def g_source() -> None:
     check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
     check("plasko: zero gradientow + pigulka", "verticalGradient" not in bs and "Brush" not in bs
           and "RoundedCornerShape(28.dp)" in bs)
+    check("wave morphs flat to wavy (M3)", '"waveAmp"' in bs and "wavyRing" in bs)
     check("force bypass for user actions", "force: Boolean = false" in es)
     check("lock off UI thread (bgLock/scheduleLock)",
           "private val bgLock" in es and "private val scheduleLock" in es

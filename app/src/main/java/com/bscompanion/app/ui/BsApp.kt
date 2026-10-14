@@ -121,6 +121,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -371,10 +372,15 @@ fun Ring(
                 phase = (phase + (2 * PI / 48).toFloat()) % (2 * PI).toFloat()
             }
         }
+        // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
+        val fullAmp = with(LocalDensity.current) { 1.5.dp.toPx() }
+        val amp by animateFloatAsState(
+            if (anim.value > 0.01f) fullAmp else 0f,
+            tween(1200), label = "waveAmp"
+        )
         Canvas(Modifier.fillMaxSize().padding(3.dp)) {
             val half = size.minDimension / 2
             val wormW = 4.5.dp.toPx()
-            val amp = 1.5.dp.toPx()
             // Promienie liczone od krawędzi do środka: nic nie wystaje poza Canvas.
             val wormR = half - amp - wormW / 2 - 0.5.dp.toPx()
             val trackR = wormR + 1.dp.toPx()
@@ -2056,6 +2062,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.53.0 — fala narasta", listOf(
+                "Pierścień najpierw płaski, potem faluje jak w M3.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.52.0 — trzy nowe motywy", listOf(
