@@ -1411,6 +1411,7 @@ fun SettingsScreen(
                                         AppTheme.MONO -> Color.Black
                                         AppTheme.GRAFIT -> Color(0xFF232329)
                                         AppTheme.MLEKO -> Color(0xFFF1F1EC)
+                                        AppTheme.CANDY -> Color(0xFFFFB1C8)
                                     }
                                 )
                                 .border(
@@ -1988,6 +1989,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.47.0 — Cukierek", listOf(
+                "Nowy motyw: ciemny róż w Ustawieniach.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.46.0 — cichy audyt", listOf(

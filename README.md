@@ -12,7 +12,7 @@ built from `Regulamin_Internatu_ZST_2025_2026`.
   Toggle + 5/10/15/30 min chips, test button with Toast feedback, auto-reschedule on boot / time change / app open.
   Weekends (no care: sob all day, ndz to 16:00, pt from 18:00) are skipped.
   Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact `setWindow` fallback (may be late) with in-app "Zezwól" row.
-- **Material 3:** 3 motywy do wyboru w Ustawieniach (Mono/Grafit/Mleko), no dynamic color, bottom navigation, cards, countdown.
+- **Material 3:** 4 motywy do wyboru w Ustawieniach (Mono/Grafit/Mleko/Cukierek), no dynamic color, bottom navigation, cards, countdown.
 - **Icon:** adaptive `@mipmap/ic_launcher` (black notebook photo) on `#000000` background, white bell `ic_notification` for status bar.
 
 ## Schedule source

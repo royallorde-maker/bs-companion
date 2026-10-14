@@ -40,11 +40,12 @@ private val AppTypography = Typography().let { t ->
     )
 }
 
-/** Trzy motywy do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
+/** Cztery motywy do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
 enum class AppTheme(val label: String, val darkBars: Boolean, val windowBg: Long) {
     MONO("Mono", true, 0xFF000000),
     GRAFIT("Grafit", true, 0xFF131316),
-    MLEKO("Mleko", false, 0xFFF1F1EC)
+    MLEKO("Mleko", false, 0xFFF1F1EC),
+    CANDY("Cukierek", true, 0xFF1A0E14)
 }
 
 fun appThemeOf(name: String?): AppTheme = try {
@@ -167,6 +168,44 @@ private val MlekoScheme = lightColorScheme(
     surfaceDim = Color(0xFFDCDCD2)
 )
 
+// Cukierek: ciemne cukierkowe tło + różowy akcent. Ciemne bary jak w Mono.
+private val CandyScheme = darkColorScheme(
+    primary = Color(0xFFFFB1C8),
+    onPrimary = Color(0xFF4A0E20),
+    primaryContainer = Color(0xFF5C1A30),
+    onPrimaryContainer = Color(0xFFFFD9E3),
+    secondary = Color(0xFFE08AA5),
+    secondaryContainer = Color(0xFF3A1421),
+    onSecondaryContainer = Color(0xFFFFD9E3),
+    tertiary = Color(0xFFDD9DF2),
+    tertiaryContainer = Color(0xFF38163F),
+    onTertiaryContainer = Color(0xFFF5D9FF),
+    background = Color(0xFF1A0E14),
+    onBackground = Color(0xFFFFE9EF),
+    surface = Color(0xFF1A0E14),
+    onSurface = Color(0xFFFFE9EF),
+    surfaceVariant = Color(0xFF241219),
+    onSurfaceVariant = Color(0xFFE0A9BB),
+    surfaceContainerLowest = Color(0xFF12070C),
+    surfaceContainerLow = Color(0xFF1A0E14),
+    surfaceContainer = Color(0xFF241219),
+    surfaceContainerHigh = Color(0xFF2F1620),
+    surfaceContainerHighest = Color(0xFF3D1C2A),
+    outline = Color(0xFF5C2E40),
+    outlineVariant = Color(0xFF3A1B28),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFFFFB1C8),
+    inverseSurface = Color(0xFFFFE9EF),
+    inverseOnSurface = Color(0xFF1A0E14),
+    inversePrimary = Color(0xFF7A2A45),
+    surfaceBright = Color(0xFF3D1C2A),
+    surfaceDim = Color(0xFF12070C)
+)
+
 @Composable
 fun BSCompanionTheme(
     theme: AppTheme = AppTheme.MONO,
@@ -176,6 +215,7 @@ fun BSCompanionTheme(
         AppTheme.MONO -> MonoScheme
         AppTheme.GRAFIT -> GrafitScheme
         AppTheme.MLEKO -> MlekoScheme
+        AppTheme.CANDY -> CandyScheme
     }
     MaterialTheme(colorScheme = scheme, typography = AppTypography, content = content)
 }
