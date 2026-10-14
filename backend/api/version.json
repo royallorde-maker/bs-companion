@@ -1,8 +1,8 @@
 {
-  "versionCode": 50,
-  "versionName": "1.44.0",
+  "versionCode": 51,
+  "versionName": "1.45.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.44.0 — audyt naprawczy: alarmy, pobieranie, luka 6:00, papiery",
+  "changelog": "1.45.0 — O aplikacji w Ustawieniach, motyw wjeżdża z boku",
   "force": false,
-  "publishedAt": "2026-10-14T14:37:25Z"
+  "publishedAt": "2026-10-14T15:48:19Z"
 }
