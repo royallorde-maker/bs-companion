@@ -171,12 +171,16 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
             setMimeType("application/vnd.android.package-archive")
         }
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        dm.enqueue(req)
+        // Zapamiętaj id — "Zainstaluj" pyta DownloadManager o STAN zamiast zgadywać po rozmiarze.
+        val id = dm.enqueue(req)
+        try {
+            context.getSharedPreferences("bs_update", Context.MODE_PRIVATE).edit()
+                .putLong("dl_id", id)
+                .putString("dl_version", info.versionName)
+                .apply()
+        } catch (_: Exception) { }
         android.widget.Toast.makeText(context, "Pobieranie ${info.versionName}…", android.widget.Toast.LENGTH_SHORT).show()
-        // Instalacja: użytkownik tapnie powiadomienie DownloadManagera albo plik.
-        // Bezpośredni install tu byłby przedwczesny (plik jeszcze się pobiera).
-        // Otwieramy po pobraniu przez receiver systemowy — tu tylko podpowiedź:
-        android.util.Log.i("Update", "enqueue ${info.apkUrl} -> $dest")
+        android.util.Log.i("Update", "enqueue ${info.apkUrl} -> $dest (id=$id)")
     } catch (e: Exception) {
         android.util.Log.w("Update", "download failed", e)
         // Fallback: otwórz URL w przeglądarce.
@@ -190,13 +194,35 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
     }
 }
 
+/** Prawda, gdy DownloadManager zgłasza SUCCESS dla naszego pobrania tej wersji. */
+private fun downloadSucceeded(context: Context, versionName: String): Boolean {
+    return try {
+        val prefs = context.getSharedPreferences("bs_update", Context.MODE_PRIVATE)
+        if (prefs.getString("dl_version", "") != versionName) return false
+        val id = prefs.getLong("dl_id", -1L)
+        if (id < 0) return false
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val c = dm.query(DownloadManager.Query().setFilterById(id))
+        try {
+            if (!c.moveToFirst()) return false
+            val status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+            status == DownloadManager.STATUS_SUCCESSFUL
+        } finally {
+            try { c.close() } catch (_: Exception) { }
+        }
+    } catch (_: Exception) {
+        false
+    }
+}
+
 /** Otwiera lokalnie pobrany apk (gdy użytkownik tapnie "Zainstaluj"). */
 fun installApkFile(context: Context, versionName: String) {
     try {
         val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
         val f = File(dir, "bs-companion-$versionName.apk")
-        // DownloadManager tworzy plik docelowy od razu (pusty) — rozmiar 0 = wciąż się pobiera.
-        if (!f.exists() || f.length() <= 0) {
+        // Najpierw STAN z DownloadManagera (zapisane id): rozmiar kłamie, bo
+        // DownloadManager tworzy pusty plik docelowy już przy starcie.
+        if (!downloadSucceeded(context, versionName) && (!f.exists() || f.length() <= 0)) {
             android.widget.Toast.makeText(context, "Plik jeszcze się pobiera", android.widget.Toast.LENGTH_SHORT).show()
             return
         }

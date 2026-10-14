@@ -22,7 +22,6 @@ object Prefs {
     const val KEY_BATTERY_ASKED = "battery_asked"
     const val KEY_NOTIF_ASKED = "notif_asked"
     const val KEY_SCHEDULED = "scheduled_uris"
-    const val KEY_THEME = "theme_mode"
 
     fun isEnabled(context: Context): Boolean {
         migrateIfNeeded(context)
@@ -79,17 +78,6 @@ object Prefs {
             .edit().putStringSet(KEY_SCHEDULED, uris.toSet()).apply()
     }
 
-    fun getThemeMode(context: Context): Int {
-        migrateIfNeeded(context)
-        return context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-            .getInt(KEY_THEME, 0)
-    }
-
-    fun setThemeMode(context: Context, mode: Int) {
-        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_THEME, mode).apply()
-    }
-
     @Volatile
     private var migrated = false
 
@@ -118,9 +106,7 @@ object Prefs {
                     if (!dst.contains(KEY_NOTIF_ASKED) && legacy.contains(KEY_NOTIF_ASKED)) {
                         ed.putBoolean(KEY_NOTIF_ASKED, legacy.getBoolean(KEY_NOTIF_ASKED, false)); dirty = true
                     }
-                    if (!dst.contains(KEY_THEME) && legacy.contains(KEY_THEME)) {
-                        ed.putInt(KEY_THEME, legacy.getInt(KEY_THEME, 0)); dirty = true
-                    }
+                    // Martwy klucz theme_mode pomijamy: od 1.14.0 jest tylko AMOLED.
                     if (dirty) { try { ed.commit() } catch (_: Exception) { try { ed.apply() } catch (_: Exception) {} } }
                     val uris = legacy.getStringSet(KEY_SCHEDULED, null)?.toSet()
                     if (uris != null) {

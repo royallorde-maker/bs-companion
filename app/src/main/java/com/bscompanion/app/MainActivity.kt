@@ -54,22 +54,11 @@ class MainActivity : ComponentActivity() {
         // Dokładny tryb z systemu (nie sztywne 120f), odnawiane też w onResume
         // (w onCreate okno bywa jeszcze niepodpięte i display == null).
         applyRefreshRate()
-        // Wczesne bary wg zapisanego themeMode (nie systemu) — bez flesza
-        // złych ikon przed pierwszą kompozycją.
+        // Zawsze AMOLED: ciemne bary od pierwszej klatki, bez flesza.
         try {
-            val earlyMode = Prefs.getThemeMode(this)
-            val sysNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                android.content.res.Configuration.UI_MODE_NIGHT_YES
-            val earlyDark = when (earlyMode) {
-                1 -> true
-                2 -> false
-                else -> sysNight
-            }
             enableEdgeToEdge(
-                statusBarStyle = if (earlyDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
-                navigationBarStyle = if (earlyDark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             )
         } catch (_: Exception) { }
         NotificationHelper.ensureChannel(this)

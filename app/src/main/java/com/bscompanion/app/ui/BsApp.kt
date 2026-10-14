@@ -809,7 +809,9 @@ fun HoldingSection(
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.clickable(onClick = onSeeAll)
+                modifier = Modifier.heightIn(min = 48.dp)
+                    .clickable(onClick = onSeeAll, role = Role.Button)
+                    .padding(vertical = 12.dp)
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -903,6 +905,8 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
         else LocalDateTime.of(date, it)
     }
     val totalMin = endDT?.let { Duration.between(startDT, it).toMinutes().coerceAtLeast(1) } ?: 15L
+    // Licznik w SEKUNDACH — minutowy skok pierścienia przy sekundowym takcie to był bug.
+    val totalSec = endDT?.let { Duration.between(startDT, it).seconds.coerceAtLeast(1) } ?: 15L * 60
     val progress: Float
     val center: String
     val caption: String
@@ -918,8 +922,8 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
             caption = "wydarzenie minęło"
         }
         else -> {
-            val done = Duration.between(startDT, now).toMinutes().coerceIn(0, totalMin)
-            progress = done / totalMin.toFloat()
+            val doneSec = Duration.between(startDT, now).seconds.coerceIn(0, totalSec)
+            progress = doneSec / totalSec.toFloat()
             center = "jeszcze " + formatCountdown(now, endDT!!)
             caption = "do końca"
         }
@@ -1383,7 +1387,8 @@ fun BatteryRow() {
                     android.util.Log.w("BatteryRow", "battery request failed", e)
                     android.widget.Toast.makeText(context, "Nie można otworzyć ustawień baterii", android.widget.Toast.LENGTH_SHORT).show()
                 }
-                exempt = safeExempt()
+                // Bez natychmiastowego odświeżania: dialog systemowy jeszcze wisi,
+                // stan podniesie LifecycleResumeEffect po powrocie.
                 }) { Text(if (asked) "Ustawienia baterii" else "Zezwól na tło") }
             }
         }
@@ -1528,6 +1533,12 @@ fun MealsScreen() {
     val nowTick = remember(tick, todayMeals.value) { LocalDateTime.now() }
     val meals = remember(todayMeals.value) { DormSchedule.eventsForDate(todayMeals.value) }
     fun hours(id: String) = meals.firstOrNull { it.id == id }?.let { timeRange(it) } ?: "—"
+    // Każdy posiłek liczony WŁASNYM czasem: piątek 19:00 pokazuje śniadanie i obiad
+    // zjedzone za dnia, a kreskę tylko tam, gdzie stołówka była nieczynna.
+    fun closedFor(id: String): Boolean {
+        val e = meals.firstOrNull { it.id == id } ?: return true
+        return DormSchedule.isNoCare(LocalDateTime.of(todayMeals.value, e.start))
+    }
     // Baner, gdy TERAZ brak opieki (jak w Planie i Dziś), nie tylko w soboty.
     val closedToday = remember(nowTick) { DormSchedule.isNoCare(nowTick) }
     LazyColumn(
@@ -1550,24 +1561,24 @@ fun MealsScreen() {
         item {
             MealCard(
                 "Śniadanie",
-                if (closedToday) "—" else hours("sniadanie"),
-                if (closedToday) "Stołówka nieczynna w dniu bez opieki." else "Szwedzki stół. Schludny ubiór, samoobsługa, odnieś naczynia.",
+                if (closedFor("sniadanie")) "—" else hours("sniadanie"),
+                if (closedFor("sniadanie")) "Stołówka nieczynna w dniu bez opieki." else "Szwedzki stół. Schludny ubiór, samoobsługa, odnieś naczynia.",
                 Icons.Filled.FreeBreakfast
             )
         }
         item {
             MealCard(
                 "Obiad",
-                if (closedToday) "—" else hours("obiad"),
-                if (closedToday) "Stołówka nieczynna w dniu bez opieki." else "Dwudaniowy + kompot, codziennie.",
+                if (closedFor("obiad")) "—" else hours("obiad"),
+                if (closedFor("obiad")) "Stołówka nieczynna w dniu bez opieki." else "Dwudaniowy + kompot, codziennie.",
                 Icons.Filled.LunchDining
             )
         }
         item {
             MealCard(
                 "Kolacja",
-                if (closedToday) "—" else hours("kolacja"),
-                if (closedToday) "Stołówka nieczynna w dniu bez opieki." else "Szwedzki stół (bez dni wyjazdów). Po posiłku porządek na stoliku.",
+                if (closedFor("kolacja")) "—" else hours("kolacja"),
+                if (closedFor("kolacja")) "Stołówka nieczynna w dniu bez opieki." else "Szwedzki stół (bez dni wyjazdów). Po posiłku porządek na stoliku.",
                 Icons.Filled.Restaurant
             )
         }
@@ -1678,6 +1689,14 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.18.0 — uczciwsze detale", listOf(
+                "Stołówka: każdy posiłek liczony własnym czasem, nie chwilą obecną",
+                "Pobieranie pilnuje stanu DownloadManagera zamiast zgadywać po rozmiarze",
+                "Donut pełznie co sekundę, ponowienie po błędzie, dostępniejsze przyciski",
+                "Koniec martwego theme_mode i przedwczesnego odświeżania baterii"
+            ))
         }
         item {
             InfoCard("1.17.0 — twardszy plan i pobieranie", listOf(
@@ -1898,9 +1917,9 @@ fun UpdateCard() {
 
     // Pierwsze wejście na Zmiany = jedno sprawdzenie. Bez WorkManagera.
     LaunchedEffect(Unit) { runCheck() }
-    // Powrót z offline → online: jedno dosprawdzenie, nie pętla.
+    // Powrót z offline → online: jedno dosprawdzenie także po błędzie, nie pętla.
     LaunchedEffect(online) {
-        if (online && (state == UpdateState.Offline || state == UpdateState.Idle)) runCheck()
+        if (online && (state == UpdateState.Offline || state == UpdateState.Idle || state is UpdateState.Error)) runCheck()
     }
 
     BsSurface(Modifier.fillMaxWidth()) {
