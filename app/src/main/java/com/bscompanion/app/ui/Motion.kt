@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -71,7 +72,9 @@ fun RollingText(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.clearAndSetSemantics { contentDescription = text }
+        modifier = modifier
+            .clipToBounds()
+            .clearAndSetSemantics { contentDescription = text }
     ) {
         text.forEachIndexed { idx, ch ->
             key(idx) {

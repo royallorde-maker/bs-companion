@@ -55,7 +55,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -98,10 +97,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -111,6 +110,8 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -123,7 +124,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
@@ -359,25 +362,39 @@ fun Ring(
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
         // Fala wędruje o pełną długość co ~2,4 s — ruch jak w M3 Expressive.
         // Ręczny takt 20 fps: ta wersja Compose nie ma infiniteRepeatable.
+        // Takt stoi gdy brak postępu (same kotwice) — nie grzejemy baterii na darmo.
         var phase by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(Unit) {
+        LaunchedEffect(progress != null) {
+            if (progress == null) return@LaunchedEffect
             while (true) {
                 delay(50)
                 phase = (phase + (2 * PI / 48).toFloat()) % (2 * PI).toFloat()
             }
         }
-        // Większy inset: gruby falisty postęp potrzebuje miejsca na fale.
         Canvas(Modifier.fillMaxSize().padding(3.dp)) {
-            val trackR = size.minDimension / 2
+            val half = size.minDimension / 2
+            val wormW = 4.5.dp.toPx()
+            val amp = 1.5.dp.toPx()
+            // Promienie liczone od krawędzi do środka: nic nie wystaje poza Canvas.
+            val wormR = half - amp - wormW / 2 - 0.5.dp.toPx()
+            val trackR = wormR + 1.dp.toPx()
             // Tor cienki i spokojny.
-            drawArc(track, -90f, 360f, false, style = Stroke(2.5.dp.toPx()))
+            val trackD = trackR * 2
+            drawArc(
+                track, -90f, 360f, false,
+                topLeft = Offset(
+                    (size.width - trackD) / 2,
+                    (size.height - trackD) / 2
+                ),
+                size = Size(trackD, trackD),
+                style = Stroke(2.5.dp.toPx())
+            )
             if (anim.value > 0.01f) {
-                // Postęp to gruby wąż na tym samym torze (węższy promień,
-                // żeby fale z grubością zmieściły się w insecie).
+                // Postęp to gruby wąż na tym samym torze.
                 val worm = wavyRing(
                     radius = trackR - 1.dp.toPx(),
                     waves = 14,
-                    ampPx = 1.5.dp.toPx(),
+                    ampPx = amp,
                     sweepDeg = 360f * anim.value,
                     phase = phase
                 )
@@ -555,6 +572,7 @@ fun PillBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                     titles.forEachIndexed { i, t ->
+                        key(i) {
                         val sel = selected == i
                         // Dotyk rozświetla ikonę — szkło reaguje na palec.
                         val interaction = remember { MutableInteractionSource() }
@@ -574,7 +592,7 @@ fun PillBar(
                                     interactionSource = interaction,
                                     indication = LocalIndication.current
                                 )
-                                .semantics { contentDescription = t }
+                                .semantics(mergeDescendants = true) { contentDescription = t }
                                 .animateContentSize()
                                 .fluentScale(rememberFluentPress(interaction, 0.93f))
                                 .padding(horizontal = if (sel) 16.dp else 12.dp, vertical = 10.dp),
@@ -598,6 +616,7 @@ fun PillBar(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+                        }
                         }
                     }
                 }
@@ -639,7 +658,6 @@ fun HomeScreen(
         nowState.value = LocalDateTime.now()
         onPauseOrDispose { }
     }
-    // Minutnik pochodny dla osi Nadchodzące (rekompozycja 1/min, nie 1/s).
     var notifEnabled by rememberSaveable { mutableStateOf(Prefs.isEnabled(context)) }
     var minutesBefore by rememberSaveable { mutableStateOf(Prefs.minutesBefore(context)) }
 
@@ -941,7 +959,7 @@ fun HoldingSection(
 ) {
     val now by nowState
     // Bez krzykliwej zieleni — odliczanie w stonowanym kolorze tekstu.
-    // Stan minutowy (pochodny) — rekompozycja 1/min, nie 1/s.
+    // Lista przeliczana co minutę, ale tekst z sekundami i tak tyka co 1 s.
     val items = remember(now.truncatedTo(ChronoUnit.MINUTES)) {
         DormSchedule.upcomingCared(now.truncatedTo(ChronoUnit.MINUTES), 4)
     }
@@ -1144,12 +1162,24 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
                     val scheme = MaterialTheme.colorScheme
                     Canvas(Modifier.size(210.dp).align(Alignment.Center)) {
                         val w = 22.dp.toPx()
-                        drawArc(scheme.outlineVariant, -90f, 360f, false, style = Stroke(w))
+                        // Promień pomniejszony o połowę stroku — inaczej zewnętrzne
+                        // 11.dp ucina krawędź Canvas i okrąg wygląda na chudszy.
+                        val d = size.minDimension - w
+                        val arcTopLeft = Offset(
+                            (size.width - d) / 2,
+                            (size.height - d) / 2
+                        )
+                        val arcSize = Size(d, d)
+                        drawArc(
+                            scheme.outlineVariant, -90f, 360f, false,
+                            topLeft = arcTopLeft, size = arcSize, style = Stroke(w)
+                        )
                         if (progress > 0.005f) {
                             // Pełne koło z Round cap robi garb na łączeniu — przytnij.
                             val sweep = if (progress >= 0.999f) 359.9f else 360f * progress
                             drawArc(
                                 scheme.primary, -90f, sweep, false,
+                                topLeft = arcTopLeft, size = arcSize,
                                 style = Stroke(w, cap = StrokeCap.Round)
                             )
                         }
@@ -1693,7 +1723,11 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     val rowPress = remember { MutableInteractionSource() }
     val rowScale = rememberFluentPress(rowPress)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .semantics {
+                this[SemanticsProperties.Role] = Role.Button
+                stateDescription = if (expanded) "Rozwinięte" else "Zwinięte"
+            },
         shape = RoundedCornerShape(20.dp),
         color = if (isCurrent) scheme.primary else scheme.surfaceContainerLowest,
         border = BorderStroke(1.dp, borderColor),
@@ -1924,7 +1958,12 @@ fun MealCard(title: String, hours: String, desc: String, icon: ImageVector = Ico
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = if (expanded) Int.MAX_VALUE else 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.clickable { expanded = !expanded }
+                    modifier = Modifier
+                        .semantics {
+                            this[SemanticsProperties.Role] = Role.Button
+                            stateDescription = if (expanded) "Rozwinięte" else "Zwinięte"
+                        }
+                        .clickable { expanded = !expanded }
                 )
             }
         }
@@ -1949,6 +1988,13 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.46.0 — cichy audyt", listOf(
+                "Pierścienie nie ucinane, fala tylko gdy widać postęp.",
+                "Wiersze mówią czytnikowi o rozwinięciu.",
+                "Papiery zgodne z kodem."
+            ))
         }
         item {
             InfoCard("1.45.0 — Ustawienia rosną", listOf(

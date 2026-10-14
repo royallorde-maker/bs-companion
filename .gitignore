@@ -10,8 +10,6 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
-*.jks
-*.keystore
 gradle/wrapper/gradle-wrapper.jar
 
 # OS

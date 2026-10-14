@@ -6,7 +6,7 @@ the source tree.
 
 ## What gets tested
 
-`tools/functional_test/run_tests.py` (stdlib only, ~133 checks, 0 deps):
+`tools/functional_test/run_tests.py` (stdlib only, ~129 checks, 0 deps):
 
 | Group | Functions covered |
 |---|---|

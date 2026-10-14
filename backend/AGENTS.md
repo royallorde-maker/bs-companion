@@ -98,7 +98,7 @@ Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build
 
 ```powershell
 git status --short --branch
-git add -A
+git add <konkretne pliki>   # NIGDY gołe -A (wciąga .concord/ i build/)
 git commit -m "krótko co i dlaczego"
 git push
 ```
