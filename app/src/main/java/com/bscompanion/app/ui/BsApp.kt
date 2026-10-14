@@ -305,7 +305,9 @@ fun IconDotOnContainer(
 }
 
 /** Falisty tor pierścienia: promień pływa sinusem (orbitka jak na screenie).
- *  Faza sunie w kółko o pełną długość fali — wzór wędruje, szew niewidoczny. */
+ *  Faza sunie w kółko o pełną długość fali — wzór wędruje, szew niewidoczny.
+ *  Amplituda wygaszana na końcach (taper): okrągłe capy siadają DOKŁADNIE
+ *  na torze, bez odklejonych bąbli na starcie i mecie węża. */
 private fun DrawScope.wavyRing(
     radius: Float,
     waves: Int,
@@ -319,9 +321,13 @@ private fun DrawScope.wavyRing(
     val cx = size.width / 2
     val cy = size.height / 2
     repeat(steps + 1) { i ->
-        val deg = -90f + sweepDeg * i / steps
+        val t = i / steps.toFloat()
+        // Okno kosinusowe na ~12% z każdej strony: końce lądują na torze.
+        val edge = minOf(t, 1f - t)
+        val taper = if (edge >= 0.12f) 1f else (0.5f - 0.5f * cos(PI * edge / 0.12f)).toFloat()
+        val deg = -90f + sweepDeg * t
         val rad = Math.toRadians(deg.toDouble())
-        val rr = radius + ampPx * sin(rad * waves - phase).toFloat()
+        val rr = radius + ampPx * taper * sin(rad * waves - phase).toFloat()
         val x = cx + rr * cos(rad).toFloat()
         val y = cy + rr * sin(rad).toFloat()
         if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -362,14 +368,14 @@ fun Ring(
     }
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
         // Fala wędruje o pełną długość co ~2,4 s — ruch jak w M3 Expressive.
-        // Ręczny takt 20 fps: ta wersja Compose nie ma infiniteRepeatable.
+        // Ręczny takt 30 fps: ta wersja Compose nie ma infiniteRepeatable.
         // Takt stoi gdy brak postępu (same kotwice) — nie grzejemy baterii na darmo.
         var phase by remember { mutableFloatStateOf(0f) }
         LaunchedEffect(progress != null) {
             if (progress == null) return@LaunchedEffect
             while (true) {
-                delay(50)
-                phase = (phase + (2 * PI / 48).toFloat()) % (2 * PI).toFloat()
+                delay(33)
+                phase = (phase + (2 * PI / 72).toFloat()) % (2 * PI).toFloat()
             }
         }
         // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
@@ -2069,6 +2075,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.55.0 — grzeczna fala", listOf(
+                "Końce węża siadają na torze, pełzanie gładsze.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.54.0 — płynniejsze karty", listOf(
