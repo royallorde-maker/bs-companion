@@ -53,6 +53,8 @@ class DormScheduleTest {
     @Test
     fun gapsAreExplicitCzasWolny() {
         val events = DormSchedule.eventsForDate(monday())
+        assertEquals(16, events.size)
+        assertEquals("czas_wolny_6", DormSchedule.currentEvent(LocalTime.of(6, 10), events)?.id)
         assertEquals("czas_wolny_2", DormSchedule.currentEvent(LocalTime.of(6, 50), events)?.id)
         assertEquals("czas_wolny_4", DormSchedule.currentEvent(LocalTime.of(12, 0), events)?.id)
         assertEquals("czas_wolny_5", DormSchedule.currentEvent(LocalTime.of(21, 50), events)?.id)

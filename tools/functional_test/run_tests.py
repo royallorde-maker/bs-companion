@@ -54,6 +54,7 @@ EVENTS = [
     ("zajecia_wych", time(19, 30), time(21, 0), False),
     ("powrot", time(21, 0), None, True),
     ("toaleta", time(21, 0), time(21, 45), True),
+    ("czas_wolny_6", time(6, 0), time(6, 30), False),
     ("czas_wolny_2", time(6, 45), time(7, 0), False),
     ("czas_wolny_3", time(7, 50), time(7, 55), False),
     ("czas_wolny_4", time(8, 10), time(13, 30), False),
@@ -283,9 +284,11 @@ def g_curfew() -> None:
 def g_events_for_date() -> None:
     section("eventsForDate")
     evs = sorted(EVENTS, key=lambda e: e[1])
-    check("15 events", len(evs) == 15, str(len(evs)))
-    check("sorted by start", all(evs[i][1] <= evs[i + 1][1] for i in range(14)))
-    check("first pobudka 06:30", evs[0][0] == "pobudka" and evs[0][1] == time(6, 30))
+    check("16 events", len(evs) == 16, str(len(evs)))
+    check("gap six first, pobudka second",
+          evs[0][0] == "czas_wolny_6" and evs[1][0] == "pobudka")
+    check("sorted by start", all(evs[i][1] <= evs[i + 1][1] for i in range(15)))
+    check("first pobudka 06:30", evs[1][0] == "pobudka" and evs[1][1] == time(6, 30))
 
 
 def g_current() -> None:
@@ -296,6 +299,7 @@ def g_current() -> None:
     check("21:00 tie-break powrot (shortest)", current_event(time(21, 5))[0] == "powrot")
     check("21:30 toaleta (powrot 15min over)", current_event(time(21, 30))[0] == "toaleta")
     check("12:00 gap is czas_wolny_4", current_event(time(12, 0))[0] == "czas_wolny_4")
+    check("06:10 gap is czas_wolny_6", current_event(time(6, 10))[0] == "czas_wolny_6")
     check("06:50 gap is czas_wolny_2", current_event(time(6, 50))[0] == "czas_wolny_2")
     check("cared sat 23:00 None (no cisza when closed)",
           current_cared(datetime.combine(SAT, time(23, 0))) is None)
@@ -340,9 +344,7 @@ def g_upcoming() -> None:
     check("saturday yields no cared (all skipped) or sunday events",
           all(d != SAT for d, _ in lst), str(lst))
     lst = upcoming_cared(datetime.combine(MON, time(6, 0)), 4)
-    check("pobudka first, then gap", [e[0] for _, e in lst][:2] == ["pobudka", "czas_wolny_2"])
-    check("no unnotified czas_wolny_1 without flag (present in plan, kept by UI)",
-          True)  # UI keeps non-notify events; scheduler skips them (checked in source)
+    check("gap first, then pobudka", [e[0] for _, e in lst][:2] == ["czas_wolny_6", "pobudka"])
 
 
 def g_countdown() -> None:
@@ -447,6 +449,9 @@ def g_source() -> None:
     ma = src("java/com/bscompanion/app/MainActivity.kt")
 
     check("debounce coalesces (no drop)", "coalescedPending" in es and "if (coalescedPending) return" in es)
+    check("force clears coalesced (no double burst)", "coalescedPending = false" in es)
+    check("scheduler skips non-notify, UI keeps them", "if (!event.notifyDefault) continue" in es)
+    check("grace clamp fires once per event", "isGraceClamped" in es and "markGraceClamped" in es)
     check("wylacznie przypomnienia (brak on-time)", "isReminder = false" not in es)
     check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
     check("plasko: zero gradientow + pigulka", "verticalGradient" not in bs and "Brush" not in bs
@@ -479,8 +484,7 @@ def g_source() -> None:
     check("switch enabled colors", "onCheckedChange = onEnabledChange" in bs)
     check("aligned 30s ticks", bs.count("30_000 - System.currentTimeMillis()") == 2)
     check("canExact sync init", "mutableStateOf(ExactAlarmHelper.canSchedule(context))" in bs)
-    check("edge-to-edge forced dark", "LaunchedEffect(Unit)" in ma and "useDark" not in ma
-          and "SystemBarStyle.dark" in ma)
+    check("bars follow app theme, not system", "appThemeOf" in ma and "isSystemInDarkTheme" not in ma)
     check("refresh keeps resolution", "sameSize" in ma)
     check("permission migrates first", "Prefs.migrateIfNeeded(this)" in ma)
     check("boot null-action guard", "intent.action ?: return" in er or "intent.action ?: return" in src("java/com/bscompanion/app/notifications/BootReceiver.kt"))

@@ -69,6 +69,17 @@ object NotificationHelper {
         }
     }
 
+    /** Prawda, gdy użytkownik zablokował kanał wydarzeń (IMPORTANCE_NONE). */
+    fun channelBlocked(context: Context): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.getNotificationChannel(CHANNEL_ID)?.importance == NotificationManager.IMPORTANCE_NONE
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun openAppNotificationSettings(context: Context) {
         try {
             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {

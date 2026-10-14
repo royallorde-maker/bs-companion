@@ -126,8 +126,9 @@ private fun parseUpdate(json: String): UpdateInfo? {
         val uri = try { Uri.parse(url) } catch (_: Exception) { return null }
         if (uri.scheme != "https") return null
         val host = (uri.host ?: "").lowercase(java.util.Locale.ROOT)
+        // Kropka obowiązkowa: bez niej evilgithubusercontent.com też by przeszło.
         val okHost = host == "github.com" || host.endsWith(".github.com") ||
-            host.endsWith("githubusercontent.com")
+            host.endsWith(".githubusercontent.com")
         if (!okHost) return null
         UpdateInfo(
             versionCode = code,
@@ -171,9 +172,14 @@ suspend fun checkForUpdate(context: Context): UpdateState = withContext(Dispatch
 /** Pobiera apk przez DownloadManager i otwiera instalator. Bez WorkManagera. */
 fun downloadAndInstall(context: Context, info: UpdateInfo) {
     try {
-        val fileName = "bs-companion-${info.versionName}.apk"
-        val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates").apply { mkdirs() }
-        val dest = File(dir, fileName)
+        // Podwójny tap w Pobierz: jedno pobieranie już leci — nie dokładaj drugiego
+        // pisarza do tego samego pliku.
+        if (queryDownloadStatus(context, info.versionName).state == DlState.RUNNING) {
+            android.widget.Toast.makeText(context, "Już się pobiera…", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+        val dest = apkFile(context, info.versionName)
+        try { dest.parentFile?.mkdirs() } catch (_: Exception) { }
         if (dest.exists()) {
             try { dest.delete() } catch (_: Exception) { }
         }
@@ -183,7 +189,7 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
             setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             // Dedykowane API zamiast setDestinationUri(Uri.fromFile) — poprawnie
             // przechodzi scoped storage; docelowo ten sam plik co dest powyżej.
-            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "updates/$fileName")
+            setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "updates/${dest.name}")
             setAllowedOverMetered(true)
             setAllowedOverRoaming(false)
             setMimeType("application/vnd.android.package-archive")
@@ -223,7 +229,7 @@ fun downloadAndInstall(context: Context, info: UpdateInfo) {
 }
 
 /** Stan lokalnego pobrania danej wersji — niezależny od version.json. */
-enum class DlState { MISSING, RUNNING, SUCCESS, FAILED }
+enum class DlState { MISSING, RUNNING, PAUSED, SUCCESS, FAILED }
 
 data class DownloadStatus(
     val state: DlState,
@@ -241,7 +247,9 @@ private const val KEY_DL_VERSION = "dl_version"
 
 private fun apkFile(context: Context, versionName: String): File {
     val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
-    return File(dir, "bs-companion-$versionName.apk")
+    // Dezynfekcja nazwy z JSON: bez tego ../ w versionName wychodzi poza updates/.
+    val safe = versionName.replace(Regex("[^A-Za-z0-9._-]"), "_").take(32)
+    return File(dir, "bs-companion-$safe.apk")
 }
 
 /** Pyta DownloadManager o stan NASZEGO pobrania; spójne z plikiem na dysku. */
@@ -283,6 +291,10 @@ fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
                     }
                 }
                 DownloadManager.STATUS_FAILED -> DownloadStatus(DlState.FAILED)
+                // Wstrzymane (np. roaming przy setAllowedOverRoaming(false) albo
+                // brak sieci): to NIE jest postęp — pokazujemy wprost zamiast
+                // wiecznego "Pobieranie…".
+                DownloadManager.STATUS_PAUSED -> DownloadStatus(DlState.PAUSED)
                 else -> {
                     val done = try {
                         c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
@@ -321,9 +333,10 @@ fun cancelDownload(context: Context) {
 private fun deleteStaleApks(context: Context, keepVersion: String?) {
     try {
         val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
+        val keepName = keepVersion?.let { apkFile(context, it).name }
         dir.listFiles { f -> f.isFile && f.name.startsWith("bs-companion-") && f.name.endsWith(".apk") }
             ?.forEach {
-                if (keepVersion == null || it.name != "bs-companion-$keepVersion.apk") {
+                if (keepName == null || it.name != keepName) {
                     try { it.delete() } catch (_: Exception) { }
                 }
             }
@@ -338,8 +351,7 @@ private fun downloadSucceeded(context: Context, versionName: String): Boolean {
 /** Otwiera lokalnie pobrany apk (gdy użytkownik tapnie "Zainstaluj"). */
 fun installApkFile(context: Context, versionName: String) {
     try {
-        val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates")
-        val f = File(dir, "bs-companion-$versionName.apk")
+        val f = apkFile(context, versionName)
         // Najpierw STAN z DownloadManagera (zapisane id): rozmiar kłamie, bo
         // DownloadManager tworzy pusty plik docelowy już przy starcie.
         if (!downloadSucceeded(context, versionName)) {

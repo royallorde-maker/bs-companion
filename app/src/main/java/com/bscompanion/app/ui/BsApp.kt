@@ -288,7 +288,7 @@ fun IconDotOnContainer(
     boxSize: Dp = 44.dp,
     iconSize: Dp = 24.dp
 ) {
-    // Czarny krążek + jasna ikona — czytelne na podświetlonym (jasnym) wierszu.
+    // Znaczek kontrastowy do podświetlonego wiersza (onPrimary na primary).
     Box(
         modifier
             .size(boxSize)
@@ -471,7 +471,7 @@ fun BsApp(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            "Offline — plan działa lokalnie",
+                            "Brak połączenia — plan działa lokalnie",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -684,7 +684,7 @@ fun HomeScreen(
     }
 }
 
-/** Granatowa karta-bohater w języku Nexora: żywy zegar + TERAZ/NASTĘPNE + skróty. */
+/** Karta-bohater: żywy zegar w kolorze primary. */
 @Composable
 fun HeroCard(nowState: State<LocalDateTime>) {
     val now by nowState
@@ -695,7 +695,7 @@ fun HeroCard(nowState: State<LocalDateTime>) {
         now.toLocalDate().format(dateFmt)
     }
     val closed = DormSchedule.isNoCare(now)
-    // Płaski granat — bez gradientów w całej apce.
+    // Płaski kolor primary — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1146,8 +1146,10 @@ fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
                         val w = 22.dp.toPx()
                         drawArc(scheme.outlineVariant, -90f, 360f, false, style = Stroke(w))
                         if (progress > 0.005f) {
+                            // Pełne koło z Round cap robi garb na łączeniu — przytnij.
+                            val sweep = if (progress >= 0.999f) 359.9f else 360f * progress
                             drawArc(
-                                scheme.primary, -90f, 360f * progress, false,
+                                scheme.primary, -90f, sweep, false,
                                 style = Stroke(w, cap = StrokeCap.Round)
                             )
                         }
@@ -1287,10 +1289,10 @@ private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modif
     }
 }
 
-/** Granatowy nagłówek zakładki w języku Nexora — te same napisy, nowa oprawa. */
+/** Nagłówek zakładki w kolorze primary — te same napisy, nowa oprawa. */
 @Composable
 fun TabHero(title: String, subtitle: String) {
-    // Płaski granat — bez gradientów w całej apce.
+    // Płaski kolor primary — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1434,7 +1436,7 @@ fun SettingsScreen(
     }
 }
 
-/** Szklana karta: gradient tonu + włosek — wspólny język całego UI. */
+/** Płaska karta w kolorach schematu — wspólny język całego UI. */
 @Composable
 fun BsSurface(
     modifier: Modifier = Modifier,
@@ -1673,7 +1675,7 @@ fun BatteryRow() {
 @Composable
 fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
-    // Zwykły wiersz to płaska tafla, bieżący to płaski granat jak hero.
+    // Zwykły wiersz to płaska tafla, bieżący w kolorze primary jak hero.
     val content = if (isCurrent) scheme.onPrimary else scheme.onSurface
     val subContent = if (isCurrent) scheme.onPrimary.copy(alpha = 0.72f)
     else scheme.onSurfaceVariant
@@ -1967,6 +1969,13 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.44.0 — audyt naprawczy", listOf(
+                "Alarmy wracają po aktualizacji, kanał zablokowany nie budzi.",
+                "Pobieranie mówi o pauzie, podwójny tap nie psuje pliku.",
+                "Luka 6:00 też jawna, reszta drobiazgów posprzątana."
+            ))
         }
         item {
             InfoCard("1.43.0 — gładki wąż", listOf(
@@ -2291,11 +2300,13 @@ fun UpdateCard() {
         avail?.let { queryDownloadStatus(context, it.versionName) }
     }
     val downloading = dl?.state == DlState.RUNNING
+    val paused = dl?.state == DlState.PAUSED
     // Rodzaj łącza do szczerego komunikatu: brak Wi-Fi/danych vs dziwne Wi-Fi.
     val kind = remember(online, resumeTick) { connectionKind(context) }
-    LaunchedEffect(avail?.versionName, downloading) {
-        // Sondowanie postępu tylko w trakcie pobierania; reszta stanów stoi.
-        if (downloading) {
+    LaunchedEffect(avail?.versionName, downloading, paused) {
+        // Sondowanie postępu w trakcie i we wstrzymaniu (wznowienie też widać);
+        // reszta stanów stoi.
+        if (downloading || paused) {
             while (true) {
                 delay(1000 - System.currentTimeMillis() % 1000)
                 dlTick++
@@ -2340,32 +2351,43 @@ fun UpdateCard() {
         }
         // Pobieranie w toku: pasek + procent + Anuluj. Samo pobieranie żyje
         // w DownloadManagerze (powiadomienie systemowe), więc trwa mimo zamknięcia apki.
-        if (downloading && dl != null) {
+        // Wstrzymane (roaming/brak sieci): pokazujemy wprost, nie wieczne kółko.
+        if ((downloading || paused) && dl != null) {
             Spacer(Modifier.height(8.dp))
-            val frac = dl.fraction
-            if (frac != null) {
-                LinearProgressIndicator(
-                    progress = { frac },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(4.dp))
+            if (paused) {
                 Text(
-                    "Pobieranie… ${(frac * 100).toInt()}%",
+                    "Wstrzymano — czeka na sieć",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             } else {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Pobieranie…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                val frac = dl.fraction
+                if (frac != null) {
+                    LinearProgressIndicator(
+                        progress = { frac },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Pobieranie… ${(frac * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Pobieranie…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
         if (avail != null && avail.changelog.isNotEmpty()) {
@@ -2376,9 +2398,10 @@ fun UpdateCard() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        // Pobrane = tylko Instaluj. W trakcie = tylko Anuluj. Brak/porażka = Pobierz.
-        // Nowsza wersja w version.json sama wraca do Pobierz (inny versionName).
+        // Pobrane = tylko Instaluj. W trakcie / wstrzymane = tylko Anuluj.
+        // Brak/porażka = Pobierz. Nowsza wersja sama wraca do Pobierz.
         val downloaded = dl?.state == DlState.SUCCESS
+        val busy = downloading || paused
         if (downloaded) {
             Spacer(Modifier.height(8.dp))
             Text(
@@ -2395,7 +2418,7 @@ fun UpdateCard() {
                 onClick = { runCheck() },
                 modifier = Modifier.heightIn(min = 48.dp)
             ) { Text(if (state == UpdateState.Checking) "Sprawdzanie…" else "Sprawdź") }
-            if (avail != null && !downloaded && !downloading) {
+            if (avail != null && !downloaded && !busy) {
                 FilledTonalButton(
                     onClick = {
                         downloadAndInstall(context, avail)
@@ -2404,7 +2427,7 @@ fun UpdateCard() {
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) { Text("Pobierz ${avail.versionName}") }
             }
-            if (downloading) {
+            if (busy) {
                 TextButton(
                     onClick = {
                         cancelDownload(context)

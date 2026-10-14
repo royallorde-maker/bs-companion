@@ -192,6 +192,9 @@ object EventScheduler {
                 coalescedPending = true
                 delayMs = (lastAsyncMs + 2000) - now
             } else {
+                // force=true: natychmiast + kasuj wiszące doschedule — inaczej
+                // egzekucja spod UI i zaplanowana w tle robią to samo podwójnie.
+                coalescedPending = false
                 lastAsyncMs = now
             }
         }
@@ -233,7 +236,10 @@ object EventScheduler {
         val stored = try { Prefs.getScheduledUris(context) } catch (_: Exception) { emptySet() }
         val enabled = try { Prefs.isEnabled(context) } catch (_: Exception) { true }
         val canPost = try { NotificationHelper.canPost(context) } catch (_: Exception) { false }
-        val minutesBefore = try { Prefs.minutesBefore(context) } catch (_: Exception) { 15 }
+        val blocked = try { NotificationHelper.channelBlocked(context) } catch (_: Exception) { false }
+        val minutesBefore = (try { Prefs.minutesBefore(context) } catch (_: Exception) { 15 }).coerceIn(0, 120)
+        // Martwe znaczniki łaski (wydarzenie już minęło) nie rosną w nieskończoność.
+        try { pruneGraceMarkers(context, System.currentTimeMillis()) } catch (_: Exception) { }
         val offsets = (setOf(0, 5, 10, 15, 30) + minutesBefore).sorted()
         synchronized(scheduleLock) {
             cancelAll(context, stored, offsets)
@@ -246,9 +252,10 @@ object EventScheduler {
                 }
                 return
             }
-            // Bez zgody na powiadomienia nie stawiamy alarmów, które i tak nic nie pokażą
-            // (oszczędza ~700 Binder IPC na każdym fire). Dopniemy po granted w callbacku.
-            if (!canPost) {
+            // Bez zgody na powiadomienia albo ze zblokowanym kanałem nie stawiamy
+            // alarmów, które i tak nic nie pokażą (oszczędza ~700 Binder IPC na każdym fire).
+            // Dopniemy po granted / odblokowaniu w callbacku.
+            if (!canPost || blocked) {
                 try { Prefs.setScheduledUris(context, emptySet()) } catch (e: Exception) {
                     android.util.Log.w("EventScheduler", "clear uris failed", e)
                 }
@@ -286,6 +293,38 @@ object EventScheduler {
         }
     }
 
+    /** Znaczniki jednorazowej łaski: alarmKey -> startMs wydarzenia. */
+    private const val GRACE_FILE = "bs_fired"
+    private const val GRACE_PREFIX = "grace_"
+
+    private fun isGraceClamped(context: Context, alarmKey: String, startMs: Long): Boolean {
+        return try {
+            context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE)
+                .getLong(GRACE_PREFIX + alarmKey, -1L) == startMs
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun markGraceClamped(context: Context, alarmKey: String, startMs: Long) {
+        try {
+            context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE).edit()
+                .putLong(GRACE_PREFIX + alarmKey, startMs).apply()
+        } catch (_: Exception) { }
+    }
+
+    private fun pruneGraceMarkers(context: Context, nowMs: Long) {
+        try {
+            val prefs = context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE)
+            val stale = prefs.all
+                .filter { (k, v) -> k.startsWith(GRACE_PREFIX) && v is Long && v <= nowMs }
+                .map { it.key }
+            if (stale.isNotEmpty()) {
+                prefs.edit().also { ed -> stale.forEach { ed.remove(it) } }.apply()
+            }
+        } catch (_: Exception) { }
+    }
+
     /** Planuje jeden alarm; zwraca identyfikator URI albo null, gdy czas minął. */
     private fun scheduleOne(
         context: Context,
@@ -304,12 +343,17 @@ object EventScheduler {
         val startMs = LocalDateTime.of(date, start).atZone(zone).toInstant().toEpochMilli()
         // Wydarzenie całe w przeszłości — nic do planowania.
         if (startMs <= nowMs) return null
+        val uri = "$URI_SCHEME://event/$date/$eventId/$offsetMinutes/$isReminder"
         // Czas przypomnienia minął o włos (wybudzenie 1 s po), a wydarzenie daleko:
-        // strzel za sekundę zamiast gubić przypomnienie do następnego punktu.
-        val fireMs = if (millis <= nowMs) nowMs + 1_000 else millis
+        // strzel za sekundę, ale TYLKO RAZ na wystąpienie — każde kolejne
+        // rescheduleAsync w tym oknie by stawiał budzik od nowa (patrz raport QA).
+        val fireMs = if (millis <= nowMs) {
+            if (isGraceClamped(context, uri, startMs)) return null
+            markGraceClamped(context, uri, startMs)
+            nowMs + 1_000
+        } else millis
 
         val requestCode = requestCodeFor(eventId, date, offsetMinutes, isReminder)
-        val uri = "$URI_SCHEME://event/$date/$eventId/$offsetMinutes/$isReminder"
         val intent = Intent(context, EventReceiver::class.java).apply {
             action = ACTION_EVENT
             // Data rozróżnia PendingIntenty (tożsamość ignoruje extras).

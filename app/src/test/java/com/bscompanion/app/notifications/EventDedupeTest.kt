@@ -47,5 +47,6 @@ class EventDedupeTest {
         assertNull(EventReceiver.eventKeyFromDataString(null))
         assertNull(EventReceiver.eventKeyFromDataString("bs://event/garbage"))
         assertNull(EventReceiver.eventKeyFromDataString("not-a-uri"))
+        assertNull(EventReceiver.eventKeyFromDataString("bs://event/2026-10-12//30/true"))
     }
 }

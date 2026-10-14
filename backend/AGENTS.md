@@ -27,7 +27,7 @@ Nie hardkoduj URL w Kotlin — tylko przez BuildConfig.
 - `apkUrl` MUSI wskazywać na asset z GitHub Release (nie commituj apk do repo).
 - `force=true` tylko gdy stara wersja jest łamana (apka pokazuje mocniejszy baner).
 
-## Jak wydać nową wersję (krok po kroku, sprawdzone na 1.6.0–1.8.0)
+## Jak wydać nową wersję (krok po kroku, sprawdzone do 1.43.0)
 
 Zasada: KAŻDA zmiana w apce = osobny release + wpis w instrukcji (InfoCard poniżej).
 Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build).
@@ -50,9 +50,9 @@ Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build
    ```
 6. Push + tag + Release (asset MUSI nazywać się `app-release.apk` — `latest/download` na to liczy):
    ```powershell
-   git add -A; git commit -m "1.8.0 code 14: ..."; git push origin main
-   git tag -a v1.8.0 -m "v1.8.0 ..."; git push origin v1.8.0
-   gh release create v1.8.0 app/build/outputs/apk/release/app-release.apk --title "v1.8.0" --notes "..."
+   git add <konkretne pliki — NIGDY gołe -A, wciąga .concord/>; git commit -m "1.44.0 code 50: ..."; git push origin main
+   git tag -a v1.44.0 -m "v1.44.0 ..."; git push origin v1.44.0
+   gh release create v1.44.0 app/build/outputs/apk/release/app-release.apk --title "v1.44.0" --notes "..."
    ```
    `gh` wymaga jednorazowo `gh auth login` (https). Bez Release `latest/download` serwuje STARY apk
    (objaw: "build identyczny" mimo nowego version.json).
@@ -63,15 +63,16 @@ Pomijanie tego psuje OTA (version.json wskazuje w próżnię albo na stary build
 
 - Klucz: `C:\Users\skraba\bscompanion-release.keystore`, alias `bscompanion` (POZA repo).
   Kopia + hasło MUSZĄ mieć backup — zgubienie = koniec OTA. Hasło żyje tylko w `keystore.properties`.
-- `app/build.gradle.kts` WYMAGA klucza: brak `keystore.properties` = twardy błąd konfiguracji.
-  To celowe — cichy unsigned APK w Release łamie aktualizacje.
+- `app/build.gradle.kts` wymaga klucza TYLKO przy taskach pakujących release
+  (`packageRelease`/`bundleRelease` padają z jawnym błędem); debug/testy działają bez niego.
 - Historia kluczy: ≤1.4.1 oryginalny (niedostępny), 1.5.0 DesignNest (porzucony), od 1.6.0 `bscompanion`.
   Zmiana klucza = użytkownicy muszą odinstalować apkę (Android odrzuca update).
 - Poprzedni klucz DesignNest (`designnest-release.keystore`, hasło utracone) jest martwy — nie używać.
 
 ## Jak edytować stronę statusu
 
-- Plik: `backend/site/index.html` (statyczny, zero dependencji, fetch do `../api/version.json` + Releases API).
+- Plik: `backend/site/index.html` (statyczny, zero dependencji, fetch ABSOLUTNEGO raw URL
+  `backend/api/version.json` + Releases API — `../api/` nie istnieje przy deployu Pages).
 - Podgląd lokalnie: `python3 -m http.server` w root repo → `http://localhost:8000/backend/site/`.
 - Deploy (docelowo): GitHub Pages przez Actions z `path: backend/site`. Do tego czasu wystarczy raw + Release.
 
@@ -85,7 +86,8 @@ git push
 ```
 
 - `main` to jedyny branch. Bezpośredni push jest OK (projekt 1-osobowy).
-- Nie commituj: `local.properties`, `keystore.properties`, `*.jks`, `app/build/`, `.gradle/`, `.idea/`.
+- Nie commituj: `local.properties`, `keystore.properties`, `*.jks`, `*.keystore`, `app/build/`,
+  `build/`, `.gradle/`, `.idea/`, `.kotlin/`, `.local/`, `.concord/`, `*.iml`, `.DS_Store`.
 - Duże binaria (apk/aab) TYLKO przez Releases, nigdy do gita.
 
 ## Zachowanie offline (kontrakt z apką)

@@ -97,6 +97,12 @@ object DormSchedule {
         // Luki między punktami jako jawny Czas wolny (FREE, bez alarmów):
         // TERAZ podświetla je w Planie zamiast pustego "Przerwa".
         DormEvent(
+            "czas_wolny_6", "Czas wolny",
+            "Spokój przed pobudką.",
+            LocalTime.of(6, 0), LocalTime.of(6, 30),
+            EventCategory.FREE, notifyDefault = false
+        ),
+        DormEvent(
             "czas_wolny_2", "Czas wolny",
             "Między pobudką a śniadaniem.",
             LocalTime.of(6, 45), LocalTime.of(7, 0),
@@ -159,7 +165,7 @@ object DormSchedule {
 
     /**
      * Godzina policyjna 21:00–07:00 (powrót do internatu → pobudka).
-     * UI pokazuje wtedy subtelną czerwoną winietę — jak szlaban na noc.
+     * Czysta logika czasu — żadnego UI tu nie ma (winieta usunięta w 1.6.0).
      */
     fun isCurfew(time: LocalTime): Boolean =
         !time.isBefore(LocalTime.of(21, 0)) || time.isBefore(LocalTime.of(7, 0))

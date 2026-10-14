@@ -15,8 +15,8 @@ android {
         applicationId = "com.bscompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 49
-        versionName = "1.43.0"
+        versionCode = 50
+        versionName = "1.44.0"
         // Jedno źródło URL aktualizacji — reszta czyta BuildConfig.UPDATE_URL.
         // Surowy plik z main, żeby apka nie czekała na Pages.
         buildConfigField(
@@ -35,8 +35,11 @@ android {
             )
             // Podpis release: utwórz keystore.properties (nie commituj) z:
             // storeFile=..., storePassword=..., keyAlias=..., keyPassword=...
-            // Klucz wymagany TYLKO przy taskach *Release* — debug/testy działają bez niego.
-            // Cichy unsigned APK w Release łamie OTA, więc tam brak klucza = twardy błąd.
+            // Klucz podpinamy gdy jest; gdy go NIE ma, taski pakujące release
+            // (packageRelease/bundleRelease) padają z jawnym błędem w CZASIE
+            // wykonania — precyzyjnie tam, gdzie podpis jest potrzebny.
+            // Debug/testy i parasolki (assemble/build/check) bez release
+            // w grafie działają bez klucza. Cichy unsigned APK łamie OTA.
             val ksPropsFile = rootProject.file("keystore.properties")
             if (ksPropsFile.exists()) {
                 signingConfigs {
@@ -51,13 +54,16 @@ android {
                     }
                 }
                 signingConfig = signingConfigs.getByName("release")
-            } else if (gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }) {
-                throw GradleException(
-                    "Brak keystore.properties — release MUSI być podpisany tym samym kluczem. " +
-                        "Utwórz plik wg backend/AGENTS.md; nie omijaj tego (unsigned APK łamie aktualizacje)."
-                )
             } else {
-                logger.warn("Brak keystore.properties — build bez podpisu release (tylko debug/test).")
+                logger.warn("Brak keystore.properties — packageRelease/bundleRelease padnie z błędem; reszta działa.")
+                tasks.matching { it.name == "packageRelease" || it.name == "bundleRelease" }.configureEach {
+                    doFirst {
+                        throw GradleException(
+                            "Brak keystore.properties — release MUSI być podpisany tym samym kluczem. " +
+                                "Utwórz plik wg backend/AGENTS.md; nie omijaj tego (unsigned APK łamie aktualizacje)."
+                        )
+                    }
+                }
             }
         }
     }
