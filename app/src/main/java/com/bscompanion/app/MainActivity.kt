@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
     private fun tabForIntent(intent: android.content.Intent?): Int? = when (intent?.action) {
         ACTION_OPEN_PLAN -> 1
-        ACTION_OPEN_MEALS -> 2
+        ACTION_OPEN_MEALS -> 0
         else -> null
     }
 

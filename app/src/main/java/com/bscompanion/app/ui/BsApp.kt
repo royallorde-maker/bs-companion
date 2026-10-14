@@ -1,7 +1,7 @@
 package com.bscompanion.app.ui
 
 // EKRANY APLIKACJI (Compose, Material3).
-// Zakładki: 0 = Dziś, 1 = Plan dnia, 2 = Posiłki, 3 = Zmiany (O aplikacji + changelog).
+// Zakładki: 0 = Posiłki, 1 = Plan dnia, 2 = Dziś, 3 = Ustawienia, 4 = Zmiany.
 // Wspólny język wizualny: BsSurface (węgiel + włosek), StatusChip, Ring.
 // Animacje: Appear (wejścia), splash (MainActivity), morph cyfr (AnimatedContent), płynny Ring (Animatable).
 
@@ -378,13 +378,13 @@ fun BsApp(
     tabRequest: Int? = null,
     onTabRequestConsumed: () -> Unit = {}
 ) {
-    var tab by rememberSaveable { mutableStateOf(0) }
-    val titles = listOf("Dziś", "Plan dnia", "Posiłki", "Zmiany", "Ustawienia")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.Schedule, Icons.Filled.LunchDining, Icons.Filled.History, Icons.Filled.Settings)
+    var tab by rememberSaveable { mutableStateOf(2) }
+    val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Ustawienia", "Zmiany")
+    val icons = listOf(Icons.Filled.LunchDining, Icons.Filled.Schedule, Icons.Filled.Home, Icons.Filled.Settings, Icons.Filled.History)
     var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
-    // Back: najpierw zamyka szczegóły, potem z zakładek 1-4 wraca do Dziś, wyjście tylko z 0.
-    BackHandler(enabled = tab != 0 || detailKey != null) {
-        if (detailKey != null) detailKey = null else tab = 0
+    // Back: najpierw zamyka szczegóły, potem z reszty wraca do Dziś (2), wyjście tylko z 2.
+    BackHandler(enabled = tab != 2 || detailKey != null) {
+        if (detailKey != null) detailKey = null else tab = 2
     }
     // Skrót launchera: wskocz na zakładkę raz, potem wyczyść żądanie.
     LaunchedEffect(tabRequest) {
@@ -452,14 +452,14 @@ fun BsApp(
                     if (detail != null) {
                         Appear(0) { DetailScreen(detail.first, detail.second) { detailKey = null } }
                     } else when (t) {
-                        0 -> HomeScreen(
+                        0 -> MealsScreen()
+                        1 -> ScheduleScreen()
+                        2 -> HomeScreen(
                             onTab = { tab = it },
                             onOpenEvent = { d, e -> detailKey = "$d|${e.id}" }
                         )
-                        1 -> ScheduleScreen()
-                        2 -> MealsScreen()
-                        3 -> ChangelogScreen()
-                        4 -> SettingsScreen()
+                        3 -> SettingsScreen()
+                        4 -> ChangelogScreen()
                     }
                 }
             }
@@ -1841,6 +1841,11 @@ fun ChangelogScreen() {
                 Spacer(Modifier.height(8.dp))
                 Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+        }
+        item {
+            InfoCard("1.37.0 — Dziś na środku", listOf(
+                "Kolejność: Posiłki, Plan, Dziś, Ustawienia, Zmiany."
+            ))
         }
         item {
             InfoCard("1.36.0 — pusta zakładka", listOf(
