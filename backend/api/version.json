@@ -1,8 +1,8 @@
 {
-  "versionCode": 63,
-  "versionName": "1.57.0",
+  "versionCode": 64,
+  "versionName": "1.58.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.57.0 — mądre powiadomienia: skok do Planu, smart czas, żywe czuwanie",
+  "changelog": "1.58.0 — krótszy błysk planu, fale rosną ze sweepem",
   "force": false,
-  "publishedAt": "2026-10-16T10:00:00Z"
+  "publishedAt": "2026-10-16T10:30:00Z"
 }

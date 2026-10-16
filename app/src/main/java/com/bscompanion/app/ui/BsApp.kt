@@ -398,17 +398,35 @@ fun Ring(
             )
             if (anim.value > 0.01f) {
                 // Postęp to gruby wąż na tym samym torze.
-                val worm = wavyRing(
-                    radius = trackR - 1.dp.toPx(),
-                    waves = 14,
-                    ampPx = amp,
-                    sweepDeg = 360f * anim.value,
-                    phase = phase
+                // Małe postępy: 14 fal na parę stopni robi grudkę — fale rosną
+                // ze sweepem, poniżej ~12° zwykły zaokrąglony łuk.
+                val sweepDeg = 360f * anim.value
+                val wormD = (trackR - 1.dp.toPx()) * 2
+                val wormTL = Offset(
+                    (size.width - wormD) / 2,
+                    (size.height - wormD) / 2
                 )
-                drawPath(
-                    worm, arc,
-                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
+                val wormSize = Size(wormD, wormD)
+                val waves = (14f * sweepDeg / 360f).toInt().coerceIn(0, 14)
+                if (waves <= 0) {
+                    drawArc(
+                        arc, -90f, sweepDeg, false,
+                        topLeft = wormTL, size = wormSize,
+                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                } else {
+                    val worm = wavyRing(
+                        radius = trackR - 1.dp.toPx(),
+                        waves = waves,
+                        ampPx = amp,
+                        sweepDeg = sweepDeg,
+                        phase = phase
+                    )
+                    drawPath(
+                        worm, arc,
+                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    )
+                }
             }
         }
         content()
@@ -1309,7 +1327,7 @@ fun SemesterCountdown() {
 fun EventRow(e: DormEvent, isCurrent: Boolean = false, flash: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     // Zwykły wiersz to płaska tafla, bieżący w kolorze primary jak hero.
-    // Mignięcie z Nadchodzących: jasny pojemnik gaśnie sam po ~2 s (timer w Planie).
+    // Mignięcie z Nadchodzących: jasny pojemnik gaśnie sam po ~1 s (timer w Planie).
     val rowBg by animateColorAsState(
         when {
             flash -> scheme.primaryContainer
@@ -1413,7 +1431,7 @@ fun ScheduleScreen(
         if (idx >= 0) {
             try { listState.scrollToItem(maxOf(0, idx - 1)) } catch (_: Exception) { }
         }
-        delay(2200)
+        delay(1200)
         flashId = null
         onFocusConsumed()
     }
@@ -1623,6 +1641,13 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.58.0 — krótszy błysk", listOf(
+                "Mignięcie w Planie gaśnie po ~1 s.",
+                "Małe postępy rysują łuk zamiast grudki.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.57.0 — mądre powiadomienia", listOf(
