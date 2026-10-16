@@ -362,30 +362,29 @@ fun Ring(
         }
     }
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
-        // Fala wędruje o pełną długość co ~2,4 s — ruch jak w M3 Expressive.
-        // Ręczny takt 30 fps: ta wersja Compose nie ma infiniteRepeatable.
-        // Takt stoi gdy brak postępu (same kotwice) — nie grzejemy baterii na darmo.
+        // Zawsze dryfuje: w spoczynku pulse’uje pełne koło, w trakcie wydarzenia wąż
+        // pokonuje postęp. Ręczny takt 30 fps — ta wersja Compose nie ma infiniteRepeatable.
         var phase by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(progress != null) {
-            if (progress == null) return@LaunchedEffect
+        LaunchedEffect(Unit) {
             while (true) {
                 delay(33)
                 phase = (phase + (2 * PI / 72).toFloat()) % (2 * PI).toFloat()
             }
         }
-        // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
+        // Morfowanie jak w M3 Expressive: bez postępu płytki puls, z postępem fala pełna.
         val fullAmp = with(LocalDensity.current) { 1.5.dp.toPx() }
+        val idleAmp = with(LocalDensity.current) { 0.7.dp.toPx() }
         val amp by animateFloatAsState(
-            if (anim.value > 0.01f) fullAmp else 0f,
+            if (progress != null) fullAmp else idleAmp,
             tween(1200), label = "waveAmp"
         )
         Canvas(Modifier.fillMaxSize().padding(3.dp)) {
             val half = size.minDimension / 2
             val wormW = 4.5.dp.toPx()
             // Promienie liczone od krawędzi do środka: nic nie wystaje poza Canvas.
-            val wormR = half - amp - wormW / 2 - 0.5.dp.toPx()
+            val wormR = half - idleAmp - wormW / 2 - 0.5.dp.toPx()
             val trackR = wormR + 1.dp.toPx()
-            // Tor cienki i spokojny.
+            // Tor cienki i spokojny — zawsze widoczny.
             val trackD = trackR * 2
             drawArc(
                 track, -90f, 360f, false,
@@ -396,38 +395,26 @@ fun Ring(
                 size = Size(trackD, trackD),
                 style = Stroke(2.5.dp.toPx())
             )
-            if (anim.value > 0.01f) {
-                // Postęp to gruby wąż na tym samym torze.
-                // Małe postępy: 14 fal na parę stopni robi grudkę — fale rosną
-                // ze sweepem, poniżej ~12° zwykły zaokrąglony łuk.
-                val sweepDeg = 360f * anim.value
-                val wormD = (trackR - 1.dp.toPx()) * 2
-                val wormTL = Offset(
-                    (size.width - wormD) / 2,
-                    (size.height - wormD) / 2
-                )
-                val wormSize = Size(wormD, wormD)
-                val waves = (14f * sweepDeg / 360f).toInt().coerceIn(0, 14)
-                if (waves <= 0) {
-                    drawArc(
-                        arc, -90f, sweepDeg, false,
-                        topLeft = wormTL, size = wormSize,
-                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                } else {
-                    val worm = wavyRing(
-                        radius = trackR - 1.dp.toPx(),
-                        waves = waves,
-                        ampPx = amp,
-                        sweepDeg = sweepDeg,
-                        phase = phase
-                    )
-                    drawPath(
-                        worm, arc,
-                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                    )
-                }
-            }
+            // Wąż zawsze: pełne koło w spoczynku (puls), łuk postępu przy wydarzeniu.
+            val sweepDeg = if (want > 0.01f) 360f * want else 360f
+            val wormD = (trackR - 1.dp.toPx()) * 2
+            val wormTL = Offset(
+                (size.width - wormD) / 2,
+                (size.height - wormD) / 2
+            )
+            val wormSize = Size(wormD, wormD)
+            val waves = (14f * sweepDeg / 360f).toInt().coerceIn(1, 14)
+            val worm = wavyRing(
+                radius = trackR - 1.dp.toPx(),
+                waves = waves,
+                ampPx = amp,
+                sweepDeg = sweepDeg,
+                phase = phase
+            )
+            drawPath(
+                worm, arc,
+                style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
         }
         content()
     }
@@ -1641,6 +1628,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.59.0 — fala zawsze", listOf(
+                "Pierścień pulse’uje też w spoczynku.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.58.0 — krótszy błysk", listOf(
