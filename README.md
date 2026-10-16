@@ -8,10 +8,10 @@ built from `Regulamin_Internatu_ZST_2025_2026`.
 - **Plan dnia:** full daily order from Załącznik nr 6 (pobudka → cisza nocna 22:00–6:00), current event highlighted (suppressed when dorm closed).
 - **Posiłki:** meal hours + stołówka rules (Zał. nr 3).
 - **Zmiany:** changelog + update card (O aplikacji mieszka w Ustawieniach).
-- **Notifications:** alarms via `AlarmManager` — reminder N min before each event (self-dismisses on time, no re-buzz). Same-minute reminders merge into one row.
-  Toggle + 5/10/15/30 min chips, test button with Toast feedback, auto-reschedule on boot / time change / app open.
+- **Notifications:** alarms via `AlarmManager` — smart offsets picked by the app (points 15, meals 30, cisza 10, rest 20 min before; self-dismisses on time, no re-buzz). Same-minute reminders merge into one row. No settings UI.
+  Auto-reschedule on boot / time change / app open, refresh ticks keep "Internauta czuwa" live.
   Weekends (no care: sob all day, ndz to 16:00, pt from 18:00) are skipped.
-  Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact `setWindow` fallback (may be late) with in-app "Zezwól" row.
+  Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact fallback (may be late).
 - **Material 3:** 7 motywów do wyboru w Ustawieniach (Mono/Grafit/Mleko/Cukierek/Bursztyn/Las/Lawenda), no dynamic color, bottom navigation, cards, countdown.
 - **Icon:** adaptive `@mipmap/ic_launcher` (black notebook photo) on `#000000` background, white bell `ic_notification` for status bar.
 
@@ -23,7 +23,7 @@ toaleta do 21:45 — all from the Regulamin.
 1. Open this folder in **Android Studio Ladybug+** (JDK 17).
 2. Let it download Gradle 8.7 + AGP 8.5.2 + SDK 35.
 3. Run on a device/emulator (API 26+).
-4. Accept the notification permission to receive reminders. Battery exemption only via "Praca w tle → Zezwól".
+4. Accept the notification permission to receive reminders.
 
 Package: `com.bscompanion.app` • minSdk 26 • target/compile 35 • Compose BOM 2024.06.00.
 

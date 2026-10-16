@@ -100,9 +100,9 @@ class MainActivity : ComponentActivity() {
         // Debounced w schedulerze — potrójne wołanie (onCreate/onResume/callback) jest tanie.
         EventScheduler.rescheduleAsync(this)
         enqueueSafetyNet()
-        // Tylko zgoda na powiadomienia przy starcie. Baterię proponujemy wyłącznie
-        // z wiersza "Praca w tle" (BatteryRow) — auto-prompt łamał Play policy
-        // i odpalał dwa dialogi systemowe pod rząd.
+        // Tylko zgoda na powiadomienia przy starcie. Baterii nie proponujemy
+        // wcale (brak UI) — auto-prompt łamał Play policy i odpalał dwa dialogi
+        // systemowe pod rząd; działa inexact fallback.
         requestNotifPermissionIfNeeded()
 
         // Skrót launchera przy zimnym starcie; akcję kasujemy, żeby rotacja

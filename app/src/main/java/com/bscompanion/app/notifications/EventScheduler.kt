@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import com.bscompanion.app.data.DormSchedule
+import com.bscompanion.app.data.DormEvent
+import com.bscompanion.app.data.EventCategory
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -150,8 +152,12 @@ object Prefs {
 
 object EventScheduler {
     const val ACTION_EVENT = "com.bscompanion.app.EVENT_ALARM"
+    const val ACTION_REFRESH = "com.bscompanion.app.PERSISTENT_REFRESH"
     // Schemat data w PendingIntent: rozróżnia alarmy (tożsamość IGNORUJE extras!).
     private const val URI_SCHEME = "bs"
+    // Ciche tyknięcia odświeżające trwałe powiadomienie na granicach wydarzeń.
+    private const val REFRESH_BASE = 910_000
+    const val REFRESH_SLOTS = 8
     // Dwa zamki: bgLock tylko na szybką zamianę executora (nie blokuje UI),
     // scheduleLock na właściwe cancel/schedule w tle.
     private val bgLock = Any()
@@ -230,6 +236,21 @@ object EventScheduler {
     fun shutdown() {
     }
 
+    /**
+     * Mądre wyprzedzenie przypomnienia (min): apka dobiera je sama wg wagi wydarzenia.
+     * Punkty-deadline'y krótko i konkretnie, posiłki z czasem na dojście do stołówki,
+     * cisza tylko dyskretnym szturchnięciem.
+     */
+    fun smartOffsetMinutes(e: DormEvent): Int = when {
+        e.end == null -> 15
+        e.category == EventCategory.MEAL -> 30
+        e.id == "cisza" -> 10
+        else -> 20
+    }
+
+    /** Wszystkie możliwe wyprzedzenia — do obronnego wyliczania w cancelAll. */
+    private val smartOffsets = setOf(0, 5, 10, 15, 20, 30)
+
     fun rescheduleAll(context: Context) {
         // Migracja + odczyty I/O POZA zamkiem (nie trzymamy monitora na dysku).
         Prefs.migrateIfNeeded(context)
@@ -237,10 +258,9 @@ object EventScheduler {
         val enabled = try { Prefs.isEnabled(context) } catch (_: Exception) { true }
         val canPost = try { NotificationHelper.canPost(context) } catch (_: Exception) { false }
         val blocked = try { NotificationHelper.channelBlocked(context) } catch (_: Exception) { false }
-        val minutesBefore = (try { Prefs.minutesBefore(context) } catch (_: Exception) { 15 }).coerceIn(0, 120)
+        val offsets = smartOffsets.sorted()
         // Martwe znaczniki łaski (wydarzenie już minęło) nie rosną w nieskończoność.
         try { pruneGraceMarkers(context, System.currentTimeMillis()) } catch (_: Exception) { }
-        val offsets = (setOf(0, 5, 10, 15, 30) + minutesBefore).sorted()
         synchronized(scheduleLock) {
             cancelAll(context, stored, offsets)
             try { NotificationHelper.refreshPersistent(context) } catch (e: Exception) {
@@ -282,13 +302,58 @@ object EventScheduler {
                         val endDate = if (end < event.start) date.plusDays(1) else date
                         if (DormSchedule.isNoCare(LocalDateTime.of(endDate, end).minusMinutes(1))) continue
                     }
-                    scheduleOne(context, date, event.id, event.title, event.description, event.start, minutesBefore, zone, isReminder = true)?.let { wanted += it }
+                    scheduleOne(context, date, event.id, event.title, event.description, event.start, smartOffsetMinutes(event), zone, isReminder = true)?.let { wanted += it }
                     // Celowo BRAK alarmu punktualnego: przypomnienie znika o czasie
                     // wydarzenia (timeout) i nic nie wraca. Bez re-buzzu.
                 }
             }
             try { Prefs.setScheduledUris(context, wanted) } catch (e: Exception) {
                 android.util.Log.w("EventScheduler", "save uris failed", e)
+            }
+            // Ciche tyknięcia trwałego powiadomienia — tylko gdy przypomnienia żyją.
+            try { scheduleRefreshTicks(context, zone) } catch (e: Exception) {
+                android.util.Log.w("EventScheduler", "refresh ticks failed", e)
+            }
+        }
+    }
+
+    /**
+     * Ciche tyknięcia na granice wydarzeń: trwałe "Internauta czuwa" odświeża się
+     * SAMO, bez otwierania apki. Inexact (oszczędza baterię — wiersz i tak
+     * pokazuje następne wydarzenie, nie sekundnik). Każde tyknięcie przy okazji
+     * przeplanowuje całość, więc łańcuch nie urywa się po 8 slotach.
+     */
+    private fun scheduleRefreshTicks(context: Context, zone: ZoneId) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val nowMs = System.currentTimeMillis()
+        val times = mutableListOf<Long>()
+        val today = LocalDate.now()
+        for (d in 0..2) {
+            val date = today.plusDays(d.toLong())
+            for (e in DormSchedule.eventsForDate(date)) {
+                val ms = LocalDateTime.of(date, e.start).atZone(zone).toInstant().toEpochMilli()
+                if (ms > nowMs) times += ms
+                if (times.size >= REFRESH_SLOTS) break
+            }
+            if (times.size >= REFRESH_SLOTS) break
+        }
+        // Północ: granica dni bez wydarzeń też odświeża wiersz.
+        val midnight = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        if (midnight > nowMs) times += midnight
+        times.sorted().take(REFRESH_SLOTS).forEachIndexed { i, fireMs ->
+            val intent = Intent(context, EventReceiver::class.java).apply {
+                action = ACTION_REFRESH
+                data = Uri.parse("$URI_SCHEME://refresh/$i")
+                putExtra(EventReceiver.EXTRA_TRIGGER_MS, fireMs)
+            }
+            val pi = PendingIntent.getBroadcast(
+                context, REFRESH_BASE + i, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            try {
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, fireMs, pi)
+            } catch (e: Exception) {
+                android.util.Log.w("EventScheduler", "refresh tick failed", e)
             }
         }
     }
@@ -444,15 +509,26 @@ object EventScheduler {
                 android.util.Log.w("EventScheduler", "cancel failed", e)
             }
         }
+        // 1b) Ciche tyknięcia trwałego powiadomienia (stałe sloty).
+        for (i in 0 until REFRESH_SLOTS) {
+            val intent = Intent(context, EventReceiver::class.java).apply {
+                action = ACTION_REFRESH
+                data = Uri.parse("$URI_SCHEME://refresh/$i")
+            }
+            val pi = PendingIntent.getBroadcast(
+                context, REFRESH_BASE + i, intent,
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            ) ?: continue
+            try { am.cancel(pi) } catch (e: Exception) {
+                android.util.Log.w("EventScheduler", "refresh cancel failed", e)
+            }
+        }
         // 2) Wyliczenie obronne (bieżące + historyczne offsety, horyzont 0..+7 jak w rescheduleAll).
         // Bez -1: wczorajsze alarmy już wygasły; ogranicza IPC o ~20%.
         // Offsety przekazane z rescheduleAll (bez odczytu prefs pod zamkiem).
         val today = LocalDate.now()
         val dates = (0..7).map { today.plusDays(it.toLong()) }
-        val useOffsets = offsets ?: run {
-            val mb = try { Prefs.minutesBefore(context) } catch (_: Exception) { 15 }
-            (setOf(0, 5, 10, 15, 30) + mb).sorted()
-        }
+        val useOffsets = offsets ?: smartOffsets.sorted()
         for (date in dates) {
             val ids = DormSchedule.eventsForDate(date).map { it.id } + legacyIds
             for (eventId in ids) {

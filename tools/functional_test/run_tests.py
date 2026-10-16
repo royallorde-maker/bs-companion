@@ -492,12 +492,20 @@ def g_source() -> None:
     check("countdown days", 'd ${h}g ${m}min' in bs)
     check("TERAZ uses cared helper", "currentCaredEvent(lookupNow" in bs)
     check("banners use now (sun/fri)", bs.count("isNoCare(nowTick)") >= 2)
-    check("Upcoming date for +2d", 'format(dateSuffixFmt)' in bs)
+    check("upcoming jumps to plan with flash", "planFocus" in bs and "parseFocusKey" in bs
+          and "flashId" in bs and "scrollToItem" in bs)
+    check("upcoming rows show weekday off-today", "rangeText" in bs)
+    check("smart offsets replace chips", "smartOffsetMinutes" in es and "smartOffsets" in es
+          and "Przypomnij wcześniej" not in bs)
+    check("persistent refreshes itself", "ACTION_REFRESH" in es and "scheduleRefreshTicks" in es
+          and "ACTION_REFRESH" in er)
     check("row width floor", "widthIn(min = 64.dp" in bs)
     check("no double spacing", "spacedBy(0.dp)" in bs)
-    check("switch enabled colors", "onCheckedChange = onEnabledChange" in bs)
+    check("no notif settings UI (smart mode)", "NotifCard" not in bs and "BatteryRow" not in bs
+          and "onCheckedChange = onEnabledChange" not in bs)
     check("aligned 30s ticks", bs.count("30_000 - System.currentTimeMillis()") == 2)
-    check("canExact sync init", "mutableStateOf(ExactAlarmHelper.canSchedule(context))" in bs)
+    check("exact fallback without UI row", "canScheduleExactAlarms" in es
+          and "ExactAlarmHelper.canSchedule(context)" not in bs)
     check("bars follow app theme, not system", "appThemeOf" in ma and "isSystemInDarkTheme" not in ma)
     check("refresh keeps resolution", "sameSize" in ma)
     check("permission migrates first", "Prefs.isNotifAsked(this)" in ma and "runOnUiThread" in ma)

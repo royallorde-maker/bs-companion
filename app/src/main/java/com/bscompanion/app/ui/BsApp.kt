@@ -7,6 +7,7 @@ package com.bscompanion.app.ui
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.LocalIndication
@@ -56,6 +57,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -84,14 +86,12 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Weekend
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -138,12 +138,7 @@ import androidx.compose.ui.unit.dp
 import com.bscompanion.app.data.DormEvent
 import com.bscompanion.app.data.DormSchedule
 import com.bscompanion.app.data.EventCategory
-import com.bscompanion.app.notifications.BatteryHelper
-import com.bscompanion.app.notifications.EventScheduler
-import com.bscompanion.app.notifications.ExactAlarmHelper
 import com.bscompanion.app.notifications.NotificationHelper
-import com.bscompanion.app.notifications.Prefs
-import com.bscompanion.app.notifications.findActivity
 import com.bscompanion.app.ui.theme.Montserrat
 import com.bscompanion.app.ui.theme.AppTheme
 import com.bscompanion.app.update.UpdateState
@@ -466,15 +461,16 @@ fun BsApp(
     var tab by rememberSaveable { mutableStateOf(2) }
     val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Zmiany", "Ustawienia")
     val icons = listOf(Icons.Filled.LunchDining, Icons.Filled.Schedule, Icons.Filled.Home, Icons.Filled.History, Icons.Filled.Settings)
-    var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
-    // Back: najpierw zamyka szczegóły, potem z reszty wraca do Dziś (2), wyjście tylko z 2.
-    BackHandler(enabled = tab != 2 || detailKey != null) {
-        if (detailKey != null) detailKey = null else tab = 2
+    // Cel z Nadchodzących ("data|id"): Plan pokazuje ten dzień i mignie wierszem.
+    var planFocus by rememberSaveable { mutableStateOf<String?>(null) }
+    // Back: z reszty wraca do Dziś (2), wyjście tylko z 2.
+    BackHandler(enabled = tab != 2) {
+        tab = 2
     }
     // Skrót launchera: wskocz na zakładkę raz, potem wyczyść żądanie.
     LaunchedEffect(tabRequest) {
         if (tabRequest != null && tabRequest in 0..4) {
-            detailKey = null
+            planFocus = null
             tab = tabRequest
             onTabRequestConsumed()
         }
@@ -486,7 +482,7 @@ fun BsApp(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            PillBar(titles, icons, tab) { detailKey = null; tab = it }
+            PillBar(titles, icons, tab) { planFocus = null; tab = it }
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
@@ -533,15 +529,15 @@ fun BsApp(
                 label = "tabs"
             ) { t ->
                 saveableHolder.SaveableStateProvider(t) {
-                    val detail = remember(detailKey) { detailKey?.let { parseDetailKey(it) } }
-                    if (detail != null) {
-                        Appear(0) { DetailScreen(detail.first, detail.second) { detailKey = null } }
-                    } else when (t) {
+                    when (t) {
                         0 -> MealsScreen()
-                        1 -> ScheduleScreen()
+                        1 -> ScheduleScreen(
+                            focusKey = planFocus,
+                            onFocusConsumed = { planFocus = null }
+                        )
                         2 -> HomeScreen(
                             onTab = { tab = it },
-                            onOpenEvent = { d, e -> detailKey = "$d|${e.id}" }
+                            onFocusEvent = { d, e -> planFocus = "$d|${e.id}"; tab = 1 }
                         )
                         3 -> ChangelogScreen()
                         4 -> SettingsScreen(appTheme, onThemeChange)
@@ -643,8 +639,8 @@ fun PillBar(
         }
 }
 
-/** Klucz szczegółów wydarzenia: "2026-10-13|cisza". */
-fun parseDetailKey(key: String): Pair<LocalDate, DormEvent>? {
+/** Klucz fokusu z Nadchodzących: "2026-10-13|cisza". */
+fun parseFocusKey(key: String): Pair<LocalDate, DormEvent>? {
     val sep = key.indexOf('|')
     if (sep < 0) return null
     return try {
@@ -659,9 +655,8 @@ fun parseDetailKey(key: String): Pair<LocalDate, DormEvent>? {
 @Composable
 fun HomeScreen(
     onTab: (Int) -> Unit,
-    onOpenEvent: (LocalDate, DormEvent) -> Unit
+    onFocusEvent: (LocalDate, DormEvent) -> Unit
 ) {
-    val context = LocalContext.current
     // SEKUNDNIK: tyka co 1 s, ale czytają go tylko małe poddrzewa (HeroCard/HoldingSection)
     // przez referencję State — sama HomeScreen NIE przerysowuje się co takt.
     val nowState = remember { mutableStateOf(LocalDateTime.now()) }
@@ -677,8 +672,6 @@ fun HomeScreen(
         nowState.value = LocalDateTime.now()
         onPauseOrDispose { }
     }
-    var notifEnabled by rememberSaveable { mutableStateOf(Prefs.isEnabled(context)) }
-    var minutesBefore by rememberSaveable { mutableStateOf(Prefs.minutesBefore(context)) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -696,30 +689,12 @@ fun HomeScreen(
                 HoldingSection(
                     nowState,
                     onSeeAll = { onTab(1) },
-                    onOpen = onOpenEvent
+                    onFocus = onFocusEvent
                 )
             }
         }
         item {
-            Appear(3) {
-                NotifCard(
-                    notifEnabled = notifEnabled,
-                    minutesBefore = minutesBefore,
-                    onEnabledChange = {
-                        notifEnabled = it
-                        Prefs.setEnabled(context, it)
-                        EventScheduler.rescheduleAsync(context, force = true)
-                    },
-                    onMinutesChange = {
-                        minutesBefore = it
-                        Prefs.setMinutesBefore(context, it)
-                        EventScheduler.rescheduleAsync(context, force = true)
-                    }
-                )
-            }
-        }
-        item {
-            Appear(4) { SemesterCountdown() }
+            Appear(3) { SemesterCountdown() }
         }
     }
 }
@@ -977,7 +952,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
 fun HoldingSection(
     nowState: State<LocalDateTime>,
     onSeeAll: () -> Unit,
-    onOpen: (LocalDate, DormEvent) -> Unit
+    onFocus: (LocalDate, DormEvent) -> Unit
 ) {
     val now by nowState
     // Bez krzykliwej zieleni — odliczanie w stonowanym kolorze tekstu.
@@ -985,6 +960,7 @@ fun HoldingSection(
     val items = remember(now.truncatedTo(ChronoUnit.MINUTES)) {
         DormSchedule.upcomingCared(now.truncatedTo(ChronoUnit.MINUTES), 4)
     }
+    val today = remember(now) { now.toLocalDate() }
     BsSurface(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1014,12 +990,17 @@ fun HoldingSection(
         }
         items.forEach { (date, e) ->
             val target = LocalDateTime.of(date, e.start)
+            // Dzień przy pozadzisiejszych (weekendowa przeskocznia): "niedz. • 17:30–18:30".
+            val rangeText = if (date == today) timeRange(e) else {
+                val dow = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)
+                "$dow • ${timeRange(e)}"
+            }
             val rowPress = remember(e.id, date) { MutableInteractionSource() }
             Row(
                 Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable(
-                        onClick = { onOpen(date, e) },
+                        onClick = { onFocus(date, e) },
                         role = Role.Button,
                         interactionSource = rowPress,
                         indication = LocalIndication.current
@@ -1050,7 +1031,7 @@ fun HoldingSection(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        timeRange(e),
+                        rangeText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1083,269 +1064,6 @@ fun HoldingSection(
     }
 }
 
-/** Szczegóły wydarzenia w języku drugiego ekranu Nexora: donut postępu + karty faktów. */
-@Composable
-fun DetailScreen(date: LocalDate, event: DormEvent, onBack: () -> Unit) {
-    val context = LocalContext.current
-    // Sekundnik jak na Dziś — donut pełznie płynnie, tekst i tak co minutę.
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) {
-        // Wyrównanie do granicy sekund, żeby nie dryfował.
-        while (true) {
-            delay(1000 - System.currentTimeMillis() % 1000)
-            now = LocalDateTime.now()
-        }
-    }
-    val startDT = LocalDateTime.of(date, event.start)
-    val endDT = event.end?.let {
-        if (it <= event.start) LocalDateTime.of(date.plusDays(1), it)
-        else LocalDateTime.of(date, it)
-    }
-    val totalMin = endDT?.let { Duration.between(startDT, it).toMinutes().coerceAtLeast(1) } ?: 15L
-    // Licznik w SEKUNDACH — minutowy skok pierścienia przy sekundowym takcie to był bug.
-    val totalSec = endDT?.let { Duration.between(startDT, it).seconds.coerceAtLeast(1) } ?: 15L * 60
-    val progress: Float
-    val center: String
-    val caption: String
-    when {
-        now.isBefore(startDT) -> {
-            progress = 0f
-            center = "za " + formatCountdown(now, startDT)
-            caption = "do startu"
-        }
-        endDT != null && !now.isBefore(endDT) -> {
-            progress = 1f
-            center = "Zakończone"
-            caption = "wydarzenie minęło"
-        }
-        endDT == null -> {
-            // Punktowe (wyjście/powrót): po starcie nie ma już czego odliczać.
-            progress = 1f
-            center = "Zakończone"
-            caption = "wydarzenie minęło"
-        }
-        else -> {
-            val doneSec = Duration.between(startDT, now).seconds.coerceIn(0, totalSec)
-            progress = doneSec / totalSec.toFloat()
-            center = "jeszcze " + formatCountdown(now, endDT!!)
-            caption = "do końca"
-        }
-    }
-    val today = LocalDate.now()
-    val dateSuffixFmt = remember { java.time.format.DateTimeFormatter.ofPattern("d.M") }
-    val day = when (date) {
-        today -> "dziś"
-        today.plusDays(1) -> "jutro"
-        else -> "${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)} ${date.format(dateSuffixFmt)}"
-    }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val backPress = remember { MutableInteractionSource() }
-                Box(
-                    Modifier.size(44.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                        .clickable(
-                            onClick = onBack,
-                            role = Role.Button,
-                            interactionSource = backPress,
-                            indication = LocalIndication.current
-                        )
-                        .fluentScale(rememberFluentPress(backPress)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack, null,
-                        Modifier.size(22.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        event.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        "$day • ${timeRange(event)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-        item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                Box(Modifier.fillMaxWidth().height(250.dp)) {
-                    val scheme = MaterialTheme.colorScheme
-                    Canvas(Modifier.size(210.dp).align(Alignment.Center)) {
-                        val w = 22.dp.toPx()
-                        // Promień pomniejszony o połowę stroku — inaczej zewnętrzne
-                        // 11.dp ucina krawędź Canvas i okrąg wygląda na chudszy.
-                        val d = size.minDimension - w
-                        val arcTopLeft = Offset(
-                            (size.width - d) / 2,
-                            (size.height - d) / 2
-                        )
-                        val arcSize = Size(d, d)
-                        drawArc(
-                            scheme.outlineVariant, -90f, 360f, false,
-                            topLeft = arcTopLeft, size = arcSize, style = Stroke(w)
-                        )
-                        if (progress > 0.005f) {
-                            // Pełne koło z Round cap robi garb na łączeniu — przytnij.
-                            val sweep = if (progress >= 0.999f) 359.9f else 360f * progress
-                            drawArc(
-                                scheme.primary, -90f, sweep, false,
-                                topLeft = arcTopLeft, size = arcSize,
-                                style = Stroke(w, cap = StrokeCap.Round)
-                            )
-                        }
-                    }
-                    Column(
-                        Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            center,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            caption,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    MiniPill(
-                        Icons.Filled.Schedule, "Start ${event.start.format(timeFmt)}",
-                        Modifier.align(Alignment.TopStart)
-                    )
-                    MiniPill(
-                        Icons.Filled.History, "Koniec ${event.end?.format(timeFmt) ?: "—"}",
-                        Modifier.align(Alignment.TopEnd)
-                    )
-                    MiniPill(
-                        Icons.Filled.Timer, "$totalMin min",
-                        Modifier.align(Alignment.BottomStart)
-                    )
-                    MiniPill(
-                        Icons.Filled.CheckCircle, "${(progress * 100).toInt()}%",
-                        Modifier.align(Alignment.BottomEnd)
-                    )
-                }
-            }
-        }
-        item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Text(
-                        event.category.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
-                }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    event.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "$day • ${timeRange(event)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(12.dp))
-                Row {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "Start",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            event.start.format(timeFmt),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "Koniec",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            event.end?.format(timeFmt) ?: "—",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-        }
-        item {
-            BsSurface(Modifier.fillMaxWidth()) {
-                Text(
-                    event.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(10.dp))
-                MiniPill(
-                    Icons.Filled.Notifications,
-                    if (event.notifyDefault) {
-                        "Przypomnienie: ${Prefs.minutesBefore(context)} min przed"
-                    } else {
-                        "Bez przypomnienia"
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MiniPill(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = modifier
-    ) {
-        Row(
-            Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(5.dp))
-            Text(
-                text,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-        }
-    }
-}
 
 /** Nagłówek zakładki w kolorze primary — te same napisy, nowa oprawa. */
 @Composable
@@ -1586,221 +1304,20 @@ fun SemesterCountdown() {
     }
 }
 
-/** Karta ustawień powiadomień + pracy w tle (własny takt minutowy). */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun NotifCard(
-    notifEnabled: Boolean,
-    minutesBefore: Int,
-    onEnabledChange: (Boolean) -> Unit,
-    onMinutesChange: (Int) -> Unit
-) {
-    val context = LocalContext.current
-    var minuteTick by remember { mutableStateOf(LocalTime.now().truncatedTo(ChronoUnit.MINUTES)) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(60_000 - System.currentTimeMillis() % 60_000)
-            minuteTick = LocalTime.now().truncatedTo(ChronoUnit.MINUTES)
-        }
-    }
-    val today = remember(minuteTick) { LocalDate.now() }
-    val cared = remember(today, minuteTick) {
-        DormSchedule.nextCaredEvent(LocalDateTime.of(today, minuteTick))
-    }
-    val nextTitle = cared?.second?.title ?: "—"
-    var resumeTick by remember { mutableStateOf(0) }
-    LifecycleResumeEffect(Unit) {
-        // Powrót z ustawień systemowych — odśwież Binder-stan natychmiast, nie za 60s.
-        resumeTick++
-        onPauseOrDispose { }
-    }
-    val blocked = remember(minuteTick, notifEnabled, resumeTick) { NotificationHelper.notificationsBlocked(context) }
-    // Start synchronicznie z realną wartością (bez flesza po pierwszej klatce).
-    var canExact by remember { mutableStateOf(ExactAlarmHelper.canSchedule(context)) }
-    LifecycleResumeEffect(resumeTick) {
-        canExact = ExactAlarmHelper.canSchedule(context)
-        onPauseOrDispose { }
-    }
-    BsSurface(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.heightIn(min = 48.dp).clickable(
-                onClick = { onEnabledChange(!notifEnabled) }
-            ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.Notifications, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Powiadomienia",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(Modifier.width(8.dp))
-            Switch(checked = notifEnabled, onCheckedChange = onEnabledChange)
-        }
-        if (blocked) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Powiadomienia zablokowane", style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        "System je wycisza — test też nic nie pokaże",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = {
-                    NotificationHelper.openAppNotificationSettings(context)
-                }) { Text("Ustawienia") }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Przypomnienia o posiłkach, nauce własnej, ciszy nocnej i powrocie.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-        Text("Przypomnij wcześniej:", style = MaterialTheme.typography.labelMedium)
-        Spacer(Modifier.height(4.dp))
-        // FlowRow: na wąskim ekranie chipy zawijają się zamiast ucinać.
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf(5, 10, 15, 30).forEach { m ->
-                FilterChip(
-                    selected = minutesBefore == m,
-                    onClick = { onMinutesChange(m) },
-                    label = { Text("$m min") }
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        // Chip minutowy od razu przeplanowuje (onMinutesChange) — osobny guzik zbędny.
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            TextButton(
-                onClick = {
-                    if (NotificationHelper.notificationsBlocked(context)) {
-                        android.widget.Toast.makeText(context, "Powiadomienia zablokowane w systemie", android.widget.Toast.LENGTH_SHORT).show()
-                        NotificationHelper.openAppNotificationSettings(context)
-                    } else {
-                        NotificationHelper.showEventNotification(
-                            context, 9999, "Test Internauta",
-                            "Powiadomienia działają. Kolejne: $nextTitle", false
-                        )
-                        android.widget.Toast.makeText(context, "Test wysłany", android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) { Text("Wyślij testowe") }
-        }
-        Spacer(Modifier.height(8.dp))
-        AnimatedVisibility(visible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !canExact) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Dokładne alarmy", style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        "Wyłączone — przypomnienia mogą się spóźniać",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = {
-                    context.findActivity()?.let { ExactAlarmHelper.openSettings(it) }
-                }) { Text("Zezwól na alarmy") }
-            }
-        }
-        BatteryRow()
-    }
-}
-
-/** Wiersz statusu baterii z własnym wolnym taktem (nie budzi reszty karty). */
-@Composable
-fun BatteryRow() {
-    val context = LocalContext.current
-    fun safeExempt(): Boolean = try {
-        BatteryHelper.isExempt(context)
-    } catch (e: Exception) {
-        android.util.Log.w("BatteryRow", "isExempt failed", e)
-        false
-    }
-    var exempt by remember { mutableStateOf(safeExempt()) }
-    LifecycleResumeEffect(Unit) {
-        exempt = safeExempt()
-        onPauseOrDispose { }
-    }
-    // Flaga ask-once: po pierwszym zapytaniu nie pokazujemy systemowego dialogu
-    // w kółko — tylko ekran ustawień (niektóre OEM-y blokują REQUEST_...).
-    val asked = remember(exempt) {
-        try { Prefs.isBatteryAsked(context) } catch (_: Exception) { false }
-    }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("Praca w tle", style = MaterialTheme.typography.labelMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(
-                if (exempt) "Bez ograniczeń — alarmy niezawodne"
-                else "System może ucinać alarmy",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        AnimatedVisibility(visible = !exempt) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = {
-                val act = context.findActivity()
-                if (act == null) {
-                    android.widget.Toast.makeText(context, "Nie można otworzyć ustawień", android.widget.Toast.LENGTH_SHORT).show()
-                    return@TextButton
-                }
-                try {
-                    if (!asked) {
-                        BatteryHelper.requestExempt(act)
-                        try { Prefs.setBatteryAsked(act) } catch (e: Exception) {
-                            android.util.Log.w("BatteryRow", "setBatteryAsked failed", e)
-                        }
-                    } else {
-                        // Już pytano: prowadź wprost do ustawień (dialog OEM mógł być zablokowany).
-                        try {
-                            act.startActivity(android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-                        } catch (e: Exception) {
-                            android.util.Log.w("BatteryRow", "open battery settings failed", e)
-                            android.widget.Toast.makeText(context, "Nie można otworzyć ustawień baterii", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w("BatteryRow", "battery request failed", e)
-                    android.widget.Toast.makeText(context, "Nie można otworzyć ustawień baterii", android.widget.Toast.LENGTH_SHORT).show()
-                }
-                // Bez natychmiastowego odświeżania: dialog systemowy jeszcze wisi,
-                // stan podniesie LifecycleResumeEffect po powrocie.
-                }) { Text(if (asked) "Ustawienia baterii" else "Zezwól na tło") }
-            }
-        }
-    }
-}
 
 @Composable
-fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
+fun EventRow(e: DormEvent, isCurrent: Boolean = false, flash: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     // Zwykły wiersz to płaska tafla, bieżący w kolorze primary jak hero.
+    // Mignięcie z Nadchodzących: jasny pojemnik gaśnie sam po ~2 s (timer w Planie).
+    val rowBg by animateColorAsState(
+        when {
+            flash -> scheme.primaryContainer
+            isCurrent -> scheme.primary
+            else -> scheme.surfaceContainerLowest
+        },
+        tween(FluentMotion.EnterMs), label = "flash"
+    )
     val content = if (isCurrent) scheme.onPrimary else scheme.onSurface
     val subContent = if (isCurrent) scheme.onPrimary.copy(alpha = 0.72f)
     else scheme.onSurfaceVariant
@@ -1816,7 +1333,7 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
                 stateDescription = if (expanded) "Rozwinięte" else "Zwinięte"
             },
         shape = RoundedCornerShape(20.dp),
-        color = if (isCurrent) scheme.primary else scheme.surfaceContainerLowest,
+        color = rowBg,
         border = BorderStroke(1.dp, borderColor),
         onClick = { expanded = !expanded },
         interactionSource = rowPress
@@ -1860,7 +1377,10 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false) {
 }
 
 @Composable
-fun ScheduleScreen() {
+fun ScheduleScreen(
+    focusKey: String? = null,
+    onFocusConsumed: () -> Unit = {}
+) {
     // Takt 30 s wyrównany do ściany zegara (nie dryfuje za granicę eventu).
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
@@ -1872,25 +1392,49 @@ fun ScheduleScreen() {
     // Dzień i „teraz" liczone z jednego odczytu na tick (bez straddlingu minuty).
     val nowTick = remember(tick) { LocalDateTime.now() }
     val today = remember(nowTick) { nowTick.toLocalDate() }
-    val events = remember(today) { DormSchedule.eventsForDate(today) }
+    // Fokus z Nadchodzących ("data|id"): pokazujemy TEN dzień, niekoniecznie dziś.
+    val focus = remember(focusKey) { focusKey?.let { parseFocusKey(it) } }
+    val shownDate = focus?.first ?: today
+    val shownEvents = remember(shownDate) { DormSchedule.eventsForDate(shownDate) }
+    val events = shownEvents
+    val isShownToday = shownDate == today
     val closedForHighlight = remember(nowTick) { DormSchedule.isNoCare(nowTick) }
-    val current = remember(nowTick, events) {
-        if (closedForHighlight) null
+    val current = remember(nowTick, events, isShownToday) {
+        if (!isShownToday || closedForHighlight) null
         else DormSchedule.currentEvent(nowTick.toLocalTime(), events)
     }
+    val focusId = focus?.second?.id
+    val listState = rememberLazyListState()
+    // Mignięcie zgasza fokus — wiersz wraca do zwykłego wyglądu.
+    var flashId by remember(focusKey) { mutableStateOf(focusId) }
+    LaunchedEffect(focusId, events) {
+        if (focusId == null) return@LaunchedEffect
+        val idx = events.indexOfFirst { it.id == focusId }
+        if (idx >= 0) {
+            try { listState.scrollToItem(maxOf(0, idx - 1)) } catch (_: Exception) { }
+        }
+        delay(2200)
+        flashId = null
+        onFocusConsumed()
+    }
     // Baner, gdy TERAZ brak opieki (sobota / nd<16:00 / pt≥18:00) — nie tylko sobota.
-    val isClosedNow = closedForHighlight
-    val isFullyClosed = remember(today) { DormSchedule.isFullyClosedDay(today) }
+    val isClosedNow = closedForHighlight && isShownToday
+    val isFullyClosed = remember(shownDate) { DormSchedule.isFullyClosedDay(shownDate) }
 
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
             TabHero(
                 "Porządek dnia",
-                "Zał. nr 6 Regulaminu • internat czynny ndz 16:00 – pt 18:00"
+                if (isShownToday) "Zał. nr 6 Regulaminu • internat czynny ndz 16:00 – pt 18:00"
+                else {
+                    val dow = shownDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, plLocale)
+                    "Plan na $dow ${shownDate.dayOfMonth}.${shownDate.monthValue}"
+                }
             )
             AnimatedVisibility(visible = isClosedNow) {
                 Column {
@@ -1905,7 +1449,11 @@ fun ScheduleScreen() {
         // Bez Appear w leniwych wierszach — LazyColumn kasuje kompozycję poza
         // viewportem i wejście odtwarzałoby się przy każdym scroll-backu.
         itemsIndexed(events, key = { _, e -> e.id }) { _, e ->
-            EventRow(e, isCurrent = !closedForHighlight && e.id == current?.id)
+            EventRow(
+                e,
+                isCurrent = !closedForHighlight && e.id == current?.id,
+                flash = e.id == flashId
+            )
         }
         item {
             Spacer(Modifier.height(8.dp))
@@ -2075,6 +1623,13 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.57.0 — mądre powiadomienia", listOf(
+                "Nadchodzące skacze do Planu i miga wierszem.",
+                "Koniec ustawień dzwonków — apka dobiera czas sama.",
+                "Czuwanie odświeża się samo, splash po nowemu."
+            ))
         }
         item {
             InfoCard("1.56.0 — gładszy wąż", listOf(

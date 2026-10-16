@@ -75,6 +75,16 @@ class EventReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Ciche tyknięcie: tylko odśwież trwałe i dopnij łańcuch (samo się kończy,
+        // gdy przypomnienia wyłączone — rescheduleAll wtedy nic nie stawia).
+        if (intent.action == EventScheduler.ACTION_REFRESH) {
+            val app = context.applicationContext
+            try { NotificationHelper.refreshPersistent(app) } catch (e: Exception) {
+                android.util.Log.w("EventReceiver", "refresh tick failed", e)
+            }
+            EventScheduler.rescheduleAsync(app)
+            return
+        }
         if (intent.action != EventScheduler.ACTION_EVENT) return
         val app = context.applicationContext
         if (!Prefs.isEnabled(context)) {
