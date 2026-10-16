@@ -330,17 +330,20 @@ private fun DrawScope.wavyRing(
     return path
 }
 
-/** Pierścień postępu: łuk dryfu płynnie, a przy zmianie wydarzenia SKACZE. */
+/** Pierścień postępu: łuk dryfu płynnie, a przy zmianie wydarzenia SKACZE.
+ *  alwaysWave: fala nigdy nie gaśnie (kotwice też) — tylko karta TERAZ. */
 @Composable
 fun Ring(
     progress: Float?,
     modifier: Modifier = Modifier,
+    alwaysWave: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     val track = MaterialTheme.colorScheme.outlineVariant
     val arc = MaterialTheme.colorScheme.primary
     val anim = remember { Animatable(0f) }
     val want = progress?.coerceIn(0f, 1f) ?: 0f
+    val waveOn = alwaysWave || progress != null
     var inited by remember { mutableStateOf(false) }
     LaunchedEffect(want) {
         // Pierwsze pokazanie: SNAP (bez zamiatania od zera dla małych postępów).
@@ -364,10 +367,10 @@ fun Ring(
     Box(progressSemantics.then(modifier).size(56.dp), contentAlignment = Alignment.Center) {
         // Fala wędruje o pełną długość co ~2,4 s — ruch jak w M3 Expressive.
         // Ręczny takt 30 fps: ta wersja Compose nie ma infiniteRepeatable.
-        // Takt stoi gdy brak postępu (same kotwice) — nie grzejemy baterii na darmo.
+        // Zwykłe kotwice (NASTĘPNE) stoją; TERAZ z alwaysWave nigdy nie gaśnie.
         var phase by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(progress != null) {
-            if (progress == null) return@LaunchedEffect
+        LaunchedEffect(waveOn) {
+            if (!waveOn) return@LaunchedEffect
             while (true) {
                 delay(33)
                 phase = (phase + (2 * PI / 72).toFloat()) % (2 * PI).toFloat()
@@ -376,7 +379,7 @@ fun Ring(
         // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
         val fullAmp = with(LocalDensity.current) { 1.5.dp.toPx() }
         val amp by animateFloatAsState(
-            if (anim.value > 0.01f) fullAmp else 0f,
+            if (waveOn) fullAmp else 0f,
             tween(1200), label = "waveAmp"
         )
         Canvas(Modifier.fillMaxSize().padding(3.dp)) {
@@ -396,11 +399,12 @@ fun Ring(
                 size = Size(trackD, trackD),
                 style = Stroke(2.5.dp.toPx())
             )
-            if (anim.value > 0.01f) {
+            if (waveOn) {
                 // Postęp to gruby wąż na tym samym torze.
                 // Małe postępy: 14 fal na parę stopni robi grudkę — fale rosną
                 // ze sweepem, poniżej ~12° zwykły zaokrąglony łuk.
-                val sweepDeg = 360f * anim.value
+                // Bez postępu (kotwica TERAZ) wąż obraca się po pełnym kole.
+                val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
                 val wormD = (trackR - 1.dp.toPx()) * 2
                 val wormTL = Offset(
                     (size.width - wormD) / 2,
@@ -820,7 +824,8 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                 Spacer(Modifier.height(8.dp))
                 if (closed) {
                     // Ta sama kotwica co Ring — ikony w obu kartach w jednej linii.
-                    Ring(progress = null) {
+                    // Fala zawsze: nawet zamknięty internat ma żywy pierścień.
+                    Ring(progress = null, alwaysWave = true) {
                         Icon(
                             Icons.Filled.Bedtime, null,
                             Modifier.size(24.dp),
@@ -873,7 +878,7 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
                         )
                     }
                 } else {
-                    Ring(progress = null) {
+                    Ring(progress = null, alwaysWave = true) {
                         Icon(
                             Icons.Filled.WbSunny, null,
                             Modifier.size(24.dp),
@@ -1641,6 +1646,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.61.0 — żywy TERAZ", listOf(
+                "Fala na TERAZ nigdy nie gaśnie — też zamknięty.",
+                "Reszta bez zmian."
+            ))
         }
         item {
             InfoCard("1.60.0 — cofnięcie fali", listOf(
