@@ -1683,430 +1683,56 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.69.0 — poprawki błędów", listOf(
-                "Plan dnia zostaje na dniu wybranym z Nadchodzących (nie wraca do dziś).",
-                "NASTĘPNE i lista nie dublują trwającego wydarzenia.",
-                "Licznik końca roku odświeża się po północy i pokazuje Wakacje! latem.",
-                "Pierścień TERAZ rusza od zera — koniec pełnego koła na starcie wydarzenia.",
-                "Spóźnione przypomnienie gaśnie o czasie startu wydarzenia.",
-                "Bez budzików, gdy powiadomienia są wyłączone."
-            ))
-            InfoCard("1.68.0 — wydanie z Linuksa", listOf(
-                "Wersja zbudowana i podpisana na maszynie z Linuksem.",
+            InfoCard("1.70.0 — porządek w zmianach", listOf(
+                "Historia zmian na nowo: starsze wpisy usunięte, ostatnie wydania napisane po ludzku.",
                 "Bez zmian w działaniu aplikacji."
             ))
-            InfoCard("1.67.0 — fala jak w M3", listOf(
-                "Tor i fala tej samej grubości jak w Material 3 Expressive.",
-                "Stała długość fali: krótki łuk to pełne, szerokie fale.",
+            InfoCard("1.69.0 — poprawki błędów", listOf(
+                "Plan dnia zostaje na dniu wybranym z Nadchodzących — nie wraca sam do dzisiaj.",
+                "NASTĘPNE nie pokazuje już tego samego, co TERAZ.",
+                "Licznik końca roku odświeża się sam i mówi Wakacje! w wakacje.",
+                "Pierścień TERAZ startuje od zera — bez pełnego koła na starcie wydarzenia.",
+                "Spóźnione przypomnienie gaśnie dokładnie o czasie startu.",
+                "Wyłączone powiadomienia wyłączają też budziki."
+            ))
+            InfoCard("1.68.0 — wydanie z Linuksa", listOf(
+                "Wersja zbudowana i podpisana na Linuksie.",
+                "Bez zmian w działaniu aplikacji."
+            ))
+            InfoCard("1.67.0 — fala jak w Material 3", listOf(
+                "Tor i fala mają tę samą grubość — jak w Material 3 Expressive.",
+                "Fala ma stałą długość: nawet krótki łuk to pełne, szerokie fale.",
                 "Reszta bez zmian."
             ))
             InfoCard("1.66.0 — miękka fala", listOf(
-                "Szerokie fale zamiast wibracji — styl Oddychanie.",
+                "Fala szeroka i spokojna, bez wibrowania — jak w stylu Oddychanie.",
                 "Reszta bez zmian."
             ))
-            InfoCard("1.65.0 — fala znowu", listOf(
-                "Postęp znowu faluje, ale krótki łuk to 1–2 szerokie fale.",
+            InfoCard("1.65.0 — fala wraca", listOf(
+                "Postęp znowu faluje, a krótki łuk to jedna albo dwie szerokie fale.",
                 "Reszta bez zmian."
             ))
-        }
-        item {
             InfoCard("1.64.0 — fala tylko na kole", listOf(
-                "Postęp to gładki łuk; fala tylko na żywym pełnym kole.",
-                "Koniec gruchotki na krótkim łuku TERAZ.",
+                "Postęp to gładki łuk, a fala pojawia się tylko na pełnym kole TERAZ.",
+                "Koniec poszarpanej fali przy krótkim postępie.",
                 "Reszta bez zmian."
             ))
-        }
-        item {
             InfoCard("1.63.0 — krótszy błysk", listOf(
                 "Mignięcie w Planie trwa 0,4 s zamiast 1,2 s.",
                 "Reszta bez zmian."
             ))
-            InfoCard("1.62.0 — jeden dzwonek + haptyka", listOf(
-                "Wydarzenia o tym samym starcie dzwonią razem (jeden dzwonek).",
-                "Lekkie odbicie dotykowe przy zakładce, motywie i wierszu.",
-                "Audyt dwóch patroli: 5 naprawionych, czysty scheduler."
+            InfoCard("1.62.0 — jeden dzwonek i wibracje", listOf(
+                "Wydarzenia o tej samej godzinie dzwonią razem — jednym powiadomieniem.",
+                "Lekkie odbicie dotykowe przy zakładce, zmianie motywu i wierszu planu.",
+                "Przegląd kodu: 5 naprawionych błędów i spokojniejsze planowanie powiadomień."
             ))
-        }
-        item {
             InfoCard("1.61.0 — żywy TERAZ", listOf(
-                "Fala na TERAZ nigdy nie gaśnie — też zamknięty.",
+                "Fala na TERAZ nigdy nie gaśnie — także przy zamkniętym internacie.",
                 "Reszta bez zmian."
             ))
-        }
-        item {
             InfoCard("1.60.0 — cofnięcie fali", listOf(
-                "Wracamy do fali tylko przy wydarzeniu.",
+                "Fala wraca tylko przy trwającym wydarzeniu.",
                 "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.59.0 — fala zawsze", listOf(
-                "Pierścień pulse’uje też w spoczynku.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.58.0 — krótszy błysk", listOf(
-                "Mignięcie w Planie gaśnie po ~1 s.",
-                "Małe postępy rysują łuk zamiast grudki.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.57.0 — mądre powiadomienia", listOf(
-                "Nadchodzące skacze do Planu i miga wierszem.",
-                "Koniec ustawień dzwonków — apka dobiera czas sama.",
-                "Czuwanie odświeża się samo, splash po nowemu."
-            ))
-        }
-        item {
-            InfoCard("1.56.0 — gładszy wąż", listOf(
-                "Wężyk rysowany gęściej — zero kantów.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.55.0 — grzeczna fala", listOf(
-                "Końce węża siadają na torze, pełzanie gładsze.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.54.0 — płynniejsze karty", listOf(
-                "Wejścia kart na jednej krzywej, krótszy ruch.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.53.0 — fala narasta", listOf(
-                "Pierścień najpierw płaski, potem faluje jak w M3.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.52.0 — trzy nowe motywy", listOf(
-                "Bursztyn, Las i Lawenda w Ustawieniach.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.51.0 — o aplikacji na górze", listOf(
-                "O aplikacji zawsze pierwsze w Ustawieniach.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.50.0 — jeden dzwonek", listOf(
-                "Dwa przypomnienia z tej samej minuty to jeden wiersz.",
-                "Powrót oddaje TERAZ toalecie już po 21:00.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.49.0 — stabilizacja", listOf(
-                "Szczegóły punktu już nie kraszują.",
-                "Licznik do wakacji działa co roku.",
-                "Zainstaluj nie pokazuje uciętego pliku.",
-                "Łaska alarmu wraca po szybkim przeplanowaniu."
-            ))
-        }
-        item {
-            InfoCard("1.48.0 — licznik do wakacji", listOf(
-                "Dziś na dole: dni do końca zajęć.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.47.0 — Cukierek", listOf(
-                "Nowy motyw: ciemny róż w Ustawieniach.",
-                "Reszta bez zmian."
-            ))
-        }
-        item {
-            InfoCard("1.46.0 — cichy audyt", listOf(
-                "Pierścienie nie ucinane, fala tylko gdy widać postęp.",
-                "Wiersze mówią czytnikowi o rozwinięciu.",
-                "Papiery zgodne z kodem."
-            ))
-        }
-        item {
-            InfoCard("1.45.0 — Ustawienia rosną", listOf(
-                "O aplikacji przeprowadzone do Ustawień.",
-                "Zmiana motywu wjeżdża z boku."
-            ))
-        }
-        item {
-            InfoCard("1.44.0 — audyt naprawczy", listOf(
-                "Alarmy wracają po aktualizacji, kanał zablokowany nie budzi.",
-                "Pobieranie mówi o pauzie, podwójny tap nie psuje pliku.",
-                "Luka 6:00 też jawna, reszta drobiazgów posprzątana."
-            ))
-        }
-        item {
-            InfoCard("1.43.0 — gładki wąż", listOf(
-                "Koniec kantów: okrągłe łączenia i gęstsze próbkowanie."
-            ))
-        }
-        item {
-            InfoCard("1.42.0 — wąż postępu", listOf(
-                "Wypełnienie pierścienia faluje jak robak, tor cichy."
-            ))
-        }
-        item {
-            InfoCard("1.41.0 — żywa fala", listOf(
-                "Fale pierścienia wędrują jak w M3 Expressive."
-            ))
-        }
-        item {
-            InfoCard("1.40.0 — trzy motywy", listOf(
-                "Mono, Grafit i Mleko w Ustawieniach — od razu.",
-                "Falisty tor pierścienia TERAZ."
-            ))
-        }
-        item {
-            InfoCard("1.39.0 — falisty pierścień", listOf(
-                "Tor TERAZ faluje jak orbitka, postęp gładkim łukiem."
-            ))
-        }
-        item {
-            InfoCard("1.38.0 — zamiana miejsc", listOf(
-                "Zmiany i Ustawienia zamienione miejscami."
-            ))
-        }
-        item {
-            InfoCard("1.37.0 — Dziś na środku", listOf(
-                "Kolejność: Posiłki, Plan, Dziś, Ustawienia, Zmiany."
-            ))
-        }
-        item {
-            InfoCard("1.36.0 — pusta zakładka", listOf(
-                "Piąta zakładka Ustawienia — na razie placeholder.",
-                "Cyfry odliczania rolują jak zegar."
-            ))
-        }
-        item {
-            InfoCard("1.35.0 — zegar Montserrat", listOf(
-                "Cyfry mocne i równe."
-            ))
-        }
-        item {
-            InfoCard("1.34.0 — nowe kroje", listOf(
-                "Cała apka w Space Grotesk.",
-                "Zegar w Clockerze."
-            ))
-        }
-        item {
-            InfoCard("1.33.0 — ikona mieści się", listOf(
-                "Notes pomniejszony — maska launchera już nic nie ucina."
-            ))
-        }
-        item {
-            InfoCard("1.32.0 — po ludzku", listOf(
-                "Cała historia wersji napisana krótko i normalnie.",
-                "Nowa ikona: czarny notes."
-            ))
-        }
-        item {
-            InfoCard("1.31.0 — własne ikony", listOf(
-                "Każde wydarzenie ma swoją ikonę."
-            ))
-        }
-        item {
-            InfoCard("1.30.0 — luki to Czas wolny", listOf(
-                "Przerwy w planie widać z nazwy i się podświetlają.",
-                "Zegar przewija cyfry jak flip-clock."
-            ))
-        }
-        item {
-            InfoCard("1.29.0 — szczera sieć", listOf(
-                "Karta mówi wprost: nie ma Wi-Fi, czy nie ma netu.",
-                "Po powrocie sieci sprawdza sama."
-            ))
-        }
-        item {
-            InfoCard("1.28.0 — oddech i zegar", listOf(
-                "Luźniej nad przyciskiem Sprawdź.",
-                "Cyfry zegara już nie skaczą."
-            ))
-        }
-        item {
-            InfoCard("1.27.0 — Internauta", listOf(
-                "Apka ma nową nazwę.",
-                "Aktualizacja bez reinstallu."
-            ))
-        }
-        item {
-            InfoCard("1.26.0 — uczciwe przypomnienia", listOf(
-                "Minuty liczone w chwili dzwonka.",
-                "Minutnik działa od razu, bez dodatkowego guzika."
-            ))
-        }
-        item {
-            InfoCard("1.25.0 — płynny ruch", listOf(
-                "Wejścia miękko fade'ują i rosną.",
-                "Zakładki suną w bok, przyciski uginają się pod palcem."
-            ))
-        }
-        item {
-            InfoCard("1.24.0 — bez białej kreski", listOf(
-                "Ostra kreska zniknęła z pigułki."
-            ))
-        }
-        item {
-            InfoCard("1.23.0 — bez dublowanych godzin", listOf(
-                "Godziny już się nie powtarzają.",
-                "Pigułka naprawdę wygląda jak szkło."
-            ))
-        }
-        item {
-            InfoCard("1.22.0 — skróty i płynne szkło", listOf(
-                "Przytrzymaj ikonę: Plan i Posiłki od razu.",
-                "Pigułka unosi się jak szkło."
-            ))
-        }
-        item {
-            InfoCard("1.21.0 — test kanału", listOf(
-                "Próba generalna pobierania. Nic więcej."
-            ))
-        }
-        item {
-            InfoCard("1.20.0 — pobieranie na żywo", listOf(
-                "Widać procenty, jest Anuluj.",
-                "Po pobraniu od razu Zainstaluj. Działa w tle."
-            ))
-        }
-        item {
-            InfoCard("1.19.0 — porządek w papierach", listOf(
-                "Opisy dogonione z kodem."
-            ))
-        }
-        item {
-            InfoCard("1.18.0 — uczciwsze detale", listOf(
-                "Posiłki liczone własnym czasem.",
-                "Donut sunie płynnie. Sprzątnięte martwe ustawienia."
-            ))
-        }
-        item {
-            InfoCard("1.17.0 — twardszy plan", listOf(
-                "Kompilacja działa bez klucza.",
-                "Pobieranie tylko z GitHuba.",
-                "Spóźnione przypomnienie i tak dzwoni."
-            ))
-        }
-        item {
-            InfoCard("1.16.0 — czytelny znaczek", listOf(
-                "Ikona na białym wierszu w końcu widać."
-            ))
-        }
-        item {
-            InfoCard("1.15.0 — czysty mono", listOf(
-                "Zero niebieskiego. Czerń, szarość, biel."
-            ))
-        }
-        item {
-            InfoCard("1.14.0 — tylko AMOLED", listOf(
-                "Jeden motyw: głęboka czerń.",
-                "Przełącznik motywu wyleciał."
-            ))
-        }
-        item {
-            InfoCard("1.13.0 — spokojniejszy układ", listOf(
-                "Mniej krzykliwy ekran główny."
-            ))
-        }
-        item {
-            InfoCard("1.12.0 — zwarta pigułka", listOf(
-                "Nazwy zakładek już się nie ucinają."
-            ))
-        }
-        item {
-            InfoCard("1.11.0 — pasek nad gestami", listOf(
-                "Pigułka nie tonie pod gestami."
-            ))
-        }
-        item {
-            InfoCard("1.10.0 — żywy pierścień", listOf(
-                "Kółko postępu zawsze żyje.",
-                "Koniec cieniowań, płaskie karty."
-            ))
-        }
-        item {
-            InfoCard("1.9.0 — dwie karty", listOf(
-                "TERAZ i NASTĘPNE osobno, obok siebie."
-            ))
-        }
-        item {
-            InfoCard("1.8.0 — jeden styl zakładek", listOf(
-                "Wszystkie zakładki wyglądają tak samo.",
-                "Wykres dnia wyleciał."
-            ))
-        }
-        item {
-            InfoCard("1.7.0 — nowy ekran Dziś", listOf(
-                "Bohater z zegarem, lista, szczegóły wydarzeń."
-            ))
-        }
-        item {
-            InfoCard("1.6.0 — nowy wygląd", listOf(
-                "Pierwsza duża przebudowa wyglądu."
-            ))
-        }
-        item {
-            InfoCard("1.4.1 — tylko przypomnienia", listOf(
-                "Przypomnienie przychodzi i samo znika o czasie."
-            ))
-        }
-        item {
-            InfoCard("1.4.0 — szklany wygląd", listOf(
-                "Szklane karty i pływająca nawigacja."
-            ))
-        }
-        item {
-            InfoCard("1.3.0 — instalacja z apki", listOf(
-                "Aktualizacja prosto z apki, bez kabla."
-            ))
-        }
-        item {
-            InfoCard("1.2.2 — działa instalacja", listOf(
-                "Instalowanie z apki w końcu działa."
-            ))
-        }
-        item {
-            InfoCard("1.2.1 — próba kanału", listOf(
-                "Test wykrywania nowej wersji."
-            ))
-        }
-        item {
-            InfoCard("1.2.0 — aktualizacje i offline", listOf(
-                "Apka sama znajduje aktualizacje.",
-                "Bez netu wszystko działa lokalnie."
-            ))
-        }
-        item {
-            InfoCard("1.1.3 — czytelniej", listOf(
-                "Większe, ostrzejsze, nic się nie ucina."
-            ))
-        }
-        item {
-            InfoCard("1.1.2 — plan mówi prawdę", listOf(
-                "Weekendy pokazane uczciwie.",
-                "Mnóstwo drobnych napraw wyglądu."
-            ))
-        }
-        item {
-            InfoCard("1.1.1 — pewne alarmy", listOf(
-                "Alarmy już się nie gubią.",
-                "Cisza nocna w niedzielę o 22:00 działa."
-            ))
-        }
-        item {
-            InfoCard("1.1.0 — Nadchodzące", listOf(
-                "Lista 4 następnych punktów planu."
-            ))
-        }
-        item {
-            InfoCard("1.0.0 — start", listOf(
-                "Plan, stołówka, odliczanie i przypomnienia."
             ))
         }
     }
