@@ -723,7 +723,7 @@ fun HomeScreen(
     }
 }
 
-/** Karta-bohater: żywy zegar w kolorze primary — cyfry ze szklanym połyskiem. */
+/** Karta-bohater: żywy zegar w kolorze primary — cyfry jak szklane rurki. */
 @Composable
 fun HeroCard(nowState: State<LocalDateTime>) {
     val now by nowState
@@ -735,14 +735,13 @@ fun HeroCard(nowState: State<LocalDateTime>) {
     }
     val closed = DormSchedule.isNoCare(now)
     val onHero = MaterialTheme.colorScheme.onPrimary
-    // Szklany zegar (życzenie): jedyny gradient w apce — połysk cyfr, jaśniejsza
-    // góra i gęstszy środek, jak światło w tafli szkła.
-    val glass = remember(onHero) {
+    // Szklane cyfry (życzenie): tafla cyfry to lekki, przezroczysty gradient —
+    // jedyny gradient w apce — a ciemne krawędzie niesie osobna warstwa konturu.
+    val glassWall = remember(onHero) {
         Brush.linearGradient(
-            0f to onHero.copy(alpha = 0.60f),
-            0.28f to onHero.copy(alpha = 0.88f),
-            0.62f to onHero.copy(alpha = 0.99f),
-            1f to onHero.copy(alpha = 0.84f),
+            0f to onHero.copy(alpha = 0.26f),
+            0.45f to onHero.copy(alpha = 0.40f),
+            1f to onHero.copy(alpha = 0.30f),
             start = Offset.Zero,
             end = Offset(0f, Float.POSITIVE_INFINITY)
         )
@@ -751,9 +750,17 @@ fun HeroCard(nowState: State<LocalDateTime>) {
     // Miękki cień pod cyframi — lekki efekt 3D.
     val glassShadow = remember(onHero, density) {
         Shadow(
-            color = onHero.copy(alpha = 0.20f),
-            offset = with(density) { Offset(0f, 2.5f.dp.toPx()) },
-            blurRadius = with(density) { 7.dp.toPx() }
+            color = onHero.copy(alpha = 0.18f),
+            offset = with(density) { Offset(0f, 2.dp.toPx()) },
+            blurRadius = with(density) { 6.dp.toPx() }
+        )
+    }
+    // Kontur cyfry — ciemna "rurka" szkła, zaokrąglone łączenia.
+    val glassRim = remember(density) {
+        Stroke(
+            width = with(density) { 1.8f.dp.toPx() },
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round
         )
     }
     Surface(
@@ -770,17 +777,32 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(2.dp))
-            // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
-            RollingText(
-                text = timeStr,
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontFamily = Montserrat,
-                    brush = glass,
-                    shadow = glassShadow
-                ),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Dwie warstwy tego samego bębenka: szklana tafla + kontur. Każda
+            // cyfra roluje się osobno; obie warstwy dzielą jedną zmianę stanu.
+            Box(
+                Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = timeStr }
+            ) {
+                RollingText(
+                    text = timeStr,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontFamily = Montserrat,
+                        brush = glassWall,
+                        shadow = glassShadow
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                RollingText(
+                    text = timeStr,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontFamily = Montserrat,
+                        drawStyle = glassRim
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = onHero.copy(alpha = 0.90f),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Text(
                 dateStr.replaceFirstChar { it.uppercase(plLocale) },
                 style = MaterialTheme.typography.bodyMedium,
@@ -1708,9 +1730,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.75.0 — szklany zegar", listOf(
-                "Karta wraca do układu z nazwą, zegarem i datą — zmiana z 1.74.0 cofnięta.",
-                "Cyfry zegara mają teraz delikatny połysk i cień — lekki efekt 3D, jak szkło."
+            InfoCard("1.76.0 — zegar jak szkło", listOf(
+                "Cyfry zegara jak szklane rurki: lekki, przezroczysty środek i ciemne krawędzie.",
+                "Miękki cień pod cyframi daje delikatną głębię. Układ karty bez zmian."
             ))
         }
         item {
