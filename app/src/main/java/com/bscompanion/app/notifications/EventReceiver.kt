@@ -231,7 +231,10 @@ class EventReceiver : BroadcastReceiver() {
             val oldTitle = try { prefs.getString(CO_TITLE, "") ?: "" } catch (_: Exception) { "" }
             val oldBody = try { prefs.getString(CO_BODY, "") ?: "" } catch (_: Exception) { "" }
             val comboTitle = if (oldTitle.isEmpty()) title else "$oldTitle • $title"
-            val comboBody = if (oldBody.isEmpty()) body else "$oldBody\n$body"
+            // Scalone pary mają jeden wspólny „Dalej:" — zdejmujemy dopisek ze
+            // starego wiersza (nowy — ten sam dla wspólnego startu — zostaje na końcu).
+            val comboBody = if (oldBody.isEmpty()) body
+                else "${oldBody.substringBeforeLast(NotificationHelper.DALEJ_SEP)}\n$body"
             // Wiersz znika o starcie wcześniejszego (jak pojedyncze o swoim).
             val comboTimeout = (minOf(lastStart, thisStart) - nowMs).coerceAtLeast(60_000L)
             NotificationHelper.showEventNotification(context, firstSlot, comboTitle, comboBody, true, comboTimeout)

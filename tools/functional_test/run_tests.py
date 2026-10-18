@@ -499,6 +499,13 @@ def g_source() -> None:
     check("smart offsets replace chips", "smartOffsetMinutes" in es and "smartOffsets" in es
           and "Przypomnij wcześniej" not in bs)
     check("same-start events share one offset", "offsetsByStart" in es)
+    check("smart times per category (pobudka 5, nauka 20)",
+          "EventCategory.WAKEUP -> 5" in es and "EventCategory.STUDY -> 20" in es
+          and "EventCategory.QUIET -> 10" in es)
+    check("every bell says what's next (Dalej:)",
+          "fun nextNotifiedEvent" in ds and "nextNotifiedEvent" in es
+          and "fun dalejText" in nh and "withDalej" in nh
+          and "DALEJ_SEP" in es and "DALEJ_SEP" in er)
     check("haptics wired into taps", "performTick" in bs and "performTick" in ma
           and "performTick" in mo)
     check("persistent refreshes itself", "ACTION_REFRESH" in es and "scheduleRefreshTicks" in es

@@ -238,13 +238,16 @@ object EventScheduler {
 
     /**
      * Mądre wyprzedzenie przypomnienia (min): apka dobiera je sama wg wagi wydarzenia.
-     * Punkty-deadline'y krótko i konkretnie, posiłki z czasem na dojście do stołówki,
-     * cisza tylko dyskretnym szturchnięciem.
+     * Pobudka to krótkie szturchnięcie przed porannym budzikiem, posiłki dają czas
+     * na dojście do stołówki, nauka czas na powrót do pokoju, cisza dyskretne
+     * 10 minut, a punkty-deadline'y (wyjście, powrót) krótko i konkretnie.
      */
-    fun smartOffsetMinutes(e: DormEvent): Int = when {
-        e.end == null -> 15
-        e.category == EventCategory.MEAL -> 30
-        e.id == "cisza" -> 10
+    fun smartOffsetMinutes(e: DormEvent): Int = when (e.category) {
+        EventCategory.WAKEUP -> 5
+        EventCategory.MEAL -> 30
+        EventCategory.STUDY -> 20
+        EventCategory.QUIET -> 10
+        EventCategory.ORG -> if (e.end == null) 15 else 20
         else -> 20
     }
 
@@ -458,12 +461,19 @@ object EventScheduler {
         } else millis
 
         val requestCode = requestCodeFor(eventId, date, offsetMinutes, isReminder)
+        // „Dalej: …" — co konkretnego czeka po wydarzeniu. Pary o tym samym starcie
+        // dostają ten sam dopisek, a receiver przy scaleniu zostawia go tylko raz.
+        val dalej = if (isReminder) {
+            DormSchedule.nextNotifiedEvent(LocalDateTime.of(date, start).plusMinutes(1))
+                ?.let { (nd, ne) -> NotificationHelper.DALEJ_SEP + NotificationHelper.dalejText(date, nd, ne) }
+                ?: ""
+        } else ""
         val intent = Intent(context, EventReceiver::class.java).apply {
             action = ACTION_EVENT
             // Data rozróżnia PendingIntenty (tożsamość ignoruje extras).
             data = Uri.parse(uri)
             putExtra(EventReceiver.EXTRA_TITLE, title)
-            putExtra(EventReceiver.EXTRA_TEXT, if (isReminder && offsetMinutes > 0) "Za $offsetMinutes min: $text" else text)
+            putExtra(EventReceiver.EXTRA_TEXT, if (isReminder && offsetMinutes > 0) "Za $offsetMinutes min: $text$dalej" else text)
             // Stabilny klucz wystąpienia (data/event) — odbiornik mapuje go na jeden slot
             // powiadomienia, więc zdublowana dostawa nadpisuje zamiast stackować.
             putExtra(EventReceiver.EXTRA_EVENT_KEY, "$date/$eventId")

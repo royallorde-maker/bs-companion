@@ -83,6 +83,35 @@ class DormScheduleTest {
     }
 
     @Test
+    fun nextNotified_skipsFillerCzasWolny() {
+        // Po starcie obiadu (13:31) następny KONKRET to nauka 17:30 — nie „Czas wolny".
+        val hit = DormSchedule.nextNotifiedEvent(LocalDateTime.of(monday(), LocalTime.of(13, 31)))
+        assertNotNull(hit)
+        assertEquals("nauka", hit!!.second.id)
+        assertEquals(monday(), hit.first)
+    }
+
+    @Test
+    fun nextNotified_crossesMidnightToWakeup() {
+        // Nocą (w ciszy) „dalej" to poranna pobudka następnego dnia, nie wypełniacz.
+        val hit = DormSchedule.nextNotifiedEvent(LocalDateTime.of(monday(), LocalTime.of(23, 0)))
+        assertNotNull(hit)
+        assertEquals(LocalDate.of(2026, 10, 13), hit!!.first)
+        assertEquals("pobudka", hit.second.id)
+    }
+
+    @Test
+    fun nextNotified_skipsWeekendGap() {
+        // Pt po zamknięciu → pierwszy konkret z opieką to ndz nauka 17:30
+        // (ndz obiad 13:30 jest jeszcze bez opieki), jak w nextCaredEvent.
+        val fridayEvening = LocalDateTime.of(LocalDate.of(2026, 10, 16), LocalTime.of(18, 30))
+        val hit = DormSchedule.nextNotifiedEvent(fridayEvening)
+        assertNotNull(hit)
+        assertEquals(LocalDate.of(2026, 10, 18), hit!!.first)
+        assertEquals("nauka", hit.second.id)
+    }
+
+    @Test
     fun lookahead_respectsCount() {
         val from = LocalDateTime.of(monday(), LocalTime.of(6, 0))
         val list = DormSchedule.upcomingCared(from, 2)

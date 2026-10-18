@@ -8,8 +8,8 @@ built from `Regulamin_Internatu_ZST_2025_2026`.
 - **Plan dnia:** full daily order from Załącznik nr 6 (pobudka → cisza nocna 22:00–6:00), current event highlighted (suppressed when dorm closed).
 - **Posiłki:** meal hours + stołówka rules (Zał. nr 3).
 - **Zmiany:** changelog + update card (O aplikacji mieszka w Ustawieniach).
-- **Notifications:** alarms via `AlarmManager` — smart offsets picked by the app (points 15, meals 30, cisza 10, rest 20 min before; self-dismisses on time, no re-buzz). Same-minute reminders merge into one row. No settings UI.
-  Auto-reschedule on boot / time change / app open, refresh ticks keep "Internauta czuwa" live.
+- **Notifications:** alarms via `AlarmManager` — smart offsets picked by the app (pobudka 5, meals 30, study 20, cisza 10, deadlines 15, rest 20 min before; self-dismisses on time, no re-buzz). Every reminder ends with a `Dalej:` hint of what's next; same-minute reminders merge into one row (single hint). No settings UI.
+  Auto-reschedule on boot / time change / app open; refresh ticks keep "Internauta czuwa" live (Teraz + Dalej).
   Weekends (no care: sob all day, ndz to 16:00, pt from 18:00) are skipped.
   Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact fallback (may be late).
 - **Material 3:** 7 motywów do wyboru w Ustawieniach (Mono/Grafit/Mleko/Cukierek/Bursztyn/Las/Lawenda), no dynamic color, bottom navigation, cards, countdown. Lekka haptyka przy wyborze motywu i zakładce.

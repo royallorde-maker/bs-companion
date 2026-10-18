@@ -210,6 +210,36 @@ object DormSchedule {
     }
 
     /**
+     * Następne wydarzenie Z PRZYPOMNIENIEM po danym momencie — do dopisku
+     * „Dalej: …" w dzwonku i w trwałym „Internauta czuwa". Pomija wypełniacze
+     * „Czas wolny" (notifyDefault = false, bez alarmu nie ma o czym donosić),
+     * ale pilnuje godzin opieki jak nextCaredEvent: pt wieczorem sięga przez
+     * weekend i zwraca ndz naukę 17:30.
+     */
+    fun nextNotifiedEvent(from: LocalDateTime, lookaheadDays: Int = 8): Pair<LocalDate, DormEvent>? {
+        val today = from.toLocalDate()
+        val days = maxOf(8, lookaheadDays)
+        val fromTruncated = from.truncatedTo(java.time.temporal.ChronoUnit.MINUTES)
+        for (d in 0 until days) {
+            val date = today.plusDays(d.toLong())
+            val fromTime = if (d == 0) fromTruncated.toLocalTime() else LocalTime.MIN
+            for (e in eventsForDate(date)) {
+                if (!e.notifyDefault) continue
+                // Ściśle PO momencie: „dalej" od obiadu 13:30 to nie obiad.
+                if (d == 0 && !e.start.isAfter(fromTime)) continue
+                if (isNoCare(LocalDateTime.of(date, e.start))) continue
+                val end = e.end
+                if (end != null) {
+                    val endDate = if (end < e.start) date.plusDays(1) else date
+                    if (isNoCare(LocalDateTime.of(endDate, end).minusMinutes(1))) continue
+                }
+                return date to e
+            }
+        }
+        return null
+    }
+
+    /**
      * Kolejne N wydarzeń z opieką (oś czasu "Nadchodzące").
      * Zbiera wszystkie punkty z horyzontu i sortuje — dzięki temu dwa wydarzenia
      * o tej samej godzinie (powrot 21:00 + toaleta 21:00-21:45) nie gubią się,

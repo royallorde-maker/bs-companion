@@ -12,7 +12,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.bscompanion.app.MainActivity
 import com.bscompanion.app.R
+import com.bscompanion.app.data.DormEvent
 import com.bscompanion.app.data.DormSchedule
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 object NotificationHelper {
@@ -23,6 +25,30 @@ object NotificationHelper {
     const val PERSISTENT_ID = 1001
     private val plLocale = java.util.Locale("pl", "PL")
     private val timeFmt = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+
+    // Dopisek „Dalej: …" — wspólny dla dzwonka i trwałego powiadomienia;
+    // receiver zdejmuje go po tym znaczniku przy łączeniu pary, żeby został raz.
+    const val DALEJ_SEP = "\nDalej: "
+
+    /**
+     * Format „co dalej" (ten sam w dzwonku i w „czuwa"): skrót dnia tylko, gdy
+     * to nie dziś. Tytuł z godziną w środku („Cisza nocna 22:00–6:00") nie
+     * dubluje jej na końcu.
+     */
+    fun dalejText(today: LocalDate, date: LocalDate, e: DormEvent): String {
+        val time = e.start.format(timeFmt)
+        val suffix = if (e.title.contains(time)) "" else {
+            val day = if (date == today) "" else " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
+            " •$day $time"
+        }
+        return "Dalej: ${e.title}$suffix"
+    }
+
+    /** Dokleja „Dalej: …" do linii trwałego — gdy jest co pokazać. */
+    private fun withDalej(text: String, from: LocalDateTime, today: LocalDate): String {
+        val next = DormSchedule.nextNotifiedEvent(from) ?: return text
+        return "$text$DALEJ_SEP${dalejText(today, next.first, next.second)}"
+    }
 
     fun ensureChannel(context: Context) {
         try {
@@ -163,7 +189,8 @@ object NotificationHelper {
         val now = LocalDateTime.now()
         val nowDate = now.toLocalDate()
         val line = if (DormSchedule.isNoCare(now)) {
-            "Przerwa w opiece • internat czynny ndz 16:00 – pt 18:00"
+            // Przerwa w opiece też mówi, co pierwsze po powrocie opieki.
+            withDalej("Przerwa w opiece • internat czynny ndz 16:00 – pt 18:00", now, nowDate)
         } else {
             // Wydarzenie w trakcie (np. Obiad 13:30–15:30 o 14:00) to nie "Następne".
             val ongoing = DormSchedule.currentCaredEvent(
@@ -172,7 +199,8 @@ object NotificationHelper {
             )
             if (ongoing != null) {
                 val till = if (ongoing.end != null) " do ${ongoing.end.format(timeFmt)}" else ""
-                "Teraz: ${ongoing.title}$till"
+                // Teraz + Dalej razem: drugi wiersz mówi, co konkretnego czeka.
+                withDalej("Teraz: ${ongoing.title}$till", now, nowDate)
             } else {
                 val cared = DormSchedule.nextCaredEvent(now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES))
                 if (cared != null) {

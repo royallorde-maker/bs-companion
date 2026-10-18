@@ -20,6 +20,10 @@ class SmartNotifyTest {
         // Punktowe = 15
         assertEquals(15, EventScheduler.smartOffsetMinutes(byId.getValue("powrot")))
         assertEquals(15, EventScheduler.smartOffsetMinutes(byId.getValue("wyjscie")))
+        // Pobudka = 5 (krótkie szturchnięcie przed porannym budzikiem, nie 20)
+        assertEquals(5, EventScheduler.smartOffsetMinutes(byId.getValue("pobudka")))
+        // Nauka = 20 (czas wrócić do pokoju)
+        assertEquals(20, EventScheduler.smartOffsetMinutes(byId.getValue("nauka")))
         // Posiłki = 30
         assertEquals(30, EventScheduler.smartOffsetMinutes(byId.getValue("sniadanie")))
         assertEquals(30, EventScheduler.smartOffsetMinutes(byId.getValue("obiad")))
@@ -38,6 +42,8 @@ class SmartNotifyTest {
         assertEquals(20, map[LocalTime.of(21, 0)])
         // Obiad jest sam o 13:30.
         assertEquals(30, map[LocalTime.of(13, 30)])
+        // Pobudka też jest sama — 5.
+        assertEquals(5, map[LocalTime.of(6, 30)])
     }
 
     @Test

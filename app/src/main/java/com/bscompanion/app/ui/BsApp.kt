@@ -1683,6 +1683,11 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.71.0 — mądrzejsze powiadomienia", listOf(
+                "Pobudka odzywa się 5 minut przed startem, nie 20.",
+                "Każde przypomnienie mówi też, co dalej — np. „Dalej: Śniadanie • 07:00”.",
+                "Trwałe „Internauta czuwa” pokazuje Teraz i Dalej razem."
+            ))
             InfoCard("1.70.0 — porządek w zmianach", listOf(
                 "Historia zmian na nowo: starsze wpisy usunięte, ostatnie wydania napisane po ludzku.",
                 "Bez zmian w działaniu aplikacji."
