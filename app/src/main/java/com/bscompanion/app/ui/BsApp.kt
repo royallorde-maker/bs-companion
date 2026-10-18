@@ -1150,7 +1150,7 @@ fun SettingsScreen(
     val versionName = com.bscompanion.app.BuildConfig.VERSION_NAME
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
@@ -1482,7 +1482,7 @@ fun ScheduleScreen(
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
@@ -1558,7 +1558,7 @@ fun MealsScreen() {
     val closedToday = remember(nowTick) { DormSchedule.isNoCare(nowTick) }
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
@@ -1668,7 +1668,7 @@ fun MealCard(title: String, hours: String, desc: String, icon: ImageVector = Ico
 fun ChangelogScreen() {
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
@@ -1683,20 +1683,33 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.73.0 — więcej powietrza", listOf(
+                "Karty Zmian nie kleją się już do siebie — każda wersja osobno.",
+                "Większe odstępy między kartami na wszystkich ekranach.",
+                "Trochę więcej luzu także wewnątrz kart."
+            ))
+        }
+        item {
             InfoCard("1.72.0 — powiadomienia dopracowane", listOf(
                 "„Dalej:” nie dubluje się już dwa razy — zostaje jedna, czysta linia.",
                 "Cisza nocna nie powtarza godziny końca.",
                 "Gdy coś czeka nazajutrz, podpowiedź mówi wprost „jutro”."
             ))
+        }
+        item {
             InfoCard("1.71.0 — mądrzejsze powiadomienia", listOf(
                 "Pobudka odzywa się 5 minut przed startem, nie 20.",
                 "Każde przypomnienie mówi też, co dalej — np. „Dalej: Śniadanie • 07:00”.",
                 "Trwałe „Internauta czuwa” pokazuje Teraz i Dalej razem."
             ))
+        }
+        item {
             InfoCard("1.70.0 — porządek w zmianach", listOf(
                 "Historia zmian na nowo: starsze wpisy usunięte, ostatnie wydania napisane po ludzku.",
                 "Bez zmian w działaniu aplikacji."
             ))
+        }
+        item {
             InfoCard("1.69.0 — poprawki błędów", listOf(
                 "Plan dnia zostaje na dniu wybranym z Nadchodzących — nie wraca sam do dzisiaj.",
                 "NASTĘPNE nie pokazuje już tego samego, co TERAZ.",
@@ -1705,41 +1718,59 @@ fun ChangelogScreen() {
                 "Spóźnione przypomnienie gaśnie dokładnie o czasie startu.",
                 "Wyłączone powiadomienia wyłączają też budziki."
             ))
+        }
+        item {
             InfoCard("1.68.0 — wydanie z Linuksa", listOf(
                 "Wersja zbudowana i podpisana na Linuksie.",
                 "Bez zmian w działaniu aplikacji."
             ))
+        }
+        item {
             InfoCard("1.67.0 — fala jak w Material 3", listOf(
                 "Tor i fala mają tę samą grubość — jak w Material 3 Expressive.",
                 "Fala ma stałą długość: nawet krótki łuk to pełne, szerokie fale.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.66.0 — miękka fala", listOf(
                 "Fala szeroka i spokojna, bez wibrowania — jak w stylu Oddychanie.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.65.0 — fala wraca", listOf(
                 "Postęp znowu faluje, a krótki łuk to jedna albo dwie szerokie fale.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.64.0 — fala tylko na kole", listOf(
                 "Postęp to gładki łuk, a fala pojawia się tylko na pełnym kole TERAZ.",
                 "Koniec poszarpanej fali przy krótkim postępie.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.63.0 — krótszy błysk", listOf(
                 "Mignięcie w Planie trwa 0,4 s zamiast 1,2 s.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.62.0 — jeden dzwonek i wibracje", listOf(
                 "Wydarzenia o tej samej godzinie dzwonią razem — jednym powiadomieniem.",
                 "Lekkie odbicie dotykowe przy zakładce, zmianie motywu i wierszu planu.",
                 "Przegląd kodu: 5 naprawionych błędów i spokojniejsze planowanie powiadomień."
             ))
+        }
+        item {
             InfoCard("1.61.0 — żywy TERAZ", listOf(
                 "Fala na TERAZ nigdy nie gaśnie — także przy zamkniętym internacie.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.60.0 — cofnięcie fali", listOf(
                 "Fala wraca tylko przy trwającym wydarzeniu.",
                 "Reszta bez zmian."
@@ -1752,14 +1783,14 @@ fun ChangelogScreen() {
 fun InfoCard(title: String, lines: List<String>) {
     BsSurface(Modifier.fillMaxWidth()) {
         Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         lines.forEach {
             Row(verticalAlignment = Alignment.Top) {
                 Text("•", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
