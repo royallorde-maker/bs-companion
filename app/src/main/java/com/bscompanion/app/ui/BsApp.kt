@@ -157,7 +157,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlinx.coroutines.delay
@@ -169,7 +168,6 @@ import kotlin.math.sin
 
 private val plLocale = Locale("pl", "PL")
 private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
-private val dateFmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(plLocale)
 
 // Wejścia grają przy każdym pierwszym pokazaniu danej zakładki (bez globalnego stanu).
 fun categoryIcon(cat: EventCategory): ImageVector = when (cat) {
@@ -721,16 +719,13 @@ fun HomeScreen(
     }
 }
 
-/** Karta-bohater: żywy zegar w kolorze primary. */
+/** Karta-bohater: sam wielki zegar — cyfry na całą szerokość karty. */
 @Composable
 fun HeroCard(nowState: State<LocalDateTime>) {
     val now by nowState
     // Kwantyzacja do minuty — AnimatedContent odpala się tylko przy zmianie "HH:mm".
     val minuteKey = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
     val timeStr = remember(minuteKey) { minuteKey.format(timeFmt) }
-    val dateStr = remember(now.toLocalDate()) {
-        now.toLocalDate().format(dateFmt)
-    }
     val closed = DormSchedule.isNoCare(now)
     // Płaski kolor primary — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
@@ -739,32 +734,28 @@ fun HeroCard(nowState: State<LocalDateTime>) {
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.primary
     ) {
-        Column(Modifier.padding(22.dp)) {
-            Text(
-                "Internauta",
-                style = MaterialTheme.typography.labelLarge,
-                color = onHero.copy(alpha = 0.72f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.height(2.dp))
-            // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
-            RollingText(
-                text = timeStr,
-                style = MaterialTheme.typography.displayLarge.copy(fontFamily = Montserrat),
-                fontWeight = FontWeight.Bold,
-                color = onHero,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                dateStr.replaceFirstChar { it.uppercase(plLocale) },
-                style = MaterialTheme.typography.bodyMedium,
-                color = onHero.copy(alpha = 0.72f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+        Column(
+            Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                // Sam zegar: cyfry rosną z szerokością karty (~2,52 em na "HH:mm",
+                // dzielnik 2,65 zostawia margines na najszersze zestawy cyfr).
+                val clockSize = with(LocalDensity.current) { (maxWidth / 2.65f).toSp() }
+                // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
+                RollingText(
+                    text = timeStr,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontFamily = Montserrat,
+                        fontSize = clockSize,
+                        lineHeight = clockSize * 1.2f
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = onHero
+                )
+            }
             if (closed) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 HeroPill("Brak opieki wychowawczej")
             }
         }
@@ -1681,6 +1672,12 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.74.0 — sam zegar", listOf(
+                "Karta na Dziś to teraz sam zegar — cyfry jak z ekranu blokady, na całą szerokość karty.",
+                "Nazwa aplikacji i data zniknęły z karty; pigułka o braku opieki zostaje."
+            ))
         }
         item {
             InfoCard("1.73.0 — więcej powietrza", listOf(

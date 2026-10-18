@@ -1,8 +1,8 @@
 {
-  "versionCode": 79,
-  "versionName": "1.73.0",
+  "versionCode": 80,
+  "versionName": "1.74.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.73.0 — więcej powietrza",
+  "changelog": "1.74.0 — sam zegar",
   "force": false,
-  "publishedAt": "2026-10-18T21:38:00Z"
+  "publishedAt": "2026-10-18T22:10:00Z"
 }
