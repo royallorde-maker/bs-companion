@@ -161,15 +161,26 @@ object NotificationHelper {
             return
         }
         val now = LocalDateTime.now()
+        val nowDate = now.toLocalDate()
         val line = if (DormSchedule.isNoCare(now)) {
             "Przerwa w opiece • internat czynny ndz 16:00 – pt 18:00"
         } else {
-            val cared = DormSchedule.nextCaredEvent(now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES))
-            if (cared != null) {
-                val (date, next) = cared
-                val day = if (date == now.toLocalDate()) "" else " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
-                "Następne: ${next.title} •$day ${next.start.format(timeFmt)}"
-            } else "Plan na dziś zakończony"
+            // Wydarzenie w trakcie (np. Obiad 13:30–15:30 o 14:00) to nie "Następne".
+            val ongoing = DormSchedule.currentCaredEvent(
+                now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES),
+                DormSchedule.eventsForDate(nowDate)
+            )
+            if (ongoing != null) {
+                val till = if (ongoing.end != null) " do ${ongoing.end.format(timeFmt)}" else ""
+                "Teraz: ${ongoing.title}$till"
+            } else {
+                val cared = DormSchedule.nextCaredEvent(now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES))
+                if (cared != null) {
+                    val (date, next) = cared
+                    val day = if (date == nowDate) "" else " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
+                    "Następne: ${next.title} •$day ${next.start.format(timeFmt)}"
+                } else "Plan na dziś zakończony"
+            }
         }
         ensureSilentChannel(context)
         val intent = Intent(context, MainActivity::class.java).apply {

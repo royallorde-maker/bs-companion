@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -33,6 +34,7 @@ import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.RescheduleWorker
 import com.bscompanion.app.ui.BsApp
 import com.bscompanion.app.ui.FluentMotion
+import com.bscompanion.app.ui.performTick
 import com.bscompanion.app.ui.SplashScreen
 import com.bscompanion.app.ui.theme.AppTheme
 import com.bscompanion.app.ui.theme.BSCompanionTheme
@@ -112,6 +114,7 @@ class MainActivity : ComponentActivity() {
 
         val activity = this
         setContent {
+            val haptics = LocalHapticFeedback.current
             // Motyw żyje TU — wybór w Ustawieniach przebudowuje apkę natychmiast.
             var appTheme by rememberSaveable { mutableStateOf(Prefs.appTheme(this@MainActivity)) }
             val theme = appThemeOf(appTheme)
@@ -158,6 +161,7 @@ class MainActivity : ComponentActivity() {
                             onThemeChange = {
                                 Prefs.setAppTheme(this@MainActivity, it)
                                 appTheme = it
+                                haptics.performTick()
                             }
                         )
                     }

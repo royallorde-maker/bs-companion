@@ -122,6 +122,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -481,6 +482,7 @@ fun BsApp(
     onThemeChange: (String) -> Unit = {}
 ) {
     var tab by rememberSaveable { mutableStateOf(2) }
+    val haptics = LocalHapticFeedback.current
     val titles = listOf("Posiłki", "Plan dnia", "Dziś", "Zmiany", "Ustawienia")
     val icons = listOf(Icons.Filled.LunchDining, Icons.Filled.Schedule, Icons.Filled.Home, Icons.Filled.History, Icons.Filled.Settings)
     // Cel z Nadchodzących ("data|id"): Plan pokazuje ten dzień i mignie wierszem.
@@ -504,7 +506,7 @@ fun BsApp(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            PillBar(titles, icons, tab) { planFocus = null; tab = it }
+            PillBar(titles, icons, tab) { planFocus = null; tab = it; haptics.performTick() }
         }
     ) { padding ->
         androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(padding)) {
@@ -558,7 +560,9 @@ fun BsApp(
                             onFocusConsumed = { planFocus = null }
                         )
                         2 -> HomeScreen(
-                            onTab = { tab = it },
+                            // "Zobacz wszystko" i inne wejścia do Planu zawsze z czystym
+                            // stanem — inaczej zaległy planFocus otwierał zły dzień.
+                            onTab = { planFocus = null; tab = it },
                             onFocusEvent = { d, e -> planFocus = "$d|${e.id}"; tab = 1 }
                         )
                         3 -> ChangelogScreen()
@@ -977,6 +981,7 @@ fun HoldingSection(
     onSeeAll: () -> Unit,
     onFocus: (LocalDate, DormEvent) -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     val now by nowState
     // Bez krzykliwej zieleni — odliczanie w stonowanym kolorze tekstu.
     // Lista przeliczana co minutę, ale tekst z sekundami i tak tyka co 1 s.
@@ -1023,7 +1028,7 @@ fun HoldingSection(
                 Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable(
-                        onClick = { onFocus(date, e) },
+                        onClick = { onFocus(date, e); haptics.performTick() },
                         role = Role.Button,
                         interactionSource = rowPress,
                         indication = LocalIndication.current
@@ -1330,6 +1335,7 @@ fun SemesterCountdown() {
 
 @Composable
 fun EventRow(e: DormEvent, isCurrent: Boolean = false, flash: Boolean = false) {
+    val haptics = LocalHapticFeedback.current
     val scheme = MaterialTheme.colorScheme
     // Zwykły wiersz to płaska tafla, bieżący w kolorze primary jak hero.
     // Mignięcie z Nadchodzących: jasny pojemnik gaśnie sam po ~1 s (timer w Planie).
@@ -1358,7 +1364,7 @@ fun EventRow(e: DormEvent, isCurrent: Boolean = false, flash: Boolean = false) {
         shape = RoundedCornerShape(20.dp),
         color = rowBg,
         border = BorderStroke(1.dp, borderColor),
-        onClick = { expanded = !expanded },
+        onClick = { expanded = !expanded; haptics.performTick() },
         interactionSource = rowPress
     ) {
         Row(Modifier.fluentScale(rowScale).padding(20.dp), verticalAlignment = Alignment.Top) {
@@ -1646,6 +1652,13 @@ fun ChangelogScreen() {
         // bo to status operacyjny, nie historia.
         item {
             UpdateCard()
+        }
+        item {
+            InfoCard("1.62.0 — jeden dzwonek + haptyka", listOf(
+                "Wydarzenia o tym samym starcie dzwonią razem (jeden dzwonek).",
+                "Lekkie odbicie dotykowe przy zakładce, motywie i wierszu.",
+                "Audyt dwóch patroli: 5 naprawionych, czysty scheduler."
+            ))
         }
         item {
             InfoCard("1.61.0 — żywy TERAZ", listOf(

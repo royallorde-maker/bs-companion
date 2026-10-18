@@ -459,6 +459,7 @@ def g_source() -> None:
     ds = src("java/com/bscompanion/app/data/DormSchedule.kt")
     bs = src("java/com/bscompanion/app/ui/BsApp.kt")
     ma = src("java/com/bscompanion/app/MainActivity.kt")
+    mo = src("java/com/bscompanion/app/ui/Motion.kt")
 
     check("debounce coalesces (no drop)", "coalescedPending" in es and "if (coalescedPending) return" in es)
     check("force clears coalesced (no double burst)", "coalescedPending = false" in es)
@@ -497,6 +498,9 @@ def g_source() -> None:
     check("upcoming rows show weekday off-today", "rangeText" in bs)
     check("smart offsets replace chips", "smartOffsetMinutes" in es and "smartOffsets" in es
           and "Przypomnij wcześniej" not in bs)
+    check("same-start events share one offset", "offsetsByStart" in es)
+    check("haptics wired into taps", "performTick" in bs and "performTick" in ma
+          and "performTick" in mo)
     check("persistent refreshes itself", "ACTION_REFRESH" in es and "scheduleRefreshTicks" in es
           and "ACTION_REFRESH" in er)
     check("row width floor", "widthIn(min = 64.dp" in bs)

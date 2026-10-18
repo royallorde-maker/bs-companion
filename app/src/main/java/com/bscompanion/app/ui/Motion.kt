@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
@@ -60,6 +62,12 @@ fun rememberFluentPress(
 /** Nakłada śledzoną skalę (środek elementu). */
 fun Modifier.fluentScale(value: Float): Modifier =
     graphicsLayer(scaleX = value, scaleY = value)
+
+/** Lekkie odbicie dotykowe przy wyborze (zakładka, motyw, wiersz planu).
+ *  Wołaj z composable: `val haptics = LocalHapticFeedback.current; ...; haptics.performTick()`. */
+fun androidx.compose.ui.hapticfeedback.HapticFeedback.performTick() {
+    performHapticFeedback(HapticFeedbackType.TextHandleMove)
+}
 
 /**
  * Bębenek jak w flip/slot-clock: każdy znak roluje osobno (5→4 rusza tylko

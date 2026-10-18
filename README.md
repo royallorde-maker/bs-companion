@@ -12,7 +12,7 @@ built from `Regulamin_Internatu_ZST_2025_2026`.
   Auto-reschedule on boot / time change / app open, refresh ticks keep "Internauta czuwa" live.
   Weekends (no care: sob all day, ndz to 16:00, pt from 18:00) are skipped.
   Exact alarms when granted (`SCHEDULE_EXACT_ALARM`); otherwise inexact fallback (may be late).
-- **Material 3:** 7 motywów do wyboru w Ustawieniach (Mono/Grafit/Mleko/Cukierek/Bursztyn/Las/Lawenda), no dynamic color, bottom navigation, cards, countdown.
+- **Material 3:** 7 motywów do wyboru w Ustawieniach (Mono/Grafit/Mleko/Cukierek/Bursztyn/Las/Lawenda), no dynamic color, bottom navigation, cards, countdown. Lekka haptyka przy wyborze motywu i zakładce.
 - **Icon:** adaptive `@mipmap/ic_launcher` (black notebook photo) on `#000000` background, white bell `ic_notification` for status bar.
 
 ## Schedule source

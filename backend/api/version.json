@@ -1,8 +1,8 @@
 {
-  "versionCode": 67,
-  "versionName": "1.61.0",
+  "versionCode": 68,
+  "versionName": "1.62.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.61.0 — żywy TERAZ: fala nigdy nie gaśnie",
+  "changelog": "1.62.0 — jeden dzwonek: wspolny offset, haptyka, audyt",
   "force": false,
-  "publishedAt": "2026-10-17T11:00:00Z"
+  "publishedAt": "2026-10-17T12:00:00Z"
 }

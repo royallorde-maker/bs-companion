@@ -248,6 +248,16 @@ object EventScheduler {
         else -> 20
     }
 
+    /**
+     * Wspólny offset dla wydarzeń o tym samym starcie (max) — jeden dzwonek na moment.
+     * Czysta funkcja (testowalna bez Androida): przyjmuje listę eventów, zwraca
+     * mapę start -> offset do wspólnego użycia.
+     */
+    fun offsetsByStart(events: List<DormEvent>): Map<LocalTime, Int> =
+        events.filter { it.notifyDefault }
+            .groupBy { it.start }
+            .mapValues { (_, grp) -> grp.maxOf { smartOffsetMinutes(it) } }
+
     /** Wszystkie możliwe wyprzedzenia — do obronnego wyliczania w cancelAll. */
     private val smartOffsets = setOf(0, 5, 10, 15, 20, 30)
 
@@ -289,6 +299,10 @@ object EventScheduler {
             val today = LocalDate.now()
             val dates = (0..7).map { today.plusDays(it.toLong()) }
             for (date in dates) {
+                // Jeden dzwonek na moment: wydarzenia o tym samym starcie dzwonią RAZEM
+                // (wspólny offset = max), inaczej smart-offsety rozsuwają je o minuty
+                // i łączenie "jeden dzwonek" nie łapie pary (powrót 21:00 + toaleta 21:00).
+                val offsetByStart = offsetsByStart(DormSchedule.eventsForDate(date))
                 for (event in DormSchedule.eventsForDate(date)) {
                     if (!event.notifyDefault) continue
                     val startDt = LocalDateTime.of(date, event.start)
@@ -302,7 +316,8 @@ object EventScheduler {
                         val endDate = if (end < event.start) date.plusDays(1) else date
                         if (DormSchedule.isNoCare(LocalDateTime.of(endDate, end).minusMinutes(1))) continue
                     }
-                    scheduleOne(context, date, event.id, event.title, event.description, event.start, smartOffsetMinutes(event), zone, isReminder = true)?.let { wanted += it }
+                    val offset = offsetByStart[event.start] ?: smartOffsetMinutes(event)
+                    scheduleOne(context, date, event.id, event.title, event.description, event.start, offset, zone, isReminder = true)?.let { wanted += it }
                     // Celowo BRAK alarmu punktualnego: przypomnienie znika o czasie
                     // wydarzenia (timeout) i nic nie wraca. Bez re-buzzu.
                 }
