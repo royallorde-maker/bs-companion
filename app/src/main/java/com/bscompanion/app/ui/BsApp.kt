@@ -401,35 +401,32 @@ fun Ring(
                 style = Stroke(2.5.dp.toPx())
             )
             if (waveOn) {
-                // Postęp to gruby wąż na tym samym torze.
-                // Małe postępy: 14 fal na parę stopni robi grudkę — fale rosną
-                // ze sweepem, poniżej ~12° zwykły zaokrąglony łuk.
-                // Bez postępu (kotwica TERAZ) wąż obraca się po pełnym kole.
-                val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
                 val wormD = (trackR - 1.dp.toPx()) * 2
                 val wormTL = Offset(
                     (size.width - wormD) / 2,
                     (size.height - wormD) / 2
                 )
                 val wormSize = Size(wormD, wormD)
-                val waves = (14f * sweepDeg / 360f).toInt().coerceIn(0, 14)
-                if (waves <= 0) {
-                    drawArc(
-                        arc, -90f, sweepDeg, false,
-                        topLeft = wormTL, size = wormSize,
-                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                } else {
+                if (alwaysWave && anim.value <= 0.01f) {
+                    // Spokojne, żywe pełne koło — tylko tu fala naprawdę wygląda.
                     val worm = wavyRing(
                         radius = trackR - 1.dp.toPx(),
-                        waves = waves,
+                        waves = 14,
                         ampPx = amp,
-                        sweepDeg = sweepDeg,
+                        sweepDeg = 360f,
                         phase = phase
                     )
                     drawPath(
                         worm, arc,
                         style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    )
+                } else {
+                    // Postęp: czysty zaokrąglony łuk. Fala na krótkim łuku to gruchotka,
+                    // a nie fala — dlatego tutaj bez fali.
+                    drawArc(
+                        arc, -90f, (360f * anim.value).coerceAtLeast(0.6f), false,
+                        topLeft = wormTL, size = wormSize,
+                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
                     )
                 }
             }
@@ -1654,6 +1651,11 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.64.0 — fala tylko na kole", listOf(
+                "Postęp to gładki łuk; fala tylko na żywym pełnym kole.",
+                "Koniec gruchotki na krótkim łuku TERAZ.",
+                "Reszta bez zmian."
+            ))
             InfoCard("1.63.0 — krótszy błysk", listOf(
                 "Mignięcie w Planie trwa 0,4 s zamiast 1,2 s.",
                 "Reszta bez zmian."
