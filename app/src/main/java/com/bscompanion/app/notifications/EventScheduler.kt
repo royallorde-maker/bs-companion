@@ -463,9 +463,10 @@ object EventScheduler {
         val requestCode = requestCodeFor(eventId, date, offsetMinutes, isReminder)
         // „Dalej: …" — co konkretnego czeka po wydarzeniu. Pary o tym samym starcie
         // dostają ten sam dopisek, a receiver przy scaleniu zostawia go tylko raz.
+        // dalejLine() dokleja od razu wiodący \n — nigdy nie składaj go ręcznie.
         val dalej = if (isReminder) {
             DormSchedule.nextNotifiedEvent(LocalDateTime.of(date, start).plusMinutes(1))
-                ?.let { (nd, ne) -> NotificationHelper.DALEJ_SEP + NotificationHelper.dalejText(date, nd, ne) }
+                ?.let { (nd, ne) -> NotificationHelper.dalejLine(date, nd, ne) }
                 ?: ""
         } else ""
         val intent = Intent(context, EventReceiver::class.java).apply {

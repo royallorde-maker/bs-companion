@@ -504,8 +504,9 @@ def g_source() -> None:
           and "EventCategory.QUIET -> 10" in es)
     check("every bell says what's next (Dalej:)",
           "fun nextNotifiedEvent" in ds and "nextNotifiedEvent" in es
-          and "fun dalejText" in nh and "withDalej" in nh
-          and "DALEJ_SEP" in es and "DALEJ_SEP" in er)
+          and "fun dalejLine" in nh and "withDalej" in nh
+          and "dalejLine(" in es and "dalejText" not in nh and "dalejText" not in es
+          and "DALEJ_SEP" in er)
     check("haptics wired into taps", "performTick" in bs and "performTick" in ma
           and "performTick" in mo)
     check("persistent refreshes itself", "ACTION_REFRESH" in es and "scheduleRefreshTicks" in es

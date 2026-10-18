@@ -1683,6 +1683,11 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.72.0 — powiadomienia dopracowane", listOf(
+                "„Dalej:” nie dubluje się już dwa razy — zostaje jedna, czysta linia.",
+                "Cisza nocna nie powtarza godziny końca.",
+                "Gdy coś czeka nazajutrz, podpowiedź mówi wprost „jutro”."
+            ))
             InfoCard("1.71.0 — mądrzejsze powiadomienia", listOf(
                 "Pobudka odzywa się 5 minut przed startem, nie 20.",
                 "Każde przypomnienie mówi też, co dalej — np. „Dalej: Śniadanie • 07:00”.",

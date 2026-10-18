@@ -26,28 +26,38 @@ object NotificationHelper {
     private val plLocale = java.util.Locale("pl", "PL")
     private val timeFmt = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
-    // Dopisek „Dalej: …" — wspólny dla dzwonka i trwałego powiadomienia;
-    // receiver zdejmuje go po tym znaczniku przy łączeniu pary, żeby został raz.
+    // Druga linia „co dalej" — WYŁĄCZNIE przez dalejLine(); receiver zdejmuje
+    // ją po tym znaczniku przy łączeniu pary, żeby w scalonym wierszu była raz.
     const val DALEJ_SEP = "\nDalej: "
 
-    /**
-     * Format „co dalej" (ten sam w dzwonku i w „czuwa"): skrót dnia tylko, gdy
-     * to nie dziś. Tytuł z godziną w środku („Cisza nocna 22:00–6:00") nie
-     * dubluje jej na końcu.
-     */
-    fun dalejText(today: LocalDate, date: LocalDate, e: DormEvent): String {
-        val time = e.start.format(timeFmt)
-        val suffix = if (e.title.contains(time)) "" else {
-            val day = if (date == today) "" else " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
-            " •$day $time"
-        }
-        return "Dalej: ${e.title}$suffix"
+    /** Czy tytuł ma już w środku godzinę („Cisza nocna 22:00–6:00")? */
+    private fun titleHasTime(title: String, t: java.time.LocalTime): Boolean {
+        val hhmm = t.format(timeFmt)                                     // „06:00"
+        val hmm = if (hhmm.startsWith("0")) hhmm.substring(1) else hhmm  // „6:00"
+        return title.contains(hhmm) || title.contains(hmm)
     }
 
-    /** Dokleja „Dalej: …" do linii trwałego — gdy jest co pokazać. */
+    /** Znacznik dnia: „" dziś, „ jutro" nazajutrz, inaczej skrót dnia tygodnia. */
+    private fun dayTag(today: LocalDate, date: LocalDate): String = when (date) {
+        today -> ""
+        today.plusDays(1) -> " jutro"
+        else -> " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
+    }
+
+    /**
+     * Druga linia „co dalej" z wiodącym \n — jeden format dla dzwonka i
+     * „czuwa"; godzina i dzień doklejane tylko, gdy tytuł niesie je sam.
+     */
+    fun dalejLine(today: LocalDate, date: LocalDate, e: DormEvent): String {
+        val stamp = if (titleHasTime(e.title, e.start)) "" else
+            " •${dayTag(today, date)} ${e.start.format(timeFmt)}"
+        return "$DALEJ_SEP${e.title}$stamp"
+    }
+
+    /** Dokleja drugą linię „Dalej: …" do trwałego — gdy jest co pokazać. */
     private fun withDalej(text: String, from: LocalDateTime, today: LocalDate): String {
         val next = DormSchedule.nextNotifiedEvent(from) ?: return text
-        return "$text$DALEJ_SEP${dalejText(today, next.first, next.second)}"
+        return text + dalejLine(today, next.first, next.second)
     }
 
     fun ensureChannel(context: Context) {
@@ -198,15 +208,18 @@ object NotificationHelper {
                 DormSchedule.eventsForDate(nowDate)
             )
             if (ongoing != null) {
-                val till = if (ongoing.end != null) " do ${ongoing.end.format(timeFmt)}" else ""
+                // Godzina końca tylko, gdy tytuł nie ma jej już w środku
+                // („Cisza nocna 22:00–6:00" nie dubluje „do 06:00").
+                val till = if (ongoing.end != null && !titleHasTime(ongoing.title, ongoing.end)) {
+                    " do ${ongoing.end.format(timeFmt)}"
+                } else ""
                 // Teraz + Dalej razem: drugi wiersz mówi, co konkretnego czeka.
                 withDalej("Teraz: ${ongoing.title}$till", now, nowDate)
             } else {
                 val cared = DormSchedule.nextCaredEvent(now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES))
                 if (cared != null) {
                     val (date, next) = cared
-                    val day = if (date == nowDate) "" else " ${date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, plLocale)}"
-                    "Następne: ${next.title} •$day ${next.start.format(timeFmt)}"
+                    "Następne: ${next.title} •${dayTag(nowDate, date)} ${next.start.format(timeFmt)}"
                 } else "Plan na dziś zakończony"
             }
         }

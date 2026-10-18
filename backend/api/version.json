@@ -1,8 +1,8 @@
 {
-  "versionCode": 77,
-  "versionName": "1.71.0",
+  "versionCode": 78,
+  "versionName": "1.72.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.71.0 — mądrzejsze powiadomienia",
+  "changelog": "1.72.0 — powiadomienia dopracowane",
   "force": false,
-  "publishedAt": "2026-10-18T21:25:00Z"
+  "publishedAt": "2026-10-18T21:31:00Z"
 }
