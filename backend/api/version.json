@@ -1,8 +1,8 @@
 {
-  "versionCode": 72,
-  "versionName": "1.66.0",
+  "versionCode": 73,
+  "versionName": "1.67.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.66.0 — miękka fala: 4 szerokie fale, mocniejsza amplituda",
+  "changelog": "1.67.0 — fala i tor jak w Material 3 Expressive",
   "force": false,
-  "publishedAt": "2026-10-18T12:00:00Z"
+  "publishedAt": "2026-10-18T12:30:00Z"
 }

@@ -164,7 +164,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -302,7 +301,8 @@ fun IconDotOnContainer(
     }
 }
 
-/** Falisty tor pierścienia: promień pływa sinusem (orbitka jak na screenie).
+/** Falisty tor pierścienia jak w M3 Expressive: promień pływa sinusem wokół koła
+ *  (długość fali 15 dp, liczba fal stała na obwodzie).
  *  Faza sunie w kółko o pełną długość fali — wzór wędruje, szew niewidoczny.
  *  Amplituda wygaszana na końcach (taper): okrągłe capy siadają DOKŁADNIE
  *  na torze, bez odklejonych bąbli na starcie i mecie węża. */
@@ -320,9 +320,10 @@ private fun DrawScope.wavyRing(
     val cy = size.height / 2
     repeat(steps + 1) { i ->
         val t = i / steps.toFloat()
-        // Okno kosinusowe na ~12% z każdej strony: końce lądują na torze.
+        // Okno kosinusowe na ~7% z każdej strony: końce lądują dokładnie na torze,
+        // ale fala nie spłaszcza się przez ćwierć krótkiego łuku.
         val edge = minOf(t, 1f - t)
-        val taper = if (edge >= 0.12f) 1f else (0.5f - 0.5f * cos(PI * edge / 0.12f)).toFloat()
+        val taper = if (edge >= 0.07f) 1f else (0.5f - 0.5f * cos(PI * edge / 0.07f)).toFloat()
         val deg = -90f + sweepDeg * t
         val rad = Math.toRadians(deg.toDouble())
         val rr = radius + ampPx * taper * sin(rad * waves - phase).toFloat()
@@ -380,7 +381,8 @@ fun Ring(
             }
         }
         // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
-        val fullAmp = with(LocalDensity.current) { 2.6.dp.toPx() }
+        // Amplituda jak token ActiveWaveAmplitude: 40% grubości piku (1,6 dp na 4 dp).
+        val fullAmp = with(LocalDensity.current) { 1.8.dp.toPx() }
         val amp by animateFloatAsState(
             if (waveOn) fullAmp else 0f,
             tween(1200), label = "waveAmp"
@@ -388,10 +390,12 @@ fun Ring(
         Canvas(Modifier.fillMaxSize().padding(3.dp)) {
             val half = size.minDimension / 2
             val wormW = 4.5.dp.toPx()
-            // Promienie liczone od krawędzi do środka: nic nie wystaje poza Canvas.
-            val wormR = half - amp - wormW / 2 - 0.5.dp.toPx()
+            // Promień liczony dla PEŁNEJ amplitudy: fala rośnie w miejscu (środek
+            // pierścienia stoi), a grzbiety i tak mieszczą się w Canvas.
+            val wormR = half - fullAmp - wormW / 2 - 0.5.dp.toPx()
             val trackR = wormR + 1.dp.toPx()
-            // Tor cienki i spokojny.
+            // Tor tej samej grubości co fala (jak w M3 Expressive): pod falą znika,
+            // na resztę obwodu zostaje równym, spokojnym kołem.
             val trackD = trackR * 2
             drawArc(
                 track, -90f, 360f, false,
@@ -400,26 +404,24 @@ fun Ring(
                     (size.height - trackD) / 2
                 ),
                 size = Size(trackD, trackD),
-                style = Stroke(2.5.dp.toPx())
+                style = Stroke(wormW)
             )
             if (waveOn) {
+                // Postęp to wycinek TEJ SAMEJ fali. Długość fali 15 dp (M3 Expressive),
+                // więc liczba fal na obwodzie jest STAŁA — krótki łuk pokazuje pełne,
+                // szerokie fale zamiast grudki, a fala pod nim nie gęstnieje.
                 val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
-                val frac = sweepDeg / 360f
-                // Szerokie, miękkie fale (styl „Oddychanie"): 4 na pełnym kole, nigdy
-                // więcej — wysoka częstotliwość na małym pierścienu to wibracja, nie fala.
-                val waves = (4f * frac.pow(0.8f)).roundToInt().coerceIn(1, 4)
-                // Amplituda rośnie z sweepem; na pełnym kole największa.
-                val ampNow = amp * (0.5f + 0.5f * frac)
+                val waves = (2 * PI * wormR / 15.dp.toPx()).roundToInt().coerceAtLeast(1)
                 val worm = wavyRing(
-                    radius = trackR - 1.dp.toPx(),
+                    radius = wormR,
                     waves = waves,
-                    ampPx = ampNow,
+                    ampPx = amp,
                     sweepDeg = sweepDeg,
                     phase = phase
                 )
                 drawPath(
                     worm, arc,
-                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    style = Stroke(wormW, cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
             }
         }
@@ -1643,6 +1645,11 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.67.0 — fala jak w M3", listOf(
+                "Tor i fala tej samej grubości jak w Material 3 Expressive.",
+                "Stała długość fali: krótki łuk to pełne, szerokie fale.",
+                "Reszta bez zmian."
+            ))
             InfoCard("1.66.0 — miękka fala", listOf(
                 "Szerokie fale zamiast wibracji — styl Oddychanie.",
                 "Reszta bez zmian."
