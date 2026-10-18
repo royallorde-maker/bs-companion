@@ -1,8 +1,8 @@
 {
-  "versionCode": 68,
-  "versionName": "1.62.0",
+  "versionCode": 69,
+  "versionName": "1.63.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.62.0 — jeden dzwonek: wspolny offset, haptyka, audyt",
+  "changelog": "1.63.0 — krótszy błysk: mignięcie 0,4 s",
   "force": false,
-  "publishedAt": "2026-10-17T12:00:00Z"
+  "publishedAt": "2026-10-18T10:30:00Z"
 }

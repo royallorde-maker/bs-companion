@@ -1442,7 +1442,7 @@ fun ScheduleScreen(
         if (idx >= 0) {
             try { listState.scrollToItem(maxOf(0, idx - 1)) } catch (_: Exception) { }
         }
-        delay(1200)
+        delay(400)
         flashId = null
         onFocusConsumed()
     }
@@ -1654,6 +1654,10 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.63.0 — krótszy błysk", listOf(
+                "Mignięcie w Planie trwa 0,4 s zamiast 1,2 s.",
+                "Reszta bez zmian."
+            ))
             InfoCard("1.62.0 — jeden dzwonek + haptyka", listOf(
                 "Wydarzenia o tym samym starcie dzwonią razem (jeden dzwonek).",
                 "Lekkie odbicie dotykowe przy zakładce, motywie i wierszu.",
