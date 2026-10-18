@@ -1645,6 +1645,10 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.68.0 — wydanie z Linuksa", listOf(
+                "Wersja zbudowana i podpisana na maszynie z Linuksem.",
+                "Bez zmian w działaniu aplikacji."
+            ))
             InfoCard("1.67.0 — fala jak w M3", listOf(
                 "Tor i fala tej samej grubości jak w Material 3 Expressive.",
                 "Stała długość fali: krótki łuk to pełne, szerokie fale.",
