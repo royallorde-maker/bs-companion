@@ -164,6 +164,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private val plLocale = Locale("pl", "PL")
@@ -401,34 +403,25 @@ fun Ring(
                 style = Stroke(2.5.dp.toPx())
             )
             if (waveOn) {
-                val wormD = (trackR - 1.dp.toPx()) * 2
-                val wormTL = Offset(
-                    (size.width - wormD) / 2,
-                    (size.height - wormD) / 2
+                val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
+                val frac = sweepDeg / 360f
+                // Gęstość fal rośnie szybciej niż sweep (potęga 1.6): pełne koło ma
+                // 14 fal, a krótki łuk 1–2 szerokie fale — nigdy grudka.
+                val waves = (14f * frac.pow(1.6f)).roundToInt().coerceAtLeast(1)
+                // Amplituda łagodnie rośnie do pełnej na kole, min. 45% żeby fala
+                // zawsze była widoczna.
+                val ampNow = amp * (0.45f + 0.55f * frac)
+                val worm = wavyRing(
+                    radius = trackR - 1.dp.toPx(),
+                    waves = waves,
+                    ampPx = ampNow,
+                    sweepDeg = sweepDeg,
+                    phase = phase
                 )
-                val wormSize = Size(wormD, wormD)
-                if (alwaysWave && anim.value <= 0.01f) {
-                    // Spokojne, żywe pełne koło — tylko tu fala naprawdę wygląda.
-                    val worm = wavyRing(
-                        radius = trackR - 1.dp.toPx(),
-                        waves = 14,
-                        ampPx = amp,
-                        sweepDeg = 360f,
-                        phase = phase
-                    )
-                    drawPath(
-                        worm, arc,
-                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                    )
-                } else {
-                    // Postęp: czysty zaokrąglony łuk. Fala na krótkim łuku to gruchotka,
-                    // a nie fala — dlatego tutaj bez fali.
-                    drawArc(
-                        arc, -90f, (360f * anim.value).coerceAtLeast(0.6f), false,
-                        topLeft = wormTL, size = wormSize,
-                        style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round)
-                    )
-                }
+                drawPath(
+                    worm, arc,
+                    style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
             }
         }
         content()
@@ -1651,11 +1644,17 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.65.0 — fala znowu", listOf(
+                "Postęp znowu faluje, ale krótki łuk to 1–2 szerokie fale.",
+                "Reszta bez zmian."
+            ))
             InfoCard("1.64.0 — fala tylko na kole", listOf(
                 "Postęp to gładki łuk; fala tylko na żywym pełnym kole.",
                 "Koniec gruchotki na krótkim łuku TERAZ.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.63.0 — krótszy błysk", listOf(
                 "Mignięcie w Planie trwa 0,4 s zamiast 1,2 s.",
                 "Reszta bez zmian."

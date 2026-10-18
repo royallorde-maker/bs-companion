@@ -1,8 +1,8 @@
 {
-  "versionCode": 70,
-  "versionName": "1.64.0",
+  "versionCode": 71,
+  "versionName": "1.65.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.64.0 — fala tylko na pełnym kole, postęp to gładki łuk",
+  "changelog": "1.65.0 — fala znowu na postępie, krótkie łuki bez grudki",
   "force": false,
-  "publishedAt": "2026-10-18T11:00:00Z"
+  "publishedAt": "2026-10-18T11:30:00Z"
 }
