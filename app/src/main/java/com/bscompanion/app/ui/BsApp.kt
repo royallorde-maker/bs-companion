@@ -380,7 +380,7 @@ fun Ring(
             }
         }
         // Morfowanie jak w M3 Expressive: najpierw płaski łuk, fala narasta po chwili.
-        val fullAmp = with(LocalDensity.current) { 1.5.dp.toPx() }
+        val fullAmp = with(LocalDensity.current) { 2.6.dp.toPx() }
         val amp by animateFloatAsState(
             if (waveOn) fullAmp else 0f,
             tween(1200), label = "waveAmp"
@@ -405,12 +405,11 @@ fun Ring(
             if (waveOn) {
                 val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
                 val frac = sweepDeg / 360f
-                // Gęstość fal rośnie szybciej niż sweep (potęga 1.6): pełne koło ma
-                // 14 fal, a krótki łuk 1–2 szerokie fale — nigdy grudka.
-                val waves = (14f * frac.pow(1.6f)).roundToInt().coerceAtLeast(1)
-                // Amplituda łagodnie rośnie do pełnej na kole, min. 45% żeby fala
-                // zawsze była widoczna.
-                val ampNow = amp * (0.45f + 0.55f * frac)
+                // Szerokie, miękkie fale (styl „Oddychanie"): 4 na pełnym kole, nigdy
+                // więcej — wysoka częstotliwość na małym pierścienu to wibracja, nie fala.
+                val waves = (4f * frac.pow(0.8f)).roundToInt().coerceIn(1, 4)
+                // Amplituda rośnie z sweepem; na pełnym kole największa.
+                val ampNow = amp * (0.5f + 0.5f * frac)
                 val worm = wavyRing(
                     radius = trackR - 1.dp.toPx(),
                     waves = waves,
@@ -1644,10 +1643,16 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.66.0 — miękka fala", listOf(
+                "Szerokie fale zamiast wibracji — styl Oddychanie.",
+                "Reszta bez zmian."
+            ))
             InfoCard("1.65.0 — fala znowu", listOf(
                 "Postęp znowu faluje, ale krótki łuk to 1–2 szerokie fale.",
                 "Reszta bez zmian."
             ))
+        }
+        item {
             InfoCard("1.64.0 — fala tylko na kole", listOf(
                 "Postęp to gładki łuk; fala tylko na żywym pełnym kole.",
                 "Koniec gruchotki na krótkim łuku TERAZ.",
