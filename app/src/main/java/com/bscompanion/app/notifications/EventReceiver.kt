@@ -130,8 +130,13 @@ class EventReceiver : BroadcastReceiver() {
             ?: eventKeyFromDataString(intent.dataString)
             ?: "nid-$nid"
         val slotId = NotificationHelper.stableSlotId(eventKey)
-        // Sync: przypomnienie na N minut przed kasuje się samo dokładnie o czasie wydarzenia.
-        val timeout = if (isReminder && offsetMin > 0) offsetMin * 60_000L else null
+        // Sync: przypomnienie na N minut przed kasuje się samo o CZASIE STARTU, licząc
+        // od dostawy — spóźniony alarm (doza/inexact) nie trzyma wiersza dłużej niż do
+        // startu; gdy start już minął, zostawiamy krótkie 30 s na zauważenie.
+        val timeout = if (isReminder && offsetMin > 0) {
+            eventStartMs(eventKey)?.let { (it - System.currentTimeMillis()).coerceAtLeast(30_000L) }
+                ?: (offsetMin * 60_000L)
+        } else null
         // Tekst liczony W CHWILI DZWONKA: spóźniony alarm (doza, inexact, dopięcie
         // przy otwarciu) pokazywałby "Za 30 min" na 14 min przed startem.
         val body = if (isReminder && offsetMin > 0) refreshReminderText(eventKey, text) else text

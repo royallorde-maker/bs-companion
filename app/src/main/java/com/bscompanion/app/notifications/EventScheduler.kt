@@ -267,7 +267,9 @@ object EventScheduler {
         val stored = try { Prefs.getScheduledUris(context) } catch (_: Exception) { emptySet() }
         val enabled = try { Prefs.isEnabled(context) } catch (_: Exception) { true }
         val canPost = try { NotificationHelper.canPost(context) } catch (_: Exception) { false }
-        val blocked = try { NotificationHelper.channelBlocked(context) } catch (_: Exception) { false }
+        // notificationsBlocked łapie też globalny wyłącznik powiadomień apki (areNotificationsEnabled),
+        // nie tylko zablokowany kanał — bez tego planista stawiał budziki, które nic nie pokażą.
+        val blocked = try { NotificationHelper.notificationsBlocked(context) } catch (_: Exception) { false }
         val offsets = smartOffsets.sorted()
         // Martwe znaczniki łaski (wydarzenie już minęło) nie rosną w nieskończoność.
         try { pruneGraceMarkers(context, System.currentTimeMillis()) } catch (_: Exception) { }
@@ -407,8 +409,11 @@ object EventScheduler {
     private fun pruneGraceMarkers(context: Context, nowMs: Long) {
         try {
             val prefs = context.getSharedPreferences(GRACE_FILE, Context.MODE_PRIVATE)
+            // Kasujemy 5 s PO terminie (nie w terminie): dzięki temu tolerancja
+            // dozbrojenia w scheduleOne (deadline + 5 s) jest osiągalna, a wpisy
+            // sprzed pół minuty nie zostają na zawsze.
             val stale = prefs.all
-                .filter { (k, v) -> k.startsWith(GRACE_PREFIX) && v is Long && v <= nowMs }
+                .filter { (k, v) -> k.startsWith(GRACE_PREFIX) && v is Long && v <= nowMs - 5_000 }
                 .map { it.key }
             if (stale.isNotEmpty()) {
                 prefs.edit().also { ed -> stale.forEach { ed.remove(it) } }.apply()

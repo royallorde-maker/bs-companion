@@ -410,19 +410,24 @@ fun Ring(
                 // Postęp to wycinek TEJ SAMEJ fali. Długość fali 15 dp (M3 Expressive),
                 // więc liczba fal na obwodzie jest STAŁA — krótki łuk pokazuje pełne,
                 // szerokie fale zamiast grudki, a fala pod nim nie gęstnieje.
-                val sweepDeg = if (anim.value > 0.01f) 360f * anim.value else 360f
-                val waves = (2 * PI * wormR / 15.dp.toPx()).roundToInt().coerceAtLeast(1)
-                val worm = wavyRing(
-                    radius = wormR,
-                    waves = waves,
-                    ampPx = amp,
-                    sweepDeg = sweepDeg,
-                    phase = phase
-                )
-                drawPath(
-                    worm, arc,
-                    style = Stroke(wormW, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
+                // Pełne koło rysuje tylko brak postępu (progress == null); mierzony
+                // postęp rośnie od zera — start wydarzenia to pusty pierścień, nie
+                // pełne koło na pierwszym procencie (błąd: 22:00 świeciło pełnym kołem).
+                val sweepDeg = if (progress != null) 360f * anim.value else 360f
+                if (sweepDeg > 0f) {
+                    val waves = (2 * PI * wormR / 15.dp.toPx()).roundToInt().coerceAtLeast(1)
+                    val worm = wavyRing(
+                        radius = wormR,
+                        waves = waves,
+                        ampPx = amp,
+                        sweepDeg = sweepDeg,
+                        phase = phase
+                    )
+                    drawPath(
+                        worm, arc,
+                        style = Stroke(wormW, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    )
+                }
             }
         }
         content()
@@ -711,7 +716,7 @@ fun HomeScreen(
             }
         }
         item {
-            Appear(3) { SemesterCountdown() }
+            Appear(3) { SemesterCountdown(nowState) }
         }
     }
 }
@@ -796,7 +801,18 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
     // Lookup obcięty do minut (12:00:00.5 nie gubi eventu 12:00); licznik pełny.
     val lookupNow = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
     val current = remember(lookupNow, events) { DormSchedule.currentCaredEvent(lookupNow, events) }
-    val cared = remember(lookupNow) { DormSchedule.nextCaredEvent(lookupNow) }
+    // nextCaredEvent trzyma świeżo startujące wydarzenie przez całą minutę (obcięcie
+    // do minut) — a to już wisi w TERAZ. NASTĘPNE pokazuje więc KOLEJNE wydarzenie.
+    val cared = remember(lookupNow, current) {
+        val first = DormSchedule.nextCaredEvent(lookupNow)
+        if (first != null && current != null && first.second.id == current.id) {
+            DormSchedule.nextCaredEvent(
+                LocalDateTime.of(first.first, first.second.start).plusMinutes(1)
+            )
+        } else {
+            first
+        }
+    }
     val next = cared?.second
     val nextDate = cared?.first
     // Obok siebie: TERAZ | NASTĘPNE w jednym wierszu, zawsze równa wysokość.
@@ -977,7 +993,15 @@ fun HoldingSection(
     // Bez krzykliwej zieleni — odliczanie w stonowanym kolorze tekstu.
     // Lista przeliczana co minutę, ale tekst z sekundami i tak tyka co 1 s.
     val items = remember(now.truncatedTo(ChronoUnit.MINUTES)) {
-        DormSchedule.upcomingCared(now.truncatedTo(ChronoUnit.MINUTES), 4)
+        val mile = now.truncatedTo(ChronoUnit.MINUTES)
+        // Pierwszy wiersz nie dubluje karty TERAZ: świeżo startujące wydarzenie
+        // trzyma się listy przez minutę po starcie — bierzemy zapas i odsiewamy.
+        val running = DormSchedule.currentCaredEvent(
+            mile, DormSchedule.eventsForDate(now.toLocalDate())
+        )
+        DormSchedule.upcomingCared(mile, 5)
+            .filterNot { running != null && it.first == now.toLocalDate() && it.second.id == running.id }
+            .take(4)
     }
     val today = remember(now) { now.toLocalDate() }
     BsSurface(Modifier.fillMaxWidth()) {
@@ -1280,15 +1304,25 @@ private fun semesterEnd(today: LocalDate): LocalDate {
 }
 
 @Composable
-fun SemesterCountdown() {
-    // Bez remember: LocalDate.now() to grosze, a po północy wynik świeży bez roboty.
-    val today = LocalDate.now()
-    val days = ChronoUnit.DAYS.between(today, semesterEnd(today))
-    val text = when {
-        days > 1 -> "Do końca zajęć: $days dni"
-        days == 1L -> "Do końca zajęć: 1 dzień"
-        days == 0L -> "Dziś koniec zajęć!"
-        else -> "Wakacje!"
+fun SemesterCountdown(nowState: State<LocalDateTime>) {
+    // Liczone z sekundnika Dziś: karta nie zamarza po północy ani po powrocie z tła
+    // (bez odczytu stanu Compose pomijał ją w przebudowach).
+    val now by nowState
+    val today = now.toLocalDate()
+    val text = remember(today) {
+        val june = lastFridayOfJune(today.year)
+        val september = LocalDate.of(today.year, 9, 1)
+        if (today.isAfter(june) && today.isBefore(september)) {
+            // Lipiec–sierpień: zajęcia skończone, nowy rok jeszcze nie ruszył.
+            "Wakacje!"
+        } else {
+            val days = ChronoUnit.DAYS.between(today, semesterEnd(today))
+            when {
+                days > 1 -> "Do końca zajęć: $days dni"
+                days == 1L -> "Do końca zajęć: 1 dzień"
+                else -> "Dziś koniec zajęć!"
+            }
+        }
     }
     BsSurface(Modifier.fillMaxWidth()) {
         Row(
@@ -1413,8 +1447,12 @@ fun ScheduleScreen(
     val nowTick = remember(tick) { LocalDateTime.now() }
     val today = remember(nowTick) { nowTick.toLocalDate() }
     // Fokus z Nadchodzących ("data|id"): pokazujemy TEN dzień, niekoniecznie dziś.
+    // Dzień przypinamy lokalnie: zgaszenie fokusu po mignięciu nie może cofać
+    // ekranu do dziś w połowie oglądania (błąd: plan wracał po 400 ms).
     val focus = remember(focusKey) { focusKey?.let { parseFocusKey(it) } }
-    val shownDate = focus?.first ?: today
+    var pinnedDate by remember { mutableStateOf<LocalDate?>(focus?.first) }
+    LaunchedEffect(focus) { focus?.let { pinnedDate = it.first } }
+    val shownDate = pinnedDate ?: today
     val shownEvents = remember(shownDate) { DormSchedule.eventsForDate(shownDate) }
     val events = shownEvents
     val isShownToday = shownDate == today
@@ -1645,6 +1683,14 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.69.0 — poprawki błędów", listOf(
+                "Plan dnia zostaje na dniu wybranym z Nadchodzących (nie wraca do dziś).",
+                "NASTĘPNE i lista nie dublują trwającego wydarzenia.",
+                "Licznik końca roku odświeża się po północy i pokazuje Wakacje! latem.",
+                "Pierścień TERAZ rusza od zera — koniec pełnego koła na starcie wydarzenia.",
+                "Spóźnione przypomnienie gaśnie o czasie startu wydarzenia.",
+                "Bez budzików, gdy powiadomienia są wyłączone."
+            ))
             InfoCard("1.68.0 — wydanie z Linuksa", listOf(
                 "Wersja zbudowana i podpisana na maszynie z Linuksem.",
                 "Bez zmian w działaniu aplikacji."
