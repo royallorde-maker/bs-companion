@@ -113,8 +113,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -157,6 +159,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlinx.coroutines.delay
@@ -168,6 +171,7 @@ import kotlin.math.sin
 
 private val plLocale = Locale("pl", "PL")
 private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
+private val dateFmt = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(plLocale)
 
 // Wejścia grają przy każdym pierwszym pokazaniu danej zakładki (bez globalnego stanu).
 fun categoryIcon(cat: EventCategory): ImageVector = when (cat) {
@@ -719,43 +723,73 @@ fun HomeScreen(
     }
 }
 
-/** Karta-bohater: sam wielki zegar — cyfry na całą szerokość karty. */
+/** Karta-bohater: żywy zegar w kolorze primary — cyfry ze szklanym połyskiem. */
 @Composable
 fun HeroCard(nowState: State<LocalDateTime>) {
     val now by nowState
     // Kwantyzacja do minuty — AnimatedContent odpala się tylko przy zmianie "HH:mm".
     val minuteKey = remember(now) { now.truncatedTo(ChronoUnit.MINUTES) }
     val timeStr = remember(minuteKey) { minuteKey.format(timeFmt) }
+    val dateStr = remember(now.toLocalDate()) {
+        now.toLocalDate().format(dateFmt)
+    }
     val closed = DormSchedule.isNoCare(now)
-    // Płaski kolor primary — bez gradientów w całej apce.
     val onHero = MaterialTheme.colorScheme.onPrimary
+    // Szklany zegar (życzenie): jedyny gradient w apce — połysk cyfr, jaśniejsza
+    // góra i gęstszy środek, jak światło w tafli szkła.
+    val glass = remember(onHero) {
+        Brush.linearGradient(
+            0f to onHero.copy(alpha = 0.60f),
+            0.28f to onHero.copy(alpha = 0.88f),
+            0.62f to onHero.copy(alpha = 0.99f),
+            1f to onHero.copy(alpha = 0.84f),
+            start = Offset.Zero,
+            end = Offset(0f, Float.POSITIVE_INFINITY)
+        )
+    }
+    val density = LocalDensity.current
+    // Miękki cień pod cyframi — lekki efekt 3D.
+    val glassShadow = remember(onHero, density) {
+        Shadow(
+            color = onHero.copy(alpha = 0.20f),
+            offset = with(density) { Offset(0f, 2.5f.dp.toPx()) },
+            blurRadius = with(density) { 7.dp.toPx() }
+        )
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.primary
     ) {
-        Column(
-            Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                // Sam zegar: cyfry rosną z szerokością karty (~2,52 em na "HH:mm",
-                // dzielnik 2,65 zostawia margines na najszersze zestawy cyfr).
-                val clockSize = with(LocalDensity.current) { (maxWidth / 2.65f).toSp() }
-                // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
-                RollingText(
-                    text = timeStr,
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontFamily = Montserrat,
-                        fontSize = clockSize,
-                        lineHeight = clockSize * 1.2f
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    color = onHero
-                )
-            }
+        Column(Modifier.padding(22.dp)) {
+            Text(
+                "Internauta",
+                style = MaterialTheme.typography.labelLarge,
+                color = onHero.copy(alpha = 0.72f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(2.dp))
+            // Bębenek jak w flip/slot-clock: każda cyfra roluje osobno.
+            RollingText(
+                text = timeStr,
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontFamily = Montserrat,
+                    brush = glass,
+                    shadow = glassShadow
+                ),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                dateStr.replaceFirstChar { it.uppercase(plLocale) },
+                style = MaterialTheme.typography.bodyMedium,
+                color = onHero.copy(alpha = 0.72f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
             if (closed) {
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
                 HeroPill("Brak opieki wychowawczej")
             }
         }
@@ -1674,9 +1708,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.74.0 — sam zegar", listOf(
-                "Karta na Dziś to teraz sam zegar — cyfry jak z ekranu blokady, na całą szerokość karty.",
-                "Nazwa aplikacji i data zniknęły z karty; pigułka o braku opieki zostaje."
+            InfoCard("1.75.0 — szklany zegar", listOf(
+                "Karta wraca do układu z nazwą, zegarem i datą — zmiana z 1.74.0 cofnięta.",
+                "Cyfry zegara mają teraz delikatny połysk i cień — lekki efekt 3D, jak szkło."
             ))
         }
         item {

@@ -1,8 +1,8 @@
 {
-  "versionCode": 80,
-  "versionName": "1.74.0",
+  "versionCode": 81,
+  "versionName": "1.75.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.74.0 — sam zegar",
+  "changelog": "1.75.0 — szklany zegar",
   "force": false,
-  "publishedAt": "2026-10-18T22:10:00Z"
+  "publishedAt": "2026-10-18T22:16:00Z"
 }
