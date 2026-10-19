@@ -471,7 +471,7 @@ def g_source() -> None:
           "verticalGradient" not in bs and bs.count("Brush.linearGradient") == 0
           and "RoundedCornerShape(28.dp)" in bs)
     check("zegar pulsuje (oddech cienia)", "val breath = (1f - cos(pulsePhase)) / 2f" in bs
-          and "0.10f + 0.16f * breath" in bs)
+          and "0.08f + 0.34f * breath" in bs and "2.2f * breath" in bs)
     check("wave morphs flat to wavy (M3)", '"waveAmp"' in bs and "wavyRing" in bs
           and "taper" in bs)
     check("force bypass for user actions", "force: Boolean = false" in es)

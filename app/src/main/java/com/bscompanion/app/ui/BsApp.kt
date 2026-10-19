@@ -116,6 +116,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -747,12 +748,13 @@ fun HeroCard(nowState: State<LocalDateTime>) {
         }
     }
     val breath = (1f - cos(pulsePhase)) / 2f
-    // Cień oddycha razem z cyframi: pełny wdech = cień głębszy i dalej odsunięty.
+    // Mocniejszy puls: przy pełnym wdechu cyfry unoszą się, a cień pod nimi rośnie.
     val clockShadow = Shadow(
-        color = onHero.copy(alpha = 0.10f + 0.16f * breath),
-        offset = with(density) { Offset(0f, (1.2f + 2.4f * breath).dp.toPx()) },
-        blurRadius = with(density) { (4f + 6f * breath).dp.toPx() }
+        color = onHero.copy(alpha = 0.08f + 0.34f * breath),
+        offset = with(density) { Offset(0f, (1f + 4.2f * breath).dp.toPx()) },
+        blurRadius = with(density) { (3.5f + 10f * breath).dp.toPx() }
     )
+    val lift = with(density) { (2.2f * breath).dp.toPx() }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -779,8 +781,8 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                         shadow = clockShadow
                     ),
                     fontWeight = FontWeight.Bold,
-                    color = onHero.copy(alpha = 0.90f + 0.10f * breath),
-                    modifier = Modifier.fillMaxWidth()
+                    color = onHero.copy(alpha = 0.85f + 0.15f * breath),
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { translationY = -lift }
                 )
             }
             Text(
@@ -1710,9 +1712,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.79.0 — delikatny puls zegara", listOf(
-                "Cyfry i cień pod nimi łagodnie oddychają — karta wygląda na żywą.",
-                "Ruch jest wolny i subtelny, bez migania. Układ bez zmian: nazwa, zegar, data."
+            InfoCard("1.80.0 — wyraźniejszy puls", listOf(
+                "Puls zegara jest teraz dobrze widoczny: cyfry lekko unoszą się, a cień pod nimi rośnie i maleje.",
+                "Tempo bez zmian. Układ karty bez zmian: nazwa, zegar, data."
             ))
         }
         item {
