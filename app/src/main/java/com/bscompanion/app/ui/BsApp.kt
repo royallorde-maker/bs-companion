@@ -748,11 +748,12 @@ fun HeroCard(nowState: State<LocalDateTime>) {
         }
     }
     val breath = (1f - cos(pulsePhase)) / 2f
-    // Mocniejszy puls: przy pełnym wdechu cyfry unoszą się, a cień pod nimi rośnie.
+    // Puls 1.81: cień trzyma się kształtu cyfr (mały rozmytek, tuż pod spodem),
+    // a ruch niosą oddech skali, lekkie uniesienie i głębszy cień pod cyframi.
     val clockShadow = Shadow(
-        color = onHero.copy(alpha = 0.08f + 0.34f * breath),
-        offset = with(density) { Offset(0f, (1f + 4.2f * breath).dp.toPx()) },
-        blurRadius = with(density) { (3.5f + 10f * breath).dp.toPx() }
+        color = onHero.copy(alpha = 0.10f + 0.28f * breath),
+        offset = with(density) { Offset(0f, (1.2f + 1.6f * breath).dp.toPx()) },
+        blurRadius = with(density) { (3.5f + 2.5f * breath).dp.toPx() }
     )
     val lift = with(density) { (2.2f * breath).dp.toPx() }
     Surface(
@@ -782,7 +783,13 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                     ),
                     fontWeight = FontWeight.Bold,
                     color = onHero.copy(alpha = 0.85f + 0.15f * breath),
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { translationY = -lift }
+                    // Bez fillMaxWidth: skala rośnie wokół środka samych cyfr (bez dryfu).
+                    modifier = Modifier.graphicsLayer {
+                        translationY = -lift
+                        val swell = 1f + 0.035f * breath
+                        scaleX = swell
+                        scaleY = swell
+                    }
                 )
             }
             Text(
@@ -1712,9 +1719,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.80.0 — wyraźniejszy puls", listOf(
-                "Puls zegara jest teraz dobrze widoczny: cyfry lekko unoszą się, a cień pod nimi rośnie i maleje.",
-                "Tempo bez zmian. Układ karty bez zmian: nazwa, zegar, data."
+            InfoCard("1.81.0 — puls w kształcie cyfr", listOf(
+                "Cień pod cyframi nie rozlewa się już w prostokątną plamę — trzyma się ich kształtu.",
+                "Cyfry przy wdechu delikatnie rosną i unoszą się, a cień tuż pod nimi się pogłębia."
             ))
         }
         item {

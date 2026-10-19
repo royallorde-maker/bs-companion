@@ -1,8 +1,8 @@
 {
-  "versionCode": 86,
-  "versionName": "1.80.0",
+  "versionCode": 87,
+  "versionName": "1.81.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.80.0 — wyraźniejszy puls",
+  "changelog": "1.81.0 — puls w kształcie cyfr",
   "force": false,
-  "publishedAt": "2026-10-19T08:29:59Z"
+  "publishedAt": "2026-10-19T08:54:30Z"
 }
