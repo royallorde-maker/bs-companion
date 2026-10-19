@@ -735,13 +735,15 @@ fun HeroCard(nowState: State<LocalDateTime>) {
     }
     val closed = DormSchedule.isNoCare(now)
     val onHero = MaterialTheme.colorScheme.onPrimary
-    // Szklane cyfry (życzenie): tafla cyfry to lekki, przezroczysty gradient —
-    // jedyny gradient w apce — a ciemne krawędzie niesie osobna warstwa konturu.
+    // Szklane cyfry: tafla to lekki, przezroczysty gradient (światło z góry),
+    // a ciemne krawędzie niesie osobna warstwa konturu. Gradienty tylko tutaj.
+    // Czcionka zegara jest naprawiona (removeOverlaps): oryginał budował cyfry
+    // z nachodzących kształtów, a kontur pokazywał ich ukryte wewnętrzne krawędzie.
     val glassWall = remember(onHero) {
         Brush.linearGradient(
-            0f to onHero.copy(alpha = 0.26f),
-            0.45f to onHero.copy(alpha = 0.40f),
-            1f to onHero.copy(alpha = 0.30f),
+            0f to onHero.copy(alpha = 0.20f),
+            0.45f to onHero.copy(alpha = 0.34f),
+            1f to onHero.copy(alpha = 0.27f),
             start = Offset.Zero,
             end = Offset(0f, Float.POSITIVE_INFINITY)
         )
@@ -755,12 +757,22 @@ fun HeroCard(nowState: State<LocalDateTime>) {
             blurRadius = with(density) { 6.dp.toPx() }
         )
     }
-    // Kontur cyfry — ciemna "rurka" szkła, zaokrąglone łączenia.
+    // Kontur cyfry — ciemna "rurka" szkła, zaokrąglone łączenia. Gradient na
+    // konturze (jaśniej u góry, ciemniej u dołu) daje wrażenie światła z góry.
     val glassRim = remember(density) {
         Stroke(
-            width = with(density) { 1.8f.dp.toPx() },
+            width = with(density) { 2.2f.dp.toPx() },
             cap = StrokeCap.Round,
             join = StrokeJoin.Round
+        )
+    }
+    val glassRimBrush = remember(onHero) {
+        Brush.linearGradient(
+            0f to onHero.copy(alpha = 0.58f),
+            0.5f to onHero.copy(alpha = 0.88f),
+            1f to onHero.copy(alpha = 0.95f),
+            start = Offset.Zero,
+            end = Offset(0f, Float.POSITIVE_INFINITY)
         )
     }
     Surface(
@@ -796,10 +808,10 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                     text = timeStr,
                     style = MaterialTheme.typography.displayLarge.copy(
                         fontFamily = Montserrat,
-                        drawStyle = glassRim
+                        drawStyle = glassRim,
+                        brush = glassRimBrush
                     ),
                     fontWeight = FontWeight.Bold,
-                    color = onHero.copy(alpha = 0.90f),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1730,9 +1742,10 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.76.0 — zegar jak szkło", listOf(
-                "Cyfry zegara jak szklane rurki: lekki, przezroczysty środek i ciemne krawędzie.",
-                "Miękki cień pod cyframi daje delikatną głębię. Układ karty bez zmian."
+            InfoCard("1.77.0 — szklane cyfry bez klinów", listOf(
+                "Naprawione: w środku cyfr (np. 4 i 8) pokazywały się dziwne kliny — to ukryte krawędzie w czcionce zegara.",
+                "Krawędzie szkła są jaśniejsze u góry i ciemniejsze u dołu — bliżej efektu szklanej rurki.",
+                "Układ karty bez zmian: nazwa, zegar, data."
             ))
         }
         item {

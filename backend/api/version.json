@@ -1,8 +1,8 @@
 {
-  "versionCode": 82,
-  "versionName": "1.76.0",
+  "versionCode": 83,
+  "versionName": "1.77.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.76.0 — zegar jak szkło",
+  "changelog": "1.77.0 — szklane cyfry bez klinów",
   "force": false,
-  "publishedAt": "2026-10-18T22:35:00Z"
+  "publishedAt": "2026-10-19T00:30:00Z"
 }
