@@ -75,9 +75,11 @@ import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LunchDining
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
@@ -137,6 +139,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1181,6 +1184,7 @@ fun SettingsScreen(
     onThemeChange: (String) -> Unit
 ) {
     val versionName = com.bscompanion.app.BuildConfig.VERSION_NAME
+    var showPortfolio by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -1218,7 +1222,43 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("Autor: skraba", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Autor jako podświetlona pigułka — od razu widać, że da się dotknąć.
+                Row(
+                    Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { showPortfolio = true }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Person, null,
+                        Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Autor: loczek",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Dotknij, aby zobaczyć portfolio",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Icon(
+                        Icons.Filled.KeyboardArrowRight, null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
         item {
@@ -1328,6 +1368,75 @@ fun SettingsScreen(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
+                }
+            }
+        }
+    }
+    if (showPortfolio) {
+        PortfolioDialog(onDismiss = { showPortfolio = false })
+    }
+}
+
+/** Karta portfolio autora — na razie placeholder: miejsce na zdjęcie, opis i linki. */
+@Composable
+private fun PortfolioDialog(onDismiss: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = scheme.surfaceContainerLowest,
+            border = BorderStroke(1.dp, scheme.outlineVariant)
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Miejsce na zdjęcie: okrąg z ikoną — tu wejdzie docelowe foto.
+                Box(
+                    Modifier.size(104.dp)
+                        .clip(CircleShape)
+                        .background(scheme.surfaceContainerHigh)
+                        .border(BorderStroke(1.dp, scheme.outlineVariant), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.Person, null,
+                        Modifier.size(52.dp),
+                        tint = scheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "loczek",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    "autor Internauty",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "To na razie placeholder — miejsce na zdjęcie, opis i linki do portfolio.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Wkrótce: zdjęcie • o mnie • linki",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = scheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(16.dp))
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("Zamknij", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1750,10 +1859,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.82.0 — więcej motywów i gładki zegar", listOf(
-                "Motywy: Mono, Grafit i Mleko zostają na wierzchu, a pozostałe otwiera „Wyświetl więcej”. Wybrany motyw widać zawsze.",
-                "Nowe motywy: Ocean, Turkus, Zachód, Wino i Lód — razem dwanaście do wyboru.",
-                "Zegar: puls bez rozciągania cyfr — unoszą się delikatnie, a cień opada głębiej; ruch jest teraz czysty i gładki."
+            InfoCard("1.83.0 — wizytówka autora", listOf(
+                "W Ustawieniach autor to teraz loczek — podświetlony, więc od razu widać, że można dotknąć.",
+                "Dotknięcie otwiera kartę portfolio: na razie placeholder z miejscem na zdjęcie, opis i linki."
             ))
         }
         item {

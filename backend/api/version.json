@@ -1,8 +1,8 @@
 {
-  "versionCode": 88,
-  "versionName": "1.82.0",
+  "versionCode": 89,
+  "versionName": "1.83.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.82.0 — więcej motywów i gładki zegar",
+  "changelog": "1.83.0 — wizytówka autora",
   "force": false,
-  "publishedAt": "2026-10-19T20:53:40Z"
+  "publishedAt": "2026-10-19T21:08:02Z"
 }
