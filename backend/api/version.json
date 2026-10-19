@@ -1,8 +1,8 @@
 {
-  "versionCode": 83,
-  "versionName": "1.77.0",
+  "versionCode": 84,
+  "versionName": "1.78.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.77.0 — szklane cyfry bez klinów",
+  "changelog": "1.78.0 — zegar z miękkim cieniem",
   "force": false,
-  "publishedAt": "2026-10-19T00:30:00Z"
+  "publishedAt": "2026-10-19T05:30:08Z"
 }

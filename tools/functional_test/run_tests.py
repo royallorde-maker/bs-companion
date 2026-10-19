@@ -467,8 +467,8 @@ def g_source() -> None:
     check("grace clamp fires once per event", "isGraceClamped" in es and "markGraceClamped" in es and "graceDeadline" in es)
     check("wylacznie przypomnienia (brak on-time)", "isReminder = false" not in es)
     check("przypomnienie samo znika o czasie", "setTimeoutAfter" in nh and "isReminder, timeout)" in er)
-    check("plasko: gradienty tylko na szklanym zegarze (tafla + krawedzie)",
-          "verticalGradient" not in bs and bs.count("Brush.linearGradient") == 2
+    check("plasko: zero gradientow (zegar na plasko + pigulka)",
+          "verticalGradient" not in bs and bs.count("Brush.linearGradient") == 0
           and "RoundedCornerShape(28.dp)" in bs)
     check("wave morphs flat to wavy (M3)", '"waveAmp"' in bs and "wavyRing" in bs
           and "taper" in bs)
