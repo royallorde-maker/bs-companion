@@ -1,8 +1,8 @@
 {
-  "versionCode": 84,
-  "versionName": "1.78.0",
+  "versionCode": 85,
+  "versionName": "1.79.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.78.0 — zegar z miękkim cieniem",
+  "changelog": "1.79.0 — delikatny puls zegara",
   "force": false,
-  "publishedAt": "2026-10-19T05:30:08Z"
+  "publishedAt": "2026-10-19T06:04:34Z"
 }

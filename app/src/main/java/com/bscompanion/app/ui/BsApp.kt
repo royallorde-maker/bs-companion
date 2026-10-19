@@ -737,14 +737,22 @@ fun HeroCard(nowState: State<LocalDateTime>) {
     // Zegar: pełne cyfry w kolorze onPrimary + miękki cień pod spodem (lekka głębia).
     // Bez gradientów i konturów; czcionka (naprawiona w 1.77) daje czysty kształt.
     val density = LocalDensity.current
-    // Miękki cień pod cyframi — lekka głębia bez efektów.
-    val clockShadow = remember(onHero, density) {
-        Shadow(
-            color = onHero.copy(alpha = 0.18f),
-            offset = with(density) { Offset(0f, 2.dp.toPx()) },
-            blurRadius = with(density) { 6.dp.toPx() }
-        )
+    // Puls: cyfry i cień łagodnie oddychają (~4,8 s); ten sam ręczny takt 30 fps
+    // co fala. Faza 0..2π, oddech = (1 - cos) / 2 — płynny nawrót bez szarpnięć.
+    var pulsePhase by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(33)
+            pulsePhase = (pulsePhase + (2 * PI / 144).toFloat()) % (2 * PI).toFloat()
+        }
     }
+    val breath = (1f - cos(pulsePhase)) / 2f
+    // Cień oddycha razem z cyframi: pełny wdech = cień głębszy i dalej odsunięty.
+    val clockShadow = Shadow(
+        color = onHero.copy(alpha = 0.10f + 0.16f * breath),
+        offset = with(density) { Offset(0f, (1.2f + 2.4f * breath).dp.toPx()) },
+        blurRadius = with(density) { (4f + 6f * breath).dp.toPx() }
+    )
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -771,7 +779,7 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                         shadow = clockShadow
                     ),
                     fontWeight = FontWeight.Bold,
-                    color = onHero,
+                    color = onHero.copy(alpha = 0.90f + 0.10f * breath),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1702,9 +1710,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.78.0 — zegar z miękkim cieniem", listOf(
-                "Nowy wygląd zegara: czarne, pełne cyfry z miękkim cieniem pod spodem — lekka głębia bez efektów.",
-                "Układ karty bez zmian: nazwa, zegar, data; cyfry nadal rolują się co minutę."
+            InfoCard("1.79.0 — delikatny puls zegara", listOf(
+                "Cyfry i cień pod nimi łagodnie oddychają — karta wygląda na żywą.",
+                "Ruch jest wolny i subtelny, bez migania. Układ bez zmian: nazwa, zegar, data."
             ))
         }
         item {
