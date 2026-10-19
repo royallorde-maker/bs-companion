@@ -471,7 +471,7 @@ def g_source() -> None:
           "verticalGradient" not in bs and bs.count("Brush.linearGradient") == 0
           and "RoundedCornerShape(28.dp)" in bs)
     check("zegar pulsuje (oddech cienia)", "val breath = (1f - cos(pulsePhase)) / 2f" in bs
-          and "0.10f + 0.28f * breath" in bs and "1f + 0.035f * breath" in bs)
+          and "0.10f + 0.28f * breath" in bs and "1.2f + 3.8f * breath" in bs)
     check("wave morphs flat to wavy (M3)", '"waveAmp"' in bs and "wavyRing" in bs
           and "taper" in bs)
     check("force bypass for user actions", "force: Boolean = false" in es)
@@ -530,10 +530,13 @@ def g_source() -> None:
     dx = (MAIN / "res" / "xml" / "data_extraction_rules.xml").read_text(encoding="utf-8")
     check("D2D excludes bs_fired", dx.count("bs_fired.xml") == 2)
     th = src("java/com/bscompanion/app/ui/theme/Theme.kt")
-    check("seven themes mono..lawenda", all(x in th for x in
+    check("twelve themes mono..lod", all(x in th for x in
           ("enum class AppTheme", "MonoScheme", "GrafitScheme", "MlekoScheme", "CandyScheme",
-           "BursztynScheme", "LasScheme", "LawendaScheme"))
+           "BursztynScheme", "LasScheme", "LawendaScheme", "OceanScheme", "TurkusScheme",
+           "ZachodScheme", "WinoScheme", "LodScheme"))
           and "verticalGradient" not in th)
+    check("motywy zwijane (3 + wyswietl wiecej)", "Wyświetl więcej" in bs
+          and "AppTheme.entries.take(3)" in bs and "Zwiń listę" in bs)
     check("semester countdown on Today", "SemesterCountdown" in bs
           and "fun semesterEnd" in bs and "lastInMonth" in bs)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")

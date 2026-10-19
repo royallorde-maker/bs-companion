@@ -40,7 +40,7 @@ private val AppTypography = Typography().let { t ->
     )
 }
 
-/** Siedem motywów do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
+/** Dwanaście motywów do wyboru w Ustawieniach. Zapisywane w prefs, aktywne od razu. */
 enum class AppTheme(val label: String, val darkBars: Boolean, val windowBg: Long) {
     MONO("Mono", true, 0xFF000000),
     GRAFIT("Grafit", true, 0xFF131316),
@@ -48,7 +48,12 @@ enum class AppTheme(val label: String, val darkBars: Boolean, val windowBg: Long
     CANDY("Cukierek", true, 0xFF1A0E14),
     BURSZTYN("Bursztyn", true, 0xFF171208),
     LAS("Las", true, 0xFF0C1510),
-    LAWENDA("Lawenda", true, 0xFF14101C)
+    LAWENDA("Lawenda", true, 0xFF14101C),
+    OCEAN("Ocean", true, 0xFF08131F),
+    TURKUS("Turkus", true, 0xFF06171A),
+    ZACHOD("Zachód", true, 0xFF1B0F0C),
+    WINO("Wino", true, 0xFF170C0F),
+    LOD("Lód", false, 0xFFEFF4F7)
 }
 
 fun appThemeOf(name: String?): AppTheme = try {
@@ -323,6 +328,196 @@ private val LawendaScheme = darkColorScheme(
     surfaceDim = Color(0xFF0D0A13)
 )
 
+// Ocean: głęboki granat z lodowym błękitem. Ciemne bary.
+private val OceanScheme = darkColorScheme(
+    primary = Color(0xFF9CD8FF),
+    onPrimary = Color(0xFF002B45),
+    primaryContainer = Color(0xFF0B3B5C),
+    onPrimaryContainer = Color(0xFFD6EEFF),
+    secondary = Color(0xFF7FB8D9),
+    secondaryContainer = Color(0xFF0C2434),
+    onSecondaryContainer = Color(0xFFD6EEFF),
+    tertiary = Color(0xFFA8C8E8),
+    tertiaryContainer = Color(0xFF12293A),
+    onTertiaryContainer = Color(0xFFE1F0FF),
+    background = Color(0xFF08131F),
+    onBackground = Color(0xFFE1F0FF),
+    surface = Color(0xFF08131F),
+    onSurface = Color(0xFFE1F0FF),
+    surfaceVariant = Color(0xFF0E1D2B),
+    onSurfaceVariant = Color(0xFFA8C4D8),
+    surfaceContainerLowest = Color(0xFF050D15),
+    surfaceContainerLow = Color(0xFF08131F),
+    surfaceContainer = Color(0xFF0E1D2B),
+    surfaceContainerHigh = Color(0xFF142838),
+    surfaceContainerHighest = Color(0xFF1B3446),
+    outline = Color(0xFF2C4A60),
+    outlineVariant = Color(0xFF18303F),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFF9CD8FF),
+    inverseSurface = Color(0xFFE1F0FF),
+    inverseOnSurface = Color(0xFF08131F),
+    inversePrimary = Color(0xFF2F6690),
+    surfaceBright = Color(0xFF1B3446),
+    surfaceDim = Color(0xFF050D15)
+)
+
+// Turkus: morska zieleń z akcentem mięty. Ciemne bary.
+private val TurkusScheme = darkColorScheme(
+    primary = Color(0xFF7FE3D4),
+    onPrimary = Color(0xFF003731),
+    primaryContainer = Color(0xFF0B4A42),
+    onPrimaryContainer = Color(0xFFC8F7EE),
+    secondary = Color(0xFF6FBDB2),
+    secondaryContainer = Color(0xFF0A2C28),
+    onSecondaryContainer = Color(0xFFC8F7EE),
+    tertiary = Color(0xFF9BCFC8),
+    tertiaryContainer = Color(0xFF123732),
+    onTertiaryContainer = Color(0xFFDBF5F0),
+    background = Color(0xFF06171A),
+    onBackground = Color(0xFFDBF5F0),
+    surface = Color(0xFF06171A),
+    onSurface = Color(0xFFDBF5F0),
+    surfaceVariant = Color(0xFF0B2226),
+    onSurfaceVariant = Color(0xFF9BCABF),
+    surfaceContainerLowest = Color(0xFF030F11),
+    surfaceContainerLow = Color(0xFF06171A),
+    surfaceContainer = Color(0xFF0B2226),
+    surfaceContainerHigh = Color(0xFF102D32),
+    surfaceContainerHighest = Color(0xFF16393F),
+    outline = Color(0xFF2A4E52),
+    outlineVariant = Color(0xFF183236),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFF7FE3D4),
+    inverseSurface = Color(0xFFDBF5F0),
+    inverseOnSurface = Color(0xFF06171A),
+    inversePrimary = Color(0xFF1F6D63),
+    surfaceBright = Color(0xFF16393F),
+    surfaceDim = Color(0xFF030F11)
+)
+
+// Zachód: zachodzące słońce — koral na ciemnej kawie. Ciemne bary.
+private val ZachodScheme = darkColorScheme(
+    primary = Color(0xFFFFA98A),
+    onPrimary = Color(0xFF4A1B0A),
+    primaryContainer = Color(0xFF5C2410),
+    onPrimaryContainer = Color(0xFFFFDBCF),
+    secondary = Color(0xFFE0906F),
+    secondaryContainer = Color(0xFF332014),
+    onSecondaryContainer = Color(0xFFFFDBCF),
+    tertiary = Color(0xFFE8C08A),
+    tertiaryContainer = Color(0xFF3A2A14),
+    onTertiaryContainer = Color(0xFFFFEED4),
+    background = Color(0xFF1B0F0C),
+    onBackground = Color(0xFFFFEEDD),
+    surface = Color(0xFF1B0F0C),
+    onSurface = Color(0xFFFFEEDD),
+    surfaceVariant = Color(0xFF261610),
+    onSurfaceVariant = Color(0xFFD8AE97),
+    surfaceContainerLowest = Color(0xFF120A07),
+    surfaceContainerLow = Color(0xFF1B0F0C),
+    surfaceContainer = Color(0xFF261610),
+    surfaceContainerHigh = Color(0xFF311C15),
+    surfaceContainerHighest = Color(0xFF3E241B),
+    outline = Color(0xFF5C3A2B),
+    outlineVariant = Color(0xFF3A2318),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFFFFA98A),
+    inverseSurface = Color(0xFFFFEEDD),
+    inverseOnSurface = Color(0xFF1B0F0C),
+    inversePrimary = Color(0xFF8F4326),
+    surfaceBright = Color(0xFF3E241B),
+    surfaceDim = Color(0xFF120A07)
+)
+
+// Wino: wytrawna czerwień na ciemnym bordo. Ciemne bary.
+private val WinoScheme = darkColorScheme(
+    primary = Color(0xFFFFB3BC),
+    onPrimary = Color(0xFF4C0E1B),
+    primaryContainer = Color(0xFF5C1A27),
+    onPrimaryContainer = Color(0xFFFFD9DE),
+    secondary = Color(0xFFD999A2),
+    secondaryContainer = Color(0xFF351014),
+    onSecondaryContainer = Color(0xFFFFD9DE),
+    tertiary = Color(0xFFE5B9AC),
+    tertiaryContainer = Color(0xFF3A2019),
+    onTertiaryContainer = Color(0xFFFFEDE6),
+    background = Color(0xFF170C0F),
+    onBackground = Color(0xFFFFEBEE),
+    surface = Color(0xFF170C0F),
+    onSurface = Color(0xFFFFEBEE),
+    surfaceVariant = Color(0xFF221216),
+    onSurfaceVariant = Color(0xFFD2A6AE),
+    surfaceContainerLowest = Color(0xFF0F0709),
+    surfaceContainerLow = Color(0xFF170C0F),
+    surfaceContainer = Color(0xFF221216),
+    surfaceContainerHigh = Color(0xFF2C171C),
+    surfaceContainerHighest = Color(0xFF391E24),
+    outline = Color(0xFF553038),
+    outlineVariant = Color(0xFF331A20),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFFFFB3BC),
+    inverseSurface = Color(0xFFFFEBEE),
+    inverseOnSurface = Color(0xFF170C0F),
+    inversePrimary = Color(0xFF7E2836),
+    surfaceBright = Color(0xFF391E24),
+    surfaceDim = Color(0xFF0F0709)
+)
+
+// Lód: jasny, chłodny błękit — dzienne światło na szybie. Jasne bary.
+private val LodScheme = lightColorScheme(
+    primary = Color(0xFF0F3B4A),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD5E7EE),
+    onPrimaryContainer = Color(0xFF0F3B4A),
+    secondary = Color(0xFF4F6B75),
+    secondaryContainer = Color(0xFFE2EDF1),
+    onSecondaryContainer = Color(0xFF0F2A33),
+    tertiary = Color(0xFF3F5B63),
+    tertiaryContainer = Color(0xFFD8E6EA),
+    onTertiaryContainer = Color(0xFF0F2A33),
+    background = Color(0xFFEFF4F7),
+    onBackground = Color(0xFF10262E),
+    surface = Color(0xFFEFF4F7),
+    onSurface = Color(0xFF10262E),
+    surfaceVariant = Color(0xFFE0E9ED),
+    onSurfaceVariant = Color(0xFF4F6B75),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF6FAFB),
+    surfaceContainer = Color(0xFFECF2F5),
+    surfaceContainerHigh = Color(0xFFDCE8ED),
+    surfaceContainerHighest = Color(0xFFCFDFE6),
+    outline = Color(0xFFA9BCC4),
+    outlineVariant = Color(0xFFCFDFE6),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color(0xFF0F3B4A),
+    inverseSurface = Color(0xFF10262E),
+    inverseOnSurface = Color(0xFFEFF4F7),
+    inversePrimary = Color(0xFFC4DDE6),
+    surfaceBright = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFD3E0E5)
+)
+
 @Composable
 fun BSCompanionTheme(
     theme: AppTheme = AppTheme.MONO,
@@ -336,6 +531,11 @@ fun BSCompanionTheme(
         AppTheme.BURSZTYN -> BursztynScheme
         AppTheme.LAS -> LasScheme
         AppTheme.LAWENDA -> LawendaScheme
+        AppTheme.OCEAN -> OceanScheme
+        AppTheme.TURKUS -> TurkusScheme
+        AppTheme.ZACHOD -> ZachodScheme
+        AppTheme.WINO -> WinoScheme
+        AppTheme.LOD -> LodScheme
     }
     MaterialTheme(colorScheme = scheme, typography = AppTypography, content = content)
 }

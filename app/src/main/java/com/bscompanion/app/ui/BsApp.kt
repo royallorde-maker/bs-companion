@@ -69,6 +69,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FreeBreakfast
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -144,6 +146,7 @@ import com.bscompanion.app.data.EventCategory
 import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.ui.theme.Montserrat
 import com.bscompanion.app.ui.theme.AppTheme
+import com.bscompanion.app.ui.theme.appThemeOf
 import com.bscompanion.app.update.UpdateState
 import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
@@ -748,11 +751,11 @@ fun HeroCard(nowState: State<LocalDateTime>) {
         }
     }
     val breath = (1f - cos(pulsePhase)) / 2f
-    // Puls 1.81: cień trzyma się kształtu cyfr (mały rozmytek, tuż pod spodem),
-    // a ruch niosą oddech skali, lekkie uniesienie i głębszy cień pod cyframi.
+    // Puls 1.82: bez rozciągania cyfr — przy wdechu unoszą się delikatnie,
+    // a cień opada głębiej tuż pod nimi (mały rozmytek, więc bez prostokąta).
     val clockShadow = Shadow(
         color = onHero.copy(alpha = 0.10f + 0.28f * breath),
-        offset = with(density) { Offset(0f, (1.2f + 1.6f * breath).dp.toPx()) },
+        offset = with(density) { Offset(0f, (1.2f + 3.8f * breath).dp.toPx()) },
         blurRadius = with(density) { (3.5f + 2.5f * breath).dp.toPx() }
     )
     val lift = with(density) { (2.2f * breath).dp.toPx() }
@@ -783,13 +786,7 @@ fun HeroCard(nowState: State<LocalDateTime>) {
                     ),
                     fontWeight = FontWeight.Bold,
                     color = onHero.copy(alpha = 0.85f + 0.15f * breath),
-                    // Bez fillMaxWidth: skala rośnie wokół środka samych cyfr (bez dryfu).
-                    modifier = Modifier.graphicsLayer {
-                        translationY = -lift
-                        val swell = 1f + 0.035f * breath
-                        scaleX = swell
-                        scaleY = swell
-                    }
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { translationY = -lift }
                 )
             }
             Text(
@@ -1242,7 +1239,15 @@ fun SettingsScreen(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(12.dp))
-                AppTheme.entries.forEach { t ->
+                // Trzy pierwsze motywy zawsze na wierzchu; wybrany spoza nich też
+                // zostaje widoczny. Resztę (ukrytą) otwiera „Wyświetl więcej”.
+                var showAll by rememberSaveable { mutableStateOf(false) }
+                val shown = if (showAll) AppTheme.entries else {
+                    val pinned = AppTheme.entries.take(3)
+                    val current = appThemeOf(appTheme)
+                    if (current in pinned) pinned else pinned + current
+                }
+                shown.forEach { t ->
                     val sel = appTheme == t.name
                     Row(
                         Modifier.fillMaxWidth()
@@ -1272,6 +1277,11 @@ fun SettingsScreen(
                                         AppTheme.BURSZTYN -> Color(0xFFFFC15C)
                                         AppTheme.LAS -> Color(0xFF9BE2A8)
                                         AppTheme.LAWENDA -> Color(0xFFD3B8FF)
+                                        AppTheme.OCEAN -> Color(0xFF9CD8FF)
+                                        AppTheme.TURKUS -> Color(0xFF7FE3D4)
+                                        AppTheme.ZACHOD -> Color(0xFFFFA98A)
+                                        AppTheme.WINO -> Color(0xFFFFB3BC)
+                                        AppTheme.LOD -> Color(0xFFEFF4F7)
                                     }
                                 )
                                 .border(
@@ -1297,6 +1307,27 @@ fun SettingsScreen(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { showAll = !showAll }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (showAll) "Zwiń listę" else "Wyświetl więcej (${AppTheme.entries.size - 3})",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        if (showAll) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -1719,9 +1750,10 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.81.0 — puls w kształcie cyfr", listOf(
-                "Cień pod cyframi nie rozlewa się już w prostokątną plamę — trzyma się ich kształtu.",
-                "Cyfry przy wdechu delikatnie rosną i unoszą się, a cień tuż pod nimi się pogłębia."
+            InfoCard("1.82.0 — więcej motywów i gładki zegar", listOf(
+                "Motywy: Mono, Grafit i Mleko zostają na wierzchu, a pozostałe otwiera „Wyświetl więcej”. Wybrany motyw widać zawsze.",
+                "Nowe motywy: Ocean, Turkus, Zachód, Wino i Lód — razem dwanaście do wyboru.",
+                "Zegar: puls bez rozciągania cyfr — unoszą się delikatnie, a cień opada głębiej; ruch jest teraz czysty i gładki."
             ))
         }
         item {
