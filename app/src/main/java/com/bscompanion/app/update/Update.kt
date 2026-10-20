@@ -294,10 +294,12 @@ fun queryDownloadStatus(context: Context, versionName: String): DownloadStatus {
             when (status) {
                 DownloadManager.STATUS_SUCCESSFUL -> {
                     val f = apkFile(context, versionName)
-                    if (f.exists() && f.length() > 0) {
+                    // Sukces transferu ≠ poprawny APK (HTML z proxy albo ucięty plik):
+                    // parsujemy pakiet jak w pozostałych gałęziach — inaczej
+                    // „gotowe do instalacji” kończyło się błędem instalatora.
+                    if (isIntactApk(context, f)) {
                         DownloadStatus(DlState.SUCCESS, f.length(), f.length())
                     } else {
-                        // Sukces w bazie, pliku brak (ręcznie skasowany) — wracamy do pobierania.
                         DownloadStatus(DlState.MISSING)
                     }
                 }

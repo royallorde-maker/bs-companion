@@ -845,7 +845,9 @@ fun NowNextCards(nowState: State<LocalDateTime>) {
     // do minut) — a to już wisi w TERAZ. NASTĘPNE pokazuje więc KOLEJNE wydarzenie.
     val cared = remember(lookupNow, current) {
         val first = DormSchedule.nextCaredEvent(lookupNow)
-        if (first != null && current != null && first.second.id == current.id) {
+        // Ta sama tożsamość = ten sam event TEGO dnia; id powtarza się co dzień,
+        // więc bez daty piątkowe „nauka” zjadało niedzielne „nauka” z NASTĘPNYCH.
+        if (first != null && current != null && first.first == today && first.second.id == current.id) {
             DormSchedule.nextCaredEvent(
                 LocalDateTime.of(first.first, first.second.start).plusMinutes(1)
             )
@@ -1855,6 +1857,11 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.85.0 — przegląd i poprawki", listOf(
+                "Zmiana motywu nie wyrzuca już z Ustawień do Dziś — kolory zmieniają się w miejscu, a lista zostaje rozwinięta.",
+                "NASTĘPNE nie gubi wydarzenia, gdy kolejne wypada innego dnia i ma tę samą nazwę.",
+                "Pobrany plik aktualizacji jest sprawdzany przed instalacją — uszkodzony nie udaje gotowego."
+            ))
             InfoCard("1.84.0 — zdjęcie w portfolio", listOf(
                 "Karta portfolio pokazuje teraz prawdziwe zdjęcie autora — zamiast szarej ikony.",
                 "Pod zdjęciem krótko: „Przyszły inżynier — uczy się i buduje.”"

@@ -11,13 +11,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +27,6 @@ import com.bscompanion.app.notifications.NotificationHelper
 import com.bscompanion.app.notifications.Prefs
 import com.bscompanion.app.notifications.RescheduleWorker
 import com.bscompanion.app.ui.BsApp
-import com.bscompanion.app.ui.FluentMotion
 import com.bscompanion.app.ui.performTick
 import com.bscompanion.app.ui.SplashScreen
 import com.bscompanion.app.ui.theme.AppTheme
@@ -144,27 +137,21 @@ class MainActivity : ComponentActivity() {
                         showSplash = false
                     }
                 }
+                // Motyw zmienia się W MIEJSCU — bez przebudowy BsApp, więc wybrana
+                // zakładka i rozwinięta lista motywów zostają tam, gdzie były.
+                // Wcześniejszy AnimatedContent(appTheme) tworzył nowy BsApp od zera
+                // i po dotknięciu motywu wyrzucał z Ustawień do Dziś.
                 Crossfade(targetState = showSplash, animationSpec = tween(200), label = "splash") { splash ->
-                    if (splash) SplashScreen() else AnimatedContent(
-                        // Zmiana motywu wjeżdża treść z lewej — jak przewracana strona.
-                        targetState = appTheme,
-                        transitionSpec = {
-                            (slideInHorizontally(tween(FluentMotion.EnterMs)) { -it / 3 } + fadeIn(tween(FluentMotion.EnterMs))) togetherWith
-                                (slideOutHorizontally(tween(FluentMotion.ExitMs)) { it / 3 } + fadeOut(tween(FluentMotion.ExitMs)))
-                        },
-                        label = "theme"
-                    ) {
-                        BsApp(
-                            tabRequest = tabRequest.value,
-                            onTabRequestConsumed = { tabRequest.value = null },
-                            appTheme = appTheme,
-                            onThemeChange = {
-                                Prefs.setAppTheme(this@MainActivity, it)
-                                appTheme = it
-                                haptics.performTick()
-                            }
-                        )
-                    }
+                    if (splash) SplashScreen() else BsApp(
+                        tabRequest = tabRequest.value,
+                        onTabRequestConsumed = { tabRequest.value = null },
+                        appTheme = appTheme,
+                        onThemeChange = {
+                            Prefs.setAppTheme(this@MainActivity, it)
+                            appTheme = it
+                            haptics.performTick()
+                        }
+                    )
                 }
             }
         }

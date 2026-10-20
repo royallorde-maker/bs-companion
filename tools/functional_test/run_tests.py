@@ -540,6 +540,13 @@ def g_source() -> None:
     check("autor loczek z karta portfolio", "Autor: loczek" in bs and "PortfolioDialog" in bs
           and "Autor: skraba" not in bs and "R.drawable.loczek" in bs
           and "Przyszły inżynier" in bs)
+    check("NASTĘPNE skips only today's occurrence",
+          "first.first == today && first.second.id == current.id" in bs)
+    check("motyw zmienia sie w miejscu (bez resetu zakladki)",
+          "targetState = appTheme" not in ma and 'label = "theme"' not in ma
+          and "appTheme = appTheme" in ma)
+    up = src("java/com/bscompanion/app/update/Update.kt")
+    check("pobrany APK sprawdzany w kazdej galezi", up.count("isIntactApk(context, f)") >= 4)
     check("semester countdown on Today", "SemesterCountdown" in bs
           and "fun semesterEnd" in bs and "lastInMonth" in bs)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")
