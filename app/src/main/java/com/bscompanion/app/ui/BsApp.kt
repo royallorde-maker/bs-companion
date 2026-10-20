@@ -27,6 +27,7 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.togetherWith
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -126,9 +127,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -143,6 +146,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.bscompanion.app.R
 import com.bscompanion.app.data.DormEvent
 import com.bscompanion.app.data.DormSchedule
 import com.bscompanion.app.data.EventCategory
@@ -1377,7 +1381,7 @@ fun SettingsScreen(
     }
 }
 
-/** Karta portfolio autora — na razie placeholder: miejsce na zdjęcie, opis i linki. */
+/** Karta portfolio autora — zdjęcie, krótki opis i miejsce na linki. */
 @Composable
 private fun PortfolioDialog(onDismiss: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
@@ -1391,18 +1395,17 @@ private fun PortfolioDialog(onDismiss: () -> Unit) {
                 Modifier.fillMaxWidth().padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Miejsce na zdjęcie: okrąg z ikoną — tu wejdzie docelowe foto.
+                // Zdjęcie autora — okrągłe, z delikatnym obramowaniem.
                 Box(
                     Modifier.size(104.dp)
                         .clip(CircleShape)
-                        .background(scheme.surfaceContainerHigh)
-                        .border(BorderStroke(1.dp, scheme.outlineVariant), CircleShape),
-                    contentAlignment = Alignment.Center
+                        .border(BorderStroke(1.dp, scheme.outlineVariant), CircleShape)
                 ) {
-                    Icon(
-                        Icons.Filled.Person, null,
-                        Modifier.size(52.dp),
-                        tint = scheme.onSurfaceVariant
+                    Image(
+                        painter = painterResource(R.drawable.loczek),
+                        contentDescription = "Zdjęcie autora — loczek",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 Spacer(Modifier.height(14.dp))
@@ -1422,16 +1425,9 @@ private fun PortfolioDialog(onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "To na razie placeholder — miejsce na zdjęcie, opis i linki do portfolio.",
+                    "Przyszły inżynier — uczy się i buduje.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = scheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Wkrótce: zdjęcie • o mnie • linki",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = scheme.primary,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(16.dp))
@@ -1859,9 +1855,9 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
-            InfoCard("1.83.0 — wizytówka autora", listOf(
-                "W Ustawieniach autor to teraz loczek — podświetlony, więc od razu widać, że można dotknąć.",
-                "Dotknięcie otwiera kartę portfolio: na razie placeholder z miejscem na zdjęcie, opis i linki."
+            InfoCard("1.84.0 — zdjęcie w portfolio", listOf(
+                "Karta portfolio pokazuje teraz prawdziwe zdjęcie autora — zamiast szarej ikony.",
+                "Pod zdjęciem krótko: „Przyszły inżynier — uczy się i buduje.”"
             ))
         }
         item {

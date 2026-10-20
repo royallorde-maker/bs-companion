@@ -538,7 +538,8 @@ def g_source() -> None:
     check("motywy zwijane (3 + wyswietl wiecej)", "Wyświetl więcej" in bs
           and "AppTheme.entries.take(3)" in bs and "Zwiń listę" in bs)
     check("autor loczek z karta portfolio", "Autor: loczek" in bs and "PortfolioDialog" in bs
-          and "Autor: skraba" not in bs and "placeholder" in bs)
+          and "Autor: skraba" not in bs and "R.drawable.loczek" in bs
+          and "Przyszły inżynier" in bs)
     check("semester countdown on Today", "SemesterCountdown" in bs
           and "fun semesterEnd" in bs and "lastInMonth" in bs)
     bg = (ROOT / "app" / "build.gradle.kts").read_text(encoding="utf-8")

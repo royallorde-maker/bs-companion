@@ -1,8 +1,8 @@
 {
-  "versionCode": 89,
-  "versionName": "1.83.0",
+  "versionCode": 90,
+  "versionName": "1.84.0",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.83.0 — wizytówka autora",
+  "changelog": "1.84.0 — zdjęcie w portfolio",
   "force": false,
-  "publishedAt": "2026-10-19T21:08:02Z"
+  "publishedAt": "2026-10-20T08:42:57Z"
 }
