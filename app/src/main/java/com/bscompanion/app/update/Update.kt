@@ -89,7 +89,10 @@ fun rememberIsOnline(): Boolean {
     DisposableEffect(context) {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val cb = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { online = true }
+            // Pełny stan (z VALIDATED), nie samo true: samo onAvailable nie znaczy
+            // internet — captive portal mignąłby jako „online” do czasu
+            // onCapabilitiesChanged.
+            override fun onAvailable(network: Network) { online = isOnline(context) }
             override fun onLost(network: Network) { online = isOnline(context) }
             override fun onCapabilitiesChanged(n: Network, c: NetworkCapabilities) {
                 online = isOnline(context)

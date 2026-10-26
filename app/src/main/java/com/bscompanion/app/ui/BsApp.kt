@@ -106,6 +106,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.key
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -159,6 +160,7 @@ import com.bscompanion.app.update.checkForUpdate
 import com.bscompanion.app.update.downloadAndInstall
 import com.bscompanion.app.update.installApkFile
 import com.bscompanion.app.update.queryDownloadStatus
+import com.bscompanion.app.update.DownloadStatus
 import com.bscompanion.app.update.cancelDownload
 import com.bscompanion.app.update.DlState
 import com.bscompanion.app.update.ConnectionKind
@@ -172,8 +174,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -1626,6 +1630,13 @@ fun ScheduleScreen(
     val focus = remember(focusKey) { focusKey?.let { parseFocusKey(it) } }
     var pinnedDate by remember { mutableStateOf<LocalDate?>(focus?.first) }
     LaunchedEffect(focus) { focus?.let { pinnedDate = it.first } }
+    // Rollover dnia: przypięty dzień, który po północy znalazł się w przeszłości,
+    // wraca raz na „dziś” (bez tego karcie otwartej po dniu widać stary plan
+    // bez baneru i podświetlenia TERAZ). Odpięcie w połowie rzutu zostaje celowe.
+    LaunchedEffect(today) {
+        val p = pinnedDate
+        if (p != null && p < today) pinnedDate = today
+    }
     val shownDate = pinnedDate ?: today
     val shownEvents = remember(shownDate) { DormSchedule.eventsForDate(shownDate) }
     val events = shownEvents
@@ -1857,6 +1868,12 @@ fun ChangelogScreen() {
             UpdateCard()
         }
         item {
+            InfoCard("1.85.1 — przegląd", listOf(
+                "Po aktualizacji apki przypomnienia odzyskują się same — broadcast po nowej wersji nie wymaga już otwarcia apki.",
+                "Wyłączone przypomnienia czyszczą tydzień od razu — zaległe budziki nie budzą urządzenia do jutra.",
+                "Sprawdzenie aktualizacji rusza raz na wejście w Zmiany (podwójny HTTP znika), a status pobierania liczy się w tle — bez przycięć.",
+                "Trwałe „Internauta czuwa” odświeża się też o północy — nie kłamie „Następne” z wczoraj po granicy dnia."
+            ))
             InfoCard("1.85.0 — przegląd i poprawki", listOf(
                 "Zmiana motywu nie wyrzuca już z Ustawień do Dziś — kolory zmieniają się w miejscu, a lista zostaje rozwinięta.",
                 "NASTĘPNE nie gubi wydarzenia, gdy kolejne wypada innego dnia i ma tę samą nazwę.",
@@ -1990,9 +2007,12 @@ fun UpdateCard() {
     val online = rememberIsOnline()
 
     fun runCheck() {
+        // Checking stawia się SYNCHRONICZNIE: oba effecty startują w tej samej ramce
+        // kompozycji, a stan stawiany dopiero w coroutine był dla drugiego effectu
+        // wciąż Idle → dwa HTTP-y na wejście w Zmiany (Checking→Checking).
         if (state == UpdateState.Checking) return
+        state = UpdateState.Checking
         scope.launch {
-            state = UpdateState.Checking
             state = checkForUpdate(context)
         }
     }
@@ -2000,8 +2020,9 @@ fun UpdateCard() {
     // Pierwsze wejście na Zmiany = jedno sprawdzenie. Bez WorkManagera.
     LaunchedEffect(Unit) { runCheck() }
     // Powrót z offline → online: jedno dosprawdzenie także po błędzie, nie pętla.
+    // Idle pominięty: wejście i tak stawia Checking synchronicznie powyżej.
     LaunchedEffect(online) {
-        if (online && (state == UpdateState.Offline || state == UpdateState.Idle || state is UpdateState.Error)) runCheck()
+        if (online && (state == UpdateState.Offline || state is UpdateState.Error)) runCheck()
     }
 
     // Stan lokalnego pobrania dla ZNALEZIONEJ wersji: odświeżany co sekundę
@@ -2013,8 +2034,12 @@ fun UpdateCard() {
         resumeTick++
         onPauseOrDispose { }
     }
-    val dl = remember(avail?.versionName, dlTick, resumeTick) {
-        avail?.let { queryDownloadStatus(context, it.versionName) }
+    val dl by produceState<DownloadStatus?>(null, avail?.versionName, dlTick, resumeTick) {
+        val v = avail?.versionName
+        // Status na IO: galezie plikowe robią getPackageArchiveInfo (parsowanie APK
+        // na głównym wątku = przytyk przy każdym powrocie na Zmiany).
+        value = if (v == null) null
+        else withContext(Dispatchers.IO) { queryDownloadStatus(context, v) }
     }
     val downloading = dl?.state == DlState.RUNNING
     val paused = dl?.state == DlState.PAUSED
@@ -2069,7 +2094,8 @@ fun UpdateCard() {
         // Pobieranie w toku: pasek + procent + Anuluj. Samo pobieranie żyje
         // w DownloadManagerze (powiadomienie systemowe), więc trwa mimo zamknięcia apki.
         // Wstrzymane (roaming/brak sieci): pokazujemy wprost, nie wieczne kółko.
-        if ((downloading || paused) && dl != null) {
+        val dlNow = dl  // lokalna kopia — delegated property nie daje smart castu
+        if ((downloading || paused) && dlNow != null) {
             Spacer(Modifier.height(8.dp))
             if (paused) {
                 Text(
@@ -2080,7 +2106,7 @@ fun UpdateCard() {
                     overflow = TextOverflow.Ellipsis
                 )
             } else {
-                val frac = dl.fraction
+                val frac = dlNow.fraction
                 if (frac != null) {
                     LinearProgressIndicator(
                         progress = { frac },

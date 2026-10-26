@@ -1,8 +1,8 @@
 package com.bscompanion.app.data
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -129,7 +129,11 @@ class DormScheduleTest {
         assertTrue(!DormSchedule.isNoCare(sunday2200))
         val hit = DormSchedule.nextCaredEvent(LocalDateTime.of(LocalDate.of(2026, 10, 18), LocalTime.of(21, 50)))
         assertNotNull(hit)
-        assertNull(hit!!.takeIf { it.second.id == "cisza" && DormSchedule.isNoCare(LocalDateTime.of(it.first, it.second.start)) })
+        // Twarda asercja (dawny takeIf sprawdzał zawsze false = test pusty):
+        // to MUSI być dokładnie cisza, z opieką o starcie w niedzielę.
+        assertEquals(LocalDate.of(2026, 10, 18), hit!!.first)
+        assertEquals("cisza", hit.second.id)
+        assertFalse(DormSchedule.isNoCare(LocalDateTime.of(hit.first, hit.second.start)))
     }
 
     @Test

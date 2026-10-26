@@ -15,9 +15,13 @@ class BootReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val a = intent.action ?: return
-        // MY_PACKAGE_REPLACED da się podszyć zwykłym broadcastem — wymagaj package: URI.
+        // MY_PACKAGE_REPLACED jest protected broadcast — nada może TYLKO system, a
+        // systemowy intent nie niesie ŻADNEGO URI. Dawniej wymagaliśmy package: —
+        // to zabijało reschedulowanie po aktualizacji apki. Gdyby URI jednak
+        // przyszedł, odrzucaj tylko obcy pakiet (obronnie).
         if (a == "android.intent.action.MY_PACKAGE_REPLACED") {
-            if (intent.data?.schemeSpecificPart != context.packageName) return
+            val pkg = intent.data?.schemeSpecificPart
+            if (pkg != null && pkg != context.packageName) return
         }
         // exported=true wymagane dla BOOT_COMPLETED; pozostałe akcje jawne od obcej
         // apki kończą się co najwyżej na zdedubowanym, idempotentnym reschedule.

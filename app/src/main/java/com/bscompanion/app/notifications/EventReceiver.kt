@@ -91,6 +91,9 @@ class EventReceiver : BroadcastReceiver() {
             try { NotificationHelper.cancelPersistent(app) } catch (e: Exception) {
                 android.util.Log.w("EventReceiver", "cancel persistent failed", e)
             }
+            // Alarmy z czasów, gdy było włączone, wiszą jeszcze przez tydzień —
+            // dopnij puste okno teraz, a nie dopiero za 6 h (RescheduleWorker).
+            EventScheduler.rescheduleAsync(app)
             return
         }
         if (!NotificationHelper.canPost(context)) {

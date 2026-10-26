@@ -108,7 +108,7 @@ fun SplashScreen() {
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = titleAlpha)
+                modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = subAlpha)
             )
             Spacer(Modifier.height(16.dp))
             Surface(

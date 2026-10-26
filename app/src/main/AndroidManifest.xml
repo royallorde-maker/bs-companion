@@ -41,20 +41,18 @@
         <receiver
             android:name=".notifications.BootReceiver"
             android:exported="true">
-            <!-- exported=true wymagane dla BOOT_COMPLETED; MY_PACKAGE_REPLACED weryfikowany
-                 w kodzie po packageName, żeby obca apka nie wymuszała reschedule. -->
+            <!-- exported=true wymagane dla BOOT_COMPLETED. MY_PACKAGE_REPLACED jest
+                 protected broadcast (nadaje go tylko system) i NIE niesie ŻADNEGO
+                 URI — filtr z <data scheme="package"> nie łapie bezdanych intentów,
+                 więc reschedule po aktualizacji apki nigdy nie odpalił (1.85.x).
+                 Odbiornik przy odrzuca tylko, gdy URI wskaże obcy pakiet. -->
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
-            </intent-filter>
-            <!-- MY_PACKAGE_REPLACED zawsze niesie package: URI — filtr ze schematem
-                 odcina podszyte broadcasty bez danych (kod i tak weryfikuje pakiet). -->
-            <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <data android:scheme="package" />
             </intent-filter>
         </receiver>
 

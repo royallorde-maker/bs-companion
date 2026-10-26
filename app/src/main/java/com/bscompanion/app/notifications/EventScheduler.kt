@@ -172,6 +172,10 @@ object EventScheduler {
     private var lastAsyncMs = 0L
     @Volatile
     private var coalescedPending = false
+    // Future z wiszącego doschedulowania — force=true ma je KASOWAĆ, nie tylko
+    // gasić flagę (bez tego egzekucja spod UI i zaplanowana w tle robiły to
+    // samo podwójnie). Wszystkie odczyty/podmiany pod bgLock.
+    private var coalescedFuture: java.util.concurrent.ScheduledFuture<*>? = null
 
     private fun newExecutor(): java.util.concurrent.ScheduledExecutorService {
         return java.util.concurrent.Executors.newSingleThreadScheduledExecutor { r ->
@@ -192,32 +196,40 @@ object EventScheduler {
             if (bg.isShutdown || bg.isTerminated) {
                 bg = newExecutor()
                 coalescedPending = false
+                coalescedFuture = null
             }
             if (!force && now - lastAsyncMs < 2000) {
                 if (coalescedPending) return
                 coalescedPending = true
                 delayMs = (lastAsyncMs + 2000) - now
             } else {
-                // force=true: natychmiast + kasuj wiszące doschedule — inaczej
-                // egzekucja spod UI i zaplanowana w tle robią to samo podwójnie.
+                // force=true: natychmiast + kasuj wiszące doschedule RAZEM Z FUTURE —
+                // sama flaga nie wystarcza: task już siedzi w kolejce i odpaliłby
+                // po egzekucji spod UI (podwójny pełny cykl cancel/schedule).
                 coalescedPending = false
+                try { coalescedFuture?.cancel(false) } catch (_: Exception) { }
+                coalescedFuture = null
                 lastAsyncMs = now
             }
-        }
-        if (delayMs > 0) {
-            try {
-                bg.schedule({
-                    synchronized(bgLock) {
-                        coalescedPending = false
-                        lastAsyncMs = SystemClock.uptimeMillis()
-                    }
-                    rescheduleAll(app)
-                }, delayMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            } catch (e: Exception) {
-                android.util.Log.w("EventScheduler", "coalesced schedule failed", e)
-                synchronized(bgLock) { coalescedPending = false }
+            if (delayMs > 0) {
+                // Future zapamiętujemy POD zamkiem: force może pobiec pomiędzy
+                // submit-em a podmianą pola — nie może go wtedy przegapić.
+                try {
+                    coalescedFuture = bg.schedule({
+                        synchronized(bgLock) {
+                            coalescedPending = false
+                            coalescedFuture = null
+                            lastAsyncMs = SystemClock.uptimeMillis()
+                        }
+                        rescheduleAll(app)
+                    }, delayMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+                } catch (e: Exception) {
+                    android.util.Log.w("EventScheduler", "coalesced schedule failed", e)
+                    coalescedPending = false
+                    coalescedFuture = null
+                }
+                return
             }
-            return
         }
         val exec: java.util.concurrent.ExecutorService
         synchronized(bgLock) { exec = bg }
@@ -262,7 +274,9 @@ object EventScheduler {
             .mapValues { (_, grp) -> grp.maxOf { smartOffsetMinutes(it) } }
 
     /** Wszystkie możliwe wyprzedzenia — do obronnego wyliczania w cancelAll. */
-    private val smartOffsets = setOf(0, 5, 10, 15, 20, 30)
+    // internal (nie private): test everyOffsetIsCancellable pilnuje, żeby każdy
+    // offset z offsetsByStart dał się tu znaleźć — inaczej PendingIntent zostaje na zawsze.
+    internal val smartOffsets = setOf(0, 5, 10, 15, 20, 30)
 
     fun rescheduleAll(context: Context) {
         // Migracja + odczyty I/O POZA zamkiem (nie trzymamy monitora na dysku).
@@ -346,21 +360,23 @@ object EventScheduler {
     private fun scheduleRefreshTicks(context: Context, zone: ZoneId) {
         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val nowMs = System.currentTimeMillis()
-        val times = mutableListOf<Long>()
         val today = LocalDate.now()
+        // Północ ZAREZERWOWANA na początku: bez rezerwy ≥8 przyszłych startów
+        // wypychało ją z take(REFRESH_SLOTS) (sortują się PRZED jutrzejszą północą)
+        // i wiersz nie odświeżał się przez granicę dni aż do pierwszego wydarzenia.
+        val midnight = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val slots = mutableListOf<Long>()
+        if (midnight > nowMs) slots += midnight
         for (d in 0..2) {
             val date = today.plusDays(d.toLong())
             for (e in DormSchedule.eventsForDate(date)) {
                 val ms = LocalDateTime.of(date, e.start).atZone(zone).toInstant().toEpochMilli()
-                if (ms > nowMs) times += ms
-                if (times.size >= REFRESH_SLOTS) break
+                if (ms > nowMs) slots += ms
+                if (slots.size >= REFRESH_SLOTS) break
             }
-            if (times.size >= REFRESH_SLOTS) break
+            if (slots.size >= REFRESH_SLOTS) break
         }
-        // Północ: granica dni bez wydarzeń też odświeża wiersz.
-        val midnight = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        if (midnight > nowMs) times += midnight
-        times.sorted().take(REFRESH_SLOTS).forEachIndexed { i, fireMs ->
+        slots.sorted().take(REFRESH_SLOTS).forEachIndexed { i, fireMs ->
             val intent = Intent(context, EventReceiver::class.java).apply {
                 action = ACTION_REFRESH
                 data = Uri.parse("$URI_SCHEME://refresh/$i")
@@ -589,7 +605,7 @@ object EventScheduler {
 
     private fun requestCodeFor(eventId: String, date: LocalDate, offset: Int, reminder: Boolean): Int {
         val raw = "${date}_${eventId}_${offset}_${reminder}".hashCode()
-        // Szeroki zakres 2M..10M, z dala od 1001 (trwałe), 9999 (test) i 999013 (fallback).
+        // Szeroki zakres 2M..10M, z dala od 1001 (trwałe), 9999 i 50_001 (FALLBACK_ID).
         return (if (raw == Int.MIN_VALUE) 0 else kotlin.math.abs(raw) % 8_000_000) + 2_000_000
     }
 

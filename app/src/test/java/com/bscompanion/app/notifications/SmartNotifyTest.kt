@@ -52,8 +52,11 @@ class SmartNotifyTest {
         // cancelAll — inaczej PendingIntent zostaje na zawsze.
         val events = DormSchedule.eventsForDate(monday())
         val used = EventScheduler.offsetsByStart(events).values
-        // Ograniczamy do znanych kategorii; 0/5 to obronne wartości.
-        used.forEach { assertTrue(it in 0..30) }
+        used.forEach { offset ->
+            assertTrue("offset $offset poza 0..30", offset in 0..30)
+            assertTrue("offset $offset poza smartOffsets — cancelAll go nie anuluje",
+                       offset in EventScheduler.smartOffsets)
+        }
     }
 
     @Test
