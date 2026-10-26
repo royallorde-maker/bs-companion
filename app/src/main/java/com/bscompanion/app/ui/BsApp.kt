@@ -1867,6 +1867,14 @@ fun ChangelogScreen() {
         item {
             UpdateCard()
         }
+        // Każda karta osobno (jak 1.73.0 obiecało): w obrębie jednego itemu
+        // spacedBy nie działa — karty sklejały się od 1.84.0/1.85.0.
+        item {
+            InfoCard("1.85.2 — oddech kart", listOf(
+                "Karty Zmian znów mają światło między sobą — od 1.84.0 trzy najnowsze sklejały się w jeden blok.",
+                "Powód: odstęp listy działa między itemami, a karty trzymane były w jednym — rozbite na osobne wiersze."
+            ))
+        }
         item {
             InfoCard("1.85.1 — przegląd", listOf(
                 "Po aktualizacji apki przypomnienia odzyskują się same — broadcast po nowej wersji nie wymaga już otwarcia apki.",
@@ -1874,11 +1882,15 @@ fun ChangelogScreen() {
                 "Sprawdzenie aktualizacji rusza raz na wejście w Zmiany (podwójny HTTP znika), a status pobierania liczy się w tle — bez przycięć.",
                 "Trwałe „Internauta czuwa” odświeża się też o północy — nie kłamie „Następne” z wczoraj po granicy dnia."
             ))
+        }
+        item {
             InfoCard("1.85.0 — przegląd i poprawki", listOf(
                 "Zmiana motywu nie wyrzuca już z Ustawień do Dziś — kolory zmieniają się w miejscu, a lista zostaje rozwinięta.",
                 "NASTĘPNE nie gubi wydarzenia, gdy kolejne wypada innego dnia i ma tę samą nazwę.",
                 "Pobrany plik aktualizacji jest sprawdzany przed instalacją — uszkodzony nie udaje gotowego."
             ))
+        }
+        item {
             InfoCard("1.84.0 — zdjęcie w portfolio", listOf(
                 "Karta portfolio pokazuje teraz prawdziwe zdjęcie autora — zamiast szarej ikony.",
                 "Pod zdjęciem krótko: „Przyszły inżynier — uczy się i buduje.”"

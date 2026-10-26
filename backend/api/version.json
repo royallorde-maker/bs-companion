@@ -1,8 +1,8 @@
 {
-  "versionCode": 92,
-  "versionName": "1.85.1",
+  "versionCode": 93,
+  "versionName": "1.85.2",
   "apkUrl": "https://github.com/royallorde-maker/bs-companion/releases/latest/download/app-release.apk",
-  "changelog": "1.85.1 — przegląd: silent OTA naprawiony, czyszczenie tygodnia po wyłączeniu, tło dla statusu pobierania",
+  "changelog": "1.85.2 — oddech kart Zmian (trzy najnowsze nie sklejają się w jeden blok)",
   "force": false,
-  "publishedAt": "2026-10-26T20:43:15Z"
+  "publishedAt": "2026-10-26T21:10:25Z"
 }
